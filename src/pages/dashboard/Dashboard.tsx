@@ -1,4 +1,5 @@
-import { usePlanStore } from '@/stores/usePlanStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useJobStore } from '@/stores/useJobStore'
 import {
   Card,
   CardContent,
@@ -6,259 +7,191 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
-import { Plus, ArrowUpRight, ArrowDownRight, TrendingUp } from 'lucide-react'
+import {
+  Plus,
+  Search,
+  Star,
+  TrendingUp,
+  Wallet,
+  ShieldCheck,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
-import {
-  Area,
-  AreaChart,
-  CartesianGrid,
-  XAxis,
-  ResponsiveContainer,
-  Tooltip,
-} from 'recharts'
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from '@/components/ui/chart'
-
-const chartConfig = {
-  active: {
-    label: 'Ativos',
-    color: 'hsl(var(--chart-1))',
-  },
-  completed: {
-    label: 'Concluídos',
-    color: 'hsl(var(--chart-2))',
-  },
-}
-
-const data = [
-  { month: 'Jan', active: 10, completed: 5 },
-  { month: 'Fev', active: 15, completed: 8 },
-  { month: 'Mar', active: 20, completed: 12 },
-  { month: 'Abr', active: 18, completed: 15 },
-  { month: 'Mai', active: 25, completed: 20 },
-  { month: 'Jun', active: 30, completed: 22 },
-  { month: 'Jul', active: 35, completed: 28 },
-]
 
 export default function Dashboard() {
-  const { plans } = usePlanStore()
+  const { user } = useAuthStore()
+  const { jobs } = useJobStore()
 
-  const stats = [
-    {
-      title: 'Total de Planos',
-      value: plans.length,
-      change: '+12%',
-      trend: 'up',
-    },
-    {
-      title: 'Projetos Ativos',
-      value: plans.filter((p) => p.status === 'Em Progresso').length,
-      change: '+5%',
-      trend: 'up',
-    },
-    { title: 'Metas Concluídas', value: '85', change: '+24%', trend: 'up' },
-    { title: 'Orçamento (R$)', value: '250k', change: '-2%', trend: 'down' },
-  ]
+  const isContractor = user?.role === 'contractor'
 
-  const recentPlans = [...plans]
-    .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-    .slice(0, 5)
+  // Filter jobs based on role
+  const activeJobs = isContractor
+    ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'in_progress')
+        .length
+    : jobs.filter(
+        (j) =>
+          j.bids.some((b) => b.executorId === user?.id) &&
+          j.status === 'in_progress',
+      ).length
+
+  const openJobs = isContractor
+    ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'open').length
+    : jobs.filter((j) => j.status === 'open').length // Total available jobs for executor
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-        <div className="flex items-center space-x-2">
-          <Button asChild>
-            <Link to="/plans/new">
-              <Plus className="mr-2 h-4 w-4" /> Novo Plano
-            </Link>
-          </Button>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Olá, {user?.name}
+          </h2>
+          <p className="text-muted-foreground">
+            Bem-vindo ao seu painel de controle{' '}
+            {isContractor ? '(Contratante)' : '(Executor)'}.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {isContractor ? (
+            <Button asChild>
+              <Link to="/post-job">
+                <Plus className="mr-2 h-4 w-4" /> Publicar Novo Job
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild>
+              <Link to="/find-jobs">
+                <Search className="mr-2 h-4 w-4" /> Buscar Jobs
+              </Link>
+            </Button>
+          )}
         </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, i) => (
-          <Card key={i}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">
-                {stat.title}
-              </CardTitle>
-              {stat.trend === 'up' ? (
-                <ArrowUpRight className="h-4 w-4 text-emerald-500" />
-              ) : (
-                <ArrowDownRight className="h-4 w-4 text-rose-500" />
-              )}
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stat.value}</div>
-              <p className="text-xs text-muted-foreground flex items-center mt-1">
-                <span
-                  className={
-                    stat.trend === 'up'
-                      ? 'text-emerald-500 mr-1'
-                      : 'text-rose-500 mr-1'
-                  }
-                >
-                  {stat.change}
-                </span>
-                em relação ao mês anterior
-              </p>
-            </CardContent>
-          </Card>
-        ))}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Reputação</CardTitle>
+            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {user?.reputation.toFixed(1)}/5.0
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Baseado em avaliações recentes
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {isContractor ? 'Jobs Ativos' : 'Trabalhos em Andamento'}
+            </CardTitle>
+            <TrendingUp className="h-4 w-4 text-emerald-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{activeJobs}</div>
+            <p className="text-xs text-muted-foreground">
+              Projetos em execução agora
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              {isContractor ? 'Jobs Abertos' : 'Oportunidades'}
+            </CardTitle>
+            <Search className="h-4 w-4 text-primary" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{openJobs}</div>
+            <p className="text-xs text-muted-foreground">
+              {isContractor ? 'Aguardando propostas' : 'Disponíveis para lance'}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Saldo em Escrow
+            </CardTitle>
+            <Wallet className="h-4 w-4 text-indigo-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">R$ 0,00</div>
+            <p className="text-xs text-muted-foreground flex items-center gap-1">
+              <ShieldCheck className="h-3 w-3" /> Protegido pelo BIDWORK
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Crescimento de Planos</CardTitle>
+            <CardTitle>Atividade Recente</CardTitle>
             <CardDescription>
-              Evolução de planos ativos vs concluídos nos últimos 7 meses
+              Suas últimas interações na plataforma.
             </CardDescription>
           </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[300px] w-full">
-              <ChartContainer config={chartConfig} className="h-full w-full">
-                <AreaChart
-                  data={data}
-                  margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
-                >
-                  <defs>
-                    <linearGradient id="fillActive" x1="0" y1="0" x2="0" y2="1">
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(var(--chart-1))"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(var(--chart-1))"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                    <linearGradient
-                      id="fillCompleted"
-                      x1="0"
-                      y1="0"
-                      x2="0"
-                      y2="1"
-                    >
-                      <stop
-                        offset="5%"
-                        stopColor="hsl(var(--chart-2))"
-                        stopOpacity={0.8}
-                      />
-                      <stop
-                        offset="95%"
-                        stopColor="hsl(var(--chart-2))"
-                        stopOpacity={0.1}
-                      />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid
-                    vertical={false}
-                    strokeDasharray="3 3"
-                    className="stroke-muted"
-                  />
-                  <XAxis
-                    dataKey="month"
-                    tickLine={false}
-                    axisLine={false}
-                    tickMargin={8}
-                    tickFormatter={(value) => value.slice(0, 3)}
-                  />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Area
-                    type="monotone"
-                    dataKey="active"
-                    stroke="hsl(var(--chart-1))"
-                    fillOpacity={1}
-                    fill="url(#fillActive)"
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="completed"
-                    stroke="hsl(var(--chart-2))"
-                    fillOpacity={1}
-                    fill="url(#fillCompleted)"
-                  />
-                </AreaChart>
-              </ChartContainer>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
+              <p>Nenhuma atividade recente encontrada.</p>
             </div>
           </CardContent>
         </Card>
 
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>Planos Recentes</CardTitle>
-            <CardDescription>
-              Você tem {plans.length} planos totais.
-            </CardDescription>
+            <CardTitle>
+              Dicas de {isContractor ? 'Contratação' : 'Sucesso'}
+            </CardTitle>
+            <CardDescription>Melhore sua experiência.</CardDescription>
           </CardHeader>
           <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Plano</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Progresso</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentPlans.map((plan) => (
-                  <TableRow key={plan.id}>
-                    <TableCell className="font-medium">
-                      <div className="flex flex-col">
-                        <span>{plan.title}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {plan.category}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={
-                          plan.status === 'Concluído'
-                            ? 'bg-emerald-100 text-emerald-800 hover:bg-emerald-100'
-                            : plan.status === 'Atrasado'
-                              ? 'bg-rose-100 text-rose-800 hover:bg-rose-100'
-                              : 'bg-indigo-100 text-indigo-800 hover:bg-indigo-100'
-                        }
-                      >
-                        {plan.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {plan.progress}%
-                        </span>
-                        <Progress
-                          value={plan.progress}
-                          className="w-[60px] h-2"
-                        />
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ul className="space-y-4 text-sm">
+              {isContractor ? (
+                <>
+                  <li className="flex items-start gap-2">
+                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      1
+                    </span>
+                    <span>
+                      Descreva seu projeto com detalhes para atrair melhores
+                      propostas.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      2
+                    </span>
+                    <span>
+                      Verifique a reputação dos executores antes de aceitar.
+                    </span>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li className="flex items-start gap-2">
+                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      1
+                    </span>
+                    <span>
+                      Complete seu perfil para aumentar sua credibilidade.
+                    </span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
+                      2
+                    </span>
+                    <span>Envie propostas personalizadas e competitivas.</span>
+                  </li>
+                </>
+              )}
+            </ul>
           </CardContent>
         </Card>
       </div>

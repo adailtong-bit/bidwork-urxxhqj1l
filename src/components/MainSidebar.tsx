@@ -1,13 +1,16 @@
 import {
   LayoutDashboard,
   FileText,
-  PieChart,
   Users,
   Settings,
   LogOut,
   ChevronUp,
   User2,
   FolderOpen,
+  PlusCircle,
+  Search,
+  MessageSquare,
+  Briefcase,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -36,38 +39,66 @@ export function MainSidebar() {
   const { user, logout } = useAuthStore()
   const location = useLocation()
   const { state } = useSidebar()
+  const isContractor = user?.role === 'contractor'
 
-  const items = [
+  // Common items
+  const commonItems = [
     {
       title: 'Dashboard',
       url: '/dashboard',
       icon: LayoutDashboard,
     },
     {
-      title: 'Meus Planos',
-      url: '/plans',
-      icon: FileText,
+      title: 'Minhas Mensagens',
+      url: '/messages',
+      icon: MessageSquare,
     },
+  ]
+
+  // Role specific items
+  const contractorItems = [
+    {
+      title: 'Publicar Job',
+      url: '/post-job',
+      icon: PlusCircle,
+    },
+    {
+      title: 'Meus Jobs',
+      url: '/my-jobs',
+      icon: Briefcase,
+    },
+  ]
+
+  const executorItems = [
+    {
+      title: 'Encontrar Jobs',
+      url: '/find-jobs',
+      icon: Search,
+    },
+    {
+      title: 'Minhas Candidaturas',
+      url: '/my-jobs', // Reusing route but filtered for executor logic
+      icon: Briefcase,
+    },
+  ]
+
+  const utilityItems = [
     {
       title: 'Documentos',
       url: '/documents',
       icon: FolderOpen,
     },
     {
-      title: 'Relatórios',
-      url: '/reports',
-      icon: PieChart,
-    },
-    {
-      title: 'Equipe',
-      url: '/team',
-      icon: Users,
-    },
-    {
       title: 'Configurações',
       url: '/settings',
       icon: Settings,
     },
+  ]
+
+  const menuItems = [
+    ...commonItems,
+    ...(isContractor ? contractorItems : executorItems),
+    ...utilityItems,
   ]
 
   return (
@@ -89,10 +120,12 @@ export function MainSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Menu Principal</SidebarGroupLabel>
+          <SidebarGroupLabel>
+            {isContractor ? 'Área do Contratante' : 'Área do Executor'}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
+              {menuItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton
                     asChild
@@ -122,8 +155,8 @@ export function MainSidebar() {
                   <User2 className="shrink-0" />
                   <div className="flex flex-col gap-0.5 text-left text-sm leading-none">
                     <span className="font-semibold truncate">{user?.name}</span>
-                    <span className="text-xs text-muted-foreground truncate">
-                      {user?.email}
+                    <span className="text-xs text-muted-foreground truncate capitalize">
+                      {user?.role}
                     </span>
                   </div>
                   <ChevronUp className="ml-auto" />

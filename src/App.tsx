@@ -17,6 +17,11 @@ import Reports from '@/pages/reports/Reports'
 import Team from '@/pages/team/Team'
 import Settings from '@/pages/settings/Settings'
 import NotFound from '@/pages/NotFound'
+// New Marketplace Pages
+import PostJob from '@/pages/jobs/PostJob'
+import FindJobs from '@/pages/jobs/FindJobs'
+import MyJobs from '@/pages/jobs/MyJobs'
+import JobDetail from '@/pages/jobs/JobDetail'
 import { useAuthStore } from '@/stores/useAuthStore'
 
 // Protected Route Wrapper
@@ -30,7 +35,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
 const App = () => {
   useEffect(() => {
-    document.title = 'BIDWORK'
+    document.title = 'BIDWORK - Marketplace de Serviços'
   }, [])
 
   return (
@@ -58,12 +63,27 @@ const App = () => {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* Legacy Plan Routes - Kept for reference but deemphasized in new UI */}
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
+
+              {/* Marketplace Routes */}
+              <Route path="/post-job" element={<PostJob />} />
+              <Route path="/find-jobs" element={<FindJobs />} />
+              <Route path="/my-jobs" element={<MyJobs />} />
+              <Route path="/jobs/:id" element={<JobDetail />} />
+
+              {/* Common Routes */}
               <Route path="/documents" element={<Documents />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/team" element={<Team />} />
               <Route path="/settings" element={<Settings />} />
+              {/* Route redirection for empty messages route */}
+              <Route
+                path="/messages"
+                element={<Navigate to="/dashboard" replace />}
+              />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
