@@ -7,6 +7,7 @@ import {
   LogOut,
   ChevronUp,
   User2,
+  FolderOpen,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -46,6 +47,11 @@ export function MainSidebar() {
       title: 'Meus Planos',
       url: '/plans',
       icon: FileText,
+    },
+    {
+      title: 'Documentos',
+      url: '/documents',
+      icon: FolderOpen,
     },
     {
       title: 'Relatórios',

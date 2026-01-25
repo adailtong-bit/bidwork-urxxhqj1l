@@ -12,6 +12,7 @@ import ForgotPassword from '@/pages/auth/ForgotPassword'
 import Dashboard from '@/pages/dashboard/Dashboard'
 import PlansList from '@/pages/plans/PlansList'
 import PlanDetail from '@/pages/plans/PlanDetail'
+import Documents from '@/pages/documents/Documents'
 import Reports from '@/pages/reports/Reports'
 import Team from '@/pages/team/Team'
 import Settings from '@/pages/settings/Settings'
@@ -59,6 +60,7 @@ const App = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
+              <Route path="/documents" element={<Documents />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/team" element={<Team />} />
               <Route path="/settings" element={<Settings />} />
