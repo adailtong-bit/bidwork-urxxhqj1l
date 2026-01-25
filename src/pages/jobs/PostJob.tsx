@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -77,6 +76,19 @@ export default function PostJob() {
   const navigate = useNavigate()
   const { toast } = useToast()
 
+  const form = useForm<JobForm>({
+    resolver: zodResolver(jobSchema),
+    defaultValues: {
+      title: '',
+      description: '',
+      type: 'fixed',
+      category: '',
+      location: user?.location || '',
+      budget: 0,
+      publicationDate: new Date(),
+    },
+  })
+
   // Restriction Check
   if (user && hasActiveJob(user.id)) {
     return (
@@ -103,19 +115,6 @@ export default function PostJob() {
       </div>
     )
   }
-
-  const form = useForm<JobForm>({
-    resolver: zodResolver(jobSchema),
-    defaultValues: {
-      title: '',
-      description: '',
-      type: 'fixed',
-      category: '',
-      location: user?.location || '',
-      budget: 0,
-      publicationDate: new Date(),
-    },
-  })
 
   const onSubmit = (data: JobForm) => {
     if (!user) return
