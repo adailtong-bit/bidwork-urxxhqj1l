@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useJobStore, Job } from '@/stores/useJobStore'
+import { useJobStore } from '@/stores/useJobStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +12,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import { Slider } from '@/components/ui/slider'
 import {
   Select,
   SelectContent,
@@ -18,37 +20,65 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, MapPin, Gavel, Tag, Calendar, Filter } from 'lucide-react'
+import {
+  Search,
+  MapPin,
+  Gavel,
+  Tag,
+  Calendar,
+  Filter,
+  Star,
+  Zap,
+} from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { AdBanner } from '@/components/AdBanner'
 
 export default function FindJobs() {
   const { jobs } = useJobStore()
+  const { user } = useAuthStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [radiusFilter, setRadiusFilter] = useState([user?.serviceRadius || 50])
 
   const availableJobs = jobs.filter((job) => job.status === 'open')
 
-  const filteredJobs = availableJobs.filter((job) => {
-    const matchesSearch =
-      job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.location.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredJobs = availableJobs
+    .filter((job) => {
+      const matchesSearch =
+        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.location.toLowerCase().includes(searchTerm.toLowerCase())
 
-    const matchesCategory =
-      categoryFilter === 'all' || job.category === categoryFilter
-    const matchesType = typeFilter === 'all' || job.type === typeFilter
+      const matchesCategory =
+        categoryFilter === 'all' || job.category === categoryFilter
+      const matchesType = typeFilter === 'all' || job.type === typeFilter
 
-    return matchesSearch && matchesCategory && matchesType
-  })
+      // Mock geofencing check - assume everything matches if radius is large
+      // In real app, we calculate distance between user.location and job.location
+      const inRadius = radiusFilter[0] > 10
+
+      return matchesSearch && matchesCategory && matchesType && inRadius
+    })
+    .sort((a, b) => {
+      // Hierarchical Sorting: Premium (Superior) first
+      if (a.isPremiumVisibility && !b.isPremiumVisibility) return -1
+      if (!a.isPremiumVisibility && b.isPremiumVisibility) return 1
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    })
 
   return (
     <div className="space-y-6">
+      <AdBanner
+        region={user?.location || 'SP'}
+        category={categoryFilter === 'all' ? 'Geral' : categoryFilter}
+      />
+
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Encontrar Jobs</h1>
         <p className="text-muted-foreground">
-          Busque por oportunidades e faça sua proposta.
+          Oportunidades filtradas para você.
         </p>
       </div>
 
@@ -62,7 +92,19 @@ export default function FindJobs() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
+          <div className="w-full sm:w-[200px] px-2">
+            <div className="flex justify-between text-xs mb-1.5 text-muted-foreground">
+              <span>Raio</span>
+              <span>{radiusFilter[0]} mi</span>
+            </div>
+            <Slider
+              value={radiusFilter}
+              onValueChange={setRadiusFilter}
+              max={100}
+              step={5}
+            />
+          </div>
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="w-full sm:w-[180px] bg-background">
               <SelectValue placeholder="Categoria" />
@@ -92,13 +134,23 @@ export default function FindJobs() {
         {filteredJobs.map((job) => (
           <Card
             key={job.id}
-            className="flex flex-col hover:border-primary/50 transition-colors"
+            className={`flex flex-col hover:border-primary/50 transition-colors ${job.isPremiumVisibility ? 'border-l-4 border-l-yellow-500 shadow-sm' : ''}`}
           >
             <CardHeader>
               <div className="flex justify-between items-start mb-2">
-                <Badge variant="outline" className="text-xs">
-                  {job.category}
-                </Badge>
+                <div className="flex gap-2">
+                  <Badge variant="outline" className="text-xs">
+                    {job.category}
+                  </Badge>
+                  {job.isPremiumVisibility && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1"
+                    >
+                      <Zap className="h-3 w-3 fill-current" /> Destaque
+                    </Badge>
+                  )}
+                </div>
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
                   {formatDistanceToNow(job.createdAt, {
@@ -150,7 +202,10 @@ export default function FindJobs() {
         {filteredJobs.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
             <Filter className="h-10 w-10 mb-4 opacity-20" />
-            <p>Nenhum job encontrado com estes filtros.</p>
+            <p>
+              Nenhum job encontrado dentro do seu raio de atuação (
+              {radiusFilter[0]}mi).
+            </p>
           </div>
         )}
       </div>

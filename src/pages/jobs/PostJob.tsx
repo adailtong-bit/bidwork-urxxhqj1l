@@ -33,7 +33,24 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
-import { Gavel, Tag, MapPin, DollarSign } from 'lucide-react'
+import {
+  Calendar as CalendarIcon,
+  Gavel,
+  Tag,
+  MapPin,
+  DollarSign,
+  Clock,
+  AlertTriangle,
+} from 'lucide-react'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 const jobSchema = z.object({
   title: z.string().min(5, 'Título muito curto'),
@@ -45,15 +62,47 @@ const jobSchema = z.object({
     .string()
     .transform((val) => Number(val))
     .refine((val) => val > 0, 'Valor deve ser maior que zero'),
+  auctionEndDate: z.date().optional(),
+  maxExecutionDeadline: z.date({
+    required_error: 'Prazo máximo é obrigatório',
+  }),
+  publicationDate: z.date().default(new Date()),
 })
 
 type JobForm = z.infer<typeof jobSchema>
 
 export default function PostJob() {
-  const { addJob } = useJobStore()
+  const { addJob, hasActiveJob } = useJobStore()
   const { user } = useAuthStore()
   const navigate = useNavigate()
   const { toast } = useToast()
+
+  // Restriction Check
+  if (user && hasActiveJob(user.id)) {
+    return (
+      <div className="max-w-2xl mx-auto py-10">
+        <Card className="border-destructive/50 bg-destructive/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle /> Ação Bloqueada
+            </CardTitle>
+            <CardDescription className="text-destructive font-medium">
+              Você possui um Job Ativo pendente de finalização ou avaliação.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-4">
+              Para garantir a qualidade da plataforma, finalize seus processos
+              atuais antes de abrir novos chamados.
+            </p>
+            <Button variant="outline" onClick={() => navigate('/my-jobs')}>
+              Ir para Meus Jobs
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   const form = useForm<JobForm>({
     resolver: zodResolver(jobSchema),
@@ -62,13 +111,21 @@ export default function PostJob() {
       description: '',
       type: 'fixed',
       category: '',
-      location: '',
+      location: user?.location || '',
       budget: 0,
+      publicationDate: new Date(),
     },
   })
 
   const onSubmit = (data: JobForm) => {
     if (!user) return
+
+    if (data.type === 'auction' && !data.auctionEndDate) {
+      form.setError('auctionEndDate', {
+        message: 'Data de fim do leilão obrigatória',
+      })
+      return
+    }
 
     addJob({
       title: data.title,
@@ -79,11 +136,16 @@ export default function PostJob() {
       budget: data.budget,
       ownerId: user.id,
       ownerName: user.name,
+      publicationDate: data.publicationDate,
+      auctionEndDate: data.auctionEndDate,
+      maxExecutionDeadline: data.maxExecutionDeadline,
+      isPremiumVisibility: user.isPremium,
     })
 
     toast({
       title: 'Job Publicado!',
-      description: 'Seu serviço já está disponível para propostas.',
+      description:
+        'Seu serviço já está disponível. Notificando executores relevantes...',
     })
     navigate('/my-jobs')
   }
@@ -93,7 +155,7 @@ export default function PostJob() {
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Publicar Novo Job</h1>
         <p className="text-muted-foreground">
-          Descreva o que você precisa e encontre os melhores profissionais.
+          Preencha os detalhes para encontrar o profissional ideal.
         </p>
       </div>
 
@@ -102,9 +164,6 @@ export default function PostJob() {
           <Card>
             <CardHeader>
               <CardTitle>Detalhes do Serviço</CardTitle>
-              <CardDescription>
-                Informações básicas para os executores.
-              </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -175,13 +234,13 @@ export default function PostJob() {
                   name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Localização (Cidade/UF)</FormLabel>
+                      <FormLabel>Localização</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                           <Input
                             className="pl-9"
-                            placeholder="São Paulo, SP"
+                            placeholder="Cidade/Estado"
                             {...field}
                           />
                         </div>
@@ -191,15 +250,55 @@ export default function PostJob() {
                   )}
                 />
               </div>
+
+              <FormField
+                control={form.control}
+                name="maxExecutionDeadline"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Prazo Máximo de Execução</FormLabel>
+                    <Popover>
+                      <PopoverTrigger asChild>
+                        <FormControl>
+                          <Button
+                            variant={'outline'}
+                            className={cn(
+                              'w-full pl-3 text-left font-normal',
+                              !field.value && 'text-muted-foreground',
+                            )}
+                          >
+                            {field.value ? (
+                              format(field.value, 'PPP', { locale: ptBR })
+                            ) : (
+                              <span>Selecione uma data</span>
+                            )}
+                            <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                          </Button>
+                        </FormControl>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-0" align="start">
+                        <Calendar
+                          mode="single"
+                          selected={field.value}
+                          onSelect={field.onChange}
+                          disabled={(date) => date < new Date()}
+                          initialFocus
+                        />
+                      </PopoverContent>
+                    </Popover>
+                    <FormDescription>
+                      Data limite para o serviço estar concluído.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Orçamento e Modelo</CardTitle>
-              <CardDescription>
-                Como você deseja pagar por este serviço.
-              </CardDescription>
+              <CardTitle>Modelo de Contratação e Valor</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField
@@ -207,7 +306,7 @@ export default function PostJob() {
                 name="type"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Modelo de Contratação</FormLabel>
+                    <FormLabel>Tipo de Acordo</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -225,7 +324,7 @@ export default function PostJob() {
                             <Tag className="mb-3 h-6 w-6" />
                             <span className="font-semibold">Preço Fixo</span>
                             <span className="text-xs text-muted-foreground mt-1 text-center">
-                              Defina um valor fechado para o projeto inteiro.
+                              Valor fechado e definido.
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -239,10 +338,10 @@ export default function PostJob() {
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
                             <Gavel className="mb-3 h-6 w-6" />
                             <span className="font-semibold">
-                              Leilão / Bidding
+                              Leilão (Bidding)
                             </span>
                             <span className="text-xs text-muted-foreground mt-1 text-center">
-                              Executores dão lances competitivos.
+                              Executores competem com lances.
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -253,32 +352,75 @@ export default function PostJob() {
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="budget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Valor (R$)</FormLabel>
-                    <FormControl>
-                      <div className="relative max-w-[200px]">
-                        <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          className="pl-9"
-                          type="number"
-                          placeholder="0.00"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormDescription>
-                      {form.watch('type') === 'auction'
-                        ? 'Este será o valor máximo inicial sugerido.'
-                        : 'Valor total oferecido pelo serviço.'}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="budget"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {form.watch('type') === 'auction'
+                          ? 'Valor Máximo Inicial'
+                          : 'Valor Ofertado'}
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            className="pl-9"
+                            type="number"
+                            placeholder="0.00"
+                            {...field}
+                          />
+                        </div>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                {form.watch('type') === 'auction' && (
+                  <FormField
+                    control={form.control}
+                    name="auctionEndDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fim do Leilão</FormLabel>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant={'outline'}
+                                className={cn(
+                                  'w-full pl-3 text-left font-normal',
+                                  !field.value && 'text-muted-foreground',
+                                )}
+                              >
+                                {field.value ? (
+                                  format(field.value, 'PPP', { locale: ptBR })
+                                ) : (
+                                  <span>Selecione uma data</span>
+                                )}
+                                <Clock className="ml-auto h-4 w-4 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0" align="start">
+                            <Calendar
+                              mode="single"
+                              selected={field.value}
+                              onSelect={field.onChange}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
                 )}
-              />
+              </div>
             </CardContent>
           </Card>
 

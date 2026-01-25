@@ -8,6 +8,22 @@ export interface User {
   role: 'contractor' | 'executor' | 'admin'
   entityType: 'pf' | 'pj'
   reputation: number
+  // New fields
+  bankingDetails?: {
+    bank: string
+    agency: string
+    account: string
+    document: string // CPF/CNPJ (encrypted concept)
+  }
+  serviceRadius: number // in miles
+  location: string // State code for ads
+  pendingEvaluation?: {
+    jobId: string
+    targetId: string
+    targetName: string
+    type: 'contractor_to_executor' | 'executor_to_contractor'
+  }
+  isPremium: boolean // For visibility hierarchy
 }
 
 interface AuthState {
@@ -24,6 +40,9 @@ interface AuthState {
     entityType: 'pf' | 'pj',
   ) => Promise<void>
   updateUserReputation: (newScore: number) => void
+  updateSettings: (settings: Partial<User>) => void
+  clearPendingEvaluation: () => void
+  setPendingEvaluation: (evaluation: User['pendingEvaluation']) => void
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -35,14 +54,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500))
 
-    // Mock success - Determinisitc mock based on email for demo purposes
     const isExecutor = email.includes('executor')
+    const isPremium = email.includes('premium') // Mock premium logic
 
     set({
       isLoading: false,
       isAuthenticated: true,
       user: {
-        id: '1',
+        id: isExecutor ? '2' : '1',
         name: isExecutor ? 'João Executor' : 'Maria Contratante',
         email: email,
         avatar: isExecutor
@@ -51,6 +70,20 @@ export const useAuthStore = create<AuthState>((set) => ({
         role: isExecutor ? 'executor' : 'contractor',
         entityType: 'pf',
         reputation: isExecutor ? 4.8 : 5.0,
+        serviceRadius: 10,
+        location: 'SP',
+        isPremium: isPremium,
+        // Mock a pending evaluation for demo if email contains 'pending'
+        pendingEvaluation: email.includes('pending')
+          ? {
+              jobId: '1',
+              targetId: isExecutor ? '1' : '2',
+              targetName: isExecutor ? 'Maria Contratante' : 'João Executor',
+              type: isExecutor
+                ? 'executor_to_contractor'
+                : 'contractor_to_executor',
+            }
+          : undefined,
       },
     })
   },
@@ -67,7 +100,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         avatar: `https://img.usecurling.com/ppl/medium?seed=${Math.floor(Math.random() * 100)}`,
         role,
         entityType,
-        reputation: 0, // New users start with 0 or 5? Let's say 0 (New)
+        reputation: 0,
+        serviceRadius: 50,
+        location: 'SP',
+        isPremium: false,
       },
     })
   },
@@ -77,5 +113,19 @@ export const useAuthStore = create<AuthState>((set) => ({
   updateUserReputation: (newScore) =>
     set((state) => ({
       user: state.user ? { ...state.user, reputation: newScore } : null,
+    })),
+  updateSettings: (settings) =>
+    set((state) => ({
+      user: state.user ? { ...state.user, ...settings } : null,
+    })),
+  clearPendingEvaluation: () =>
+    set((state) => ({
+      user: state.user ? { ...state.user, pendingEvaluation: undefined } : null,
+    })),
+  setPendingEvaluation: (evaluation) =>
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, pendingEvaluation: evaluation }
+        : null,
     })),
 }))

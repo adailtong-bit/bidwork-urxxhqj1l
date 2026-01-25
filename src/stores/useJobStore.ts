@@ -18,14 +18,24 @@ export interface Job {
   title: string
   description: string
   type: 'fixed' | 'auction'
-  status: 'open' | 'in_progress' | 'completed' | 'dispute' | 'cancelled'
+  status:
+    | 'open'
+    | 'suspended'
+    | 'in_progress'
+    | 'completed'
+    | 'dispute'
+    | 'cancelled'
   category: string
   location: string
-  budget: number // Or starting price for auction
+  budget: number
   bids: Bid[]
   acceptedBidId?: string
+  // New Fields
   createdAt: Date
-  files?: string[]
+  publicationDate: Date
+  auctionEndDate?: Date
+  maxExecutionDeadline?: Date
+  isPremiumVisibility: boolean // "Superior" ranking
 }
 
 interface JobState {
@@ -37,6 +47,7 @@ interface JobState {
   openDispute: (jobId: string) => void
   cancelJob: (jobId: string) => void
   getJob: (id: string) => Job | undefined
+  hasActiveJob: (userId: string) => boolean
 }
 
 const mockJobs: Job[] = [
@@ -74,6 +85,9 @@ const mockJobs: Job[] = [
       },
     ],
     createdAt: new Date(),
+    publicationDate: new Date(),
+    maxExecutionDeadline: new Date(Date.now() + 86400000 * 30),
+    isPremiumVisibility: true,
   },
   {
     id: '2',
@@ -88,6 +102,9 @@ const mockJobs: Job[] = [
     budget: 1500,
     bids: [],
     createdAt: new Date(Date.now() - 86400000),
+    publicationDate: new Date(Date.now() - 86400000),
+    auctionEndDate: new Date(Date.now() + 86400000 * 2),
+    isPremiumVisibility: false,
   },
 ]
 
@@ -153,4 +170,11 @@ export const useJobStore = create<JobState>((set, get) => ({
       ),
     })),
   getJob: (id) => get().jobs.find((j) => j.id === id),
+  hasActiveJob: (userId) => {
+    // Check if user has any job that is NOT completed and NOT cancelled
+    return get().jobs.some(
+      (j) =>
+        j.ownerId === userId && !['completed', 'cancelled'].includes(j.status),
+    )
+  },
 }))

@@ -17,20 +17,28 @@ import Reports from '@/pages/reports/Reports'
 import Team from '@/pages/team/Team'
 import Settings from '@/pages/settings/Settings'
 import NotFound from '@/pages/NotFound'
-// New Marketplace Pages
 import PostJob from '@/pages/jobs/PostJob'
 import FindJobs from '@/pages/jobs/FindJobs'
 import MyJobs from '@/pages/jobs/MyJobs'
 import JobDetail from '@/pages/jobs/JobDetail'
+import Dispute from '@/pages/jobs/Dispute'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { EvaluationModal } from '@/components/EvaluationModal'
 
-// Protected Route Wrapper
+// Protected Route Wrapper with Mandatory Evaluation Check
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, user } = useAuthStore()
+
   if (!isAuthenticated) {
     return <Navigate to="/" replace />
   }
-  return children
+
+  return (
+    <>
+      {user?.pendingEvaluation && <EvaluationModal open={true} />}
+      {children}
+    </>
+  )
 }
 
 const App = () => {
@@ -64,7 +72,6 @@ const App = () => {
             >
               <Route path="/dashboard" element={<Dashboard />} />
 
-              {/* Legacy Plan Routes - Kept for reference but deemphasized in new UI */}
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
 
@@ -73,13 +80,13 @@ const App = () => {
               <Route path="/find-jobs" element={<FindJobs />} />
               <Route path="/my-jobs" element={<MyJobs />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
+              <Route path="/disputes/new/:id" element={<Dispute />} />
 
               {/* Common Routes */}
               <Route path="/documents" element={<Documents />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/team" element={<Team />} />
               <Route path="/settings" element={<Settings />} />
-              {/* Route redirection for empty messages route */}
               <Route
                 path="/messages"
                 element={<Navigate to="/dashboard" replace />}
