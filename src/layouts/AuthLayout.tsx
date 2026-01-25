@@ -8,7 +8,7 @@ export default function AuthLayout() {
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-indigo-900 opacity-90 z-10" />
         {/* Abstract shapes */}
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-lg max-h-lg border border-white/10 rounded-full animate-spin-slow duration-[30s]" />
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-lg max-h-lg border border-white/10 rounded-full animate-spin-slow" />
 
         <div className="relative z-20 text-white max-w-lg">
           <div className="mb-8 flex items-center gap-3">
