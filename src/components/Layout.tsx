@@ -1,13 +1,8 @@
-/* Layout Component - A component that wraps the main content of the app
-   - Use this file to add a header, footer, or other elements that should be present on every page
-   - This component is used in the App.tsx file to wrap the main content of the app */
-
+// Wrapper component to be used if we need a global context provider or similar
+// For this app structure, we are using AuthLayout and DashboardLayout specific wrappers
+// But router expects a Layout element for the base route if we want one
 import { Outlet } from 'react-router-dom'
 
 export default function Layout() {
-  return (
-    <main className="flex flex-col min-h-screen">
-      <Outlet />
-    </main>
-  )
+  return <Outlet />
 }
