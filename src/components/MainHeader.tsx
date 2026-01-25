@@ -24,7 +24,7 @@ export function MainHeader() {
     if (path.includes('/reports')) return 'Relatórios'
     if (path.includes('/team')) return 'Equipe'
     if (path.includes('/settings')) return 'Configurações'
-    return 'Plano'
+    return 'BIDWORK'
   }
 
   return (

@@ -69,7 +69,7 @@ export function MainSidebar() {
       <SidebarHeader className="h-14 flex items-center justify-start px-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-2 font-bold text-xl text-primary truncate overflow-hidden">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-            P
+            B
           </div>
           <span
             className={cn(
@@ -77,7 +77,7 @@ export function MainSidebar() {
               state === 'collapsed' ? 'opacity-0 w-0' : 'opacity-100',
             )}
           >
-            Plano
+            BIDWORK
           </span>
         </div>
       </SidebarHeader>

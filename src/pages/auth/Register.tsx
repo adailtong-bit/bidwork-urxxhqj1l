@@ -51,7 +51,7 @@ export default function Register() {
       await register(data.name, data.email, data.password)
       toast({
         title: 'Conta criada!',
-        description: 'Seja bem-vindo ao Plano.',
+        description: 'Seja bem-vindo ao BIDWORK.',
       })
       navigate('/dashboard')
     } catch (error) {

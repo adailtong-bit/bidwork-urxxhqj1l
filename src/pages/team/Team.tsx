@@ -13,25 +13,25 @@ const members = [
   {
     name: 'Ana Souza',
     role: 'Gerente de Produto',
-    email: 'ana@plano.app',
+    email: 'ana@bidwork.app',
     img: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=10',
   },
   {
     name: 'Carlos Lima',
     role: 'Engenheiro de Software',
-    email: 'carlos@plano.app',
+    email: 'carlos@bidwork.app',
     img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=11',
   },
   {
     name: 'Mariana Costa',
     role: 'Designer',
-    email: 'mariana@plano.app',
+    email: 'mariana@bidwork.app',
     img: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=12',
   },
   {
     name: 'Pedro Santos',
     role: 'Marketing',
-    email: 'pedro@plano.app',
+    email: 'pedro@bidwork.app',
     img: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=13',
   },
 ]

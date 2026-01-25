@@ -13,9 +13,9 @@ export default function AuthLayout() {
         <div className="relative z-20 text-white max-w-lg">
           <div className="mb-8 flex items-center gap-3">
             <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary font-bold text-xl">
-              P
+              B
             </div>
-            <span className="text-2xl font-bold tracking-tight">Plano</span>
+            <span className="text-2xl font-bold tracking-tight">BIDWORK</span>
           </div>
           <h1 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
             Planejamento estratégico simplificado para equipes modernas.

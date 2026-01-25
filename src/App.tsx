@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
@@ -26,42 +27,48 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   return children
 }
 
-const App = () => (
-  <BrowserRouter
-    future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
-  >
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <Routes>
-        <Route element={<Layout />}>
-          {/* Public Auth Routes */}
-          <Route element={<AuthLayout />}>
-            <Route path="/" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-          </Route>
+const App = () => {
+  useEffect(() => {
+    document.title = 'BIDWORK'
+  }, [])
 
-          {/* Protected Dashboard Routes */}
-          <Route
-            element={
-              <ProtectedRoute>
-                <DashboardLayout />
-              </ProtectedRoute>
-            }
-          >
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/plans" element={<PlansList />} />
-            <Route path="/plans/:id" element={<PlanDetail />} />
-            <Route path="/reports" element={<Reports />} />
-            <Route path="/team" element={<Team />} />
-            <Route path="/settings" element={<Settings />} />
+  return (
+    <BrowserRouter
+      future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
+    >
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <Routes>
+          <Route element={<Layout />}>
+            {/* Public Auth Routes */}
+            <Route element={<AuthLayout />}>
+              <Route path="/" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+            </Route>
+
+            {/* Protected Dashboard Routes */}
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/plans" element={<PlansList />} />
+              <Route path="/plans/:id" element={<PlanDetail />} />
+              <Route path="/reports" element={<Reports />} />
+              <Route path="/team" element={<Team />} />
+              <Route path="/settings" element={<Settings />} />
+            </Route>
           </Route>
-        </Route>
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </TooltipProvider>
-  </BrowserRouter>
-)
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </TooltipProvider>
+    </BrowserRouter>
+  )
+}
 
 export default App

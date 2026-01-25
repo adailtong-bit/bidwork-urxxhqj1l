@@ -31,7 +31,7 @@ export default function Settings() {
             </div>
             <div className="grid gap-2">
               <Label>Email</Label>
-              <Input defaultValue="demo@plano.app" disabled />
+              <Input defaultValue="demo@bidwork.app" disabled />
             </div>
           </CardContent>
         </Card>
