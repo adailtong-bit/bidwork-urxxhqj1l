@@ -85,20 +85,21 @@ export default function PostJob() {
     },
   })
 
-  // Restriction Check for non-completed jobs
+  // Strict check for previous jobs being finished/finalized
   if (user && hasActiveJob(user.id)) {
     return (
       <div className="max-w-2xl mx-auto py-10 px-4">
         <Card className="border-destructive/50 bg-destructive/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
-              Ação Bloqueada
+              Ação Bloqueada: Job Pendente
             </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="mb-4">
-              Você possui um Job Ativo pendente de finalização ou avaliação.
-              Finalize seus processos atuais antes de abrir novos chamados.
+              Detectamos que você possui um Job em andamento ou não finalizado.
+              Para garantir a qualidade da plataforma, você deve concluir ou
+              cancelar seus processos atuais antes de abrir novos chamados.
             </p>
             <Button variant="outline" onClick={() => navigate('/my-jobs')}>
               Ir para Meus Jobs
@@ -134,10 +135,11 @@ export default function PostJob() {
       premiumType: data.premiumType,
     })
 
+    // Notification Logic Mock
     toast({
-      title: 'Job Publicado!',
+      title: 'Job Publicado com Sucesso!',
       description:
-        'Seu serviço já está disponível. Notificando executores relevantes...',
+        'Notificando executores relevantes agora. Se ninguém aceitar em 24h, expandiremos para a região.',
     })
     navigate('/my-jobs')
   }

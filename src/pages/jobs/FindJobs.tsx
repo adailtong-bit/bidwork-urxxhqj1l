@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Search, MapPin, Gavel, Tag, Calendar, Filter, Zap } from 'lucide-react'
-import { formatDistanceToNow } from 'date-fns'
+import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AdBanner } from '@/components/AdBanner'
 
@@ -31,6 +31,7 @@ export default function FindJobs() {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
+  const [dateFilter, setDateFilter] = useState('all')
   const [radiusFilter, setRadiusFilter] = useState([user?.serviceRadius || 50])
 
   const availableJobs = jobs.filter((job) => job.status === 'open')
@@ -46,11 +47,28 @@ export default function FindJobs() {
         categoryFilter === 'all' || job.category === categoryFilter
       const matchesType = typeFilter === 'all' || job.type === typeFilter
 
-      // Mock geofencing check - simply checking if user has radius settings
-      // In real world, we would calculate Haversine distance
-      const inRadius = radiusFilter[0] > 0 // Placeholder logic
+      // Mock geofencing check
+      const inRadius = radiusFilter[0] > 0
 
-      return matchesSearch && matchesCategory && matchesType && inRadius
+      // Date Filter Logic
+      let matchesDate = true
+      if (dateFilter !== 'all') {
+        const now = new Date()
+        let cutoffDate = new Date()
+        if (dateFilter === '24h') cutoffDate = subDays(now, 1)
+        if (dateFilter === '7d') cutoffDate = subDays(now, 7)
+        if (dateFilter === '30d') cutoffDate = subDays(now, 30)
+
+        matchesDate = isAfter(new Date(job.createdAt), cutoffDate)
+      }
+
+      return (
+        matchesSearch &&
+        matchesCategory &&
+        matchesType &&
+        inRadius &&
+        matchesDate
+      )
     })
     .sort((a, b) => {
       // Hierarchical Sorting:
@@ -89,18 +107,19 @@ export default function FindJobs() {
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-4 p-4 bg-muted/30 rounded-lg border">
-        <div className="flex-1 relative">
+      <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg border">
+        <div className="flex-1 relative w-full">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por título, descrição ou cidade..."
-            className="pl-9 bg-background"
+            className="pl-9 bg-background w-full"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex flex-col sm:flex-row gap-4 items-center">
-          <div className="w-full sm:w-[200px] px-2">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="px-2">
             <div className="flex justify-between text-xs mb-1.5 text-muted-foreground">
               <span>Raio</span>
               <span>{radiusFilter[0]} mi</span>
@@ -112,8 +131,9 @@ export default function FindJobs() {
               step={5}
             />
           </div>
+
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectTrigger className="bg-background">
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
@@ -124,14 +144,27 @@ export default function FindJobs() {
               <SelectItem value="Marketing">Marketing</SelectItem>
             </SelectContent>
           </Select>
+
           <Select value={typeFilter} onValueChange={setTypeFilter}>
-            <SelectTrigger className="w-full sm:w-[180px] bg-background">
+            <SelectTrigger className="bg-background">
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos Tipos</SelectItem>
               <SelectItem value="fixed">Preço Fixo</SelectItem>
               <SelectItem value="auction">Leilão</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={dateFilter} onValueChange={setDateFilter}>
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Data" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Qualquer data</SelectItem>
+              <SelectItem value="24h">Últimas 24h</SelectItem>
+              <SelectItem value="7d">Última semana</SelectItem>
+              <SelectItem value="30d">Último mês</SelectItem>
             </SelectContent>
           </Select>
         </div>

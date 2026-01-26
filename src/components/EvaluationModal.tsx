@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Slider } from '@/components/ui/slider'
-import { Star, Lock, AlertCircle } from 'lucide-react'
+import { Star, Lock } from 'lucide-react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
@@ -33,22 +33,26 @@ export function EvaluationModal({ open }: EvaluationModalProps) {
 
   const isContractorToExecutor = type === 'contractor_to_executor'
 
-  // Categories based on User Story
+  // Categories based strictly on Acceptance Criteria
+  const contractorCriteria = [
+    { key: 'punctuality', label: 'Pontualidade' },
+    { key: 'execution', label: 'Execução' },
+    { key: 'time', label: 'Tempo' },
+    { key: 'cleanliness', label: 'Limpeza' },
+    { key: 'service', label: 'Atendimento' },
+    { key: 'quality', label: 'Qualidade' },
+  ]
+
+  const executorCriteria = [
+    { key: 'jobDescription', label: 'Descrição da Vaga' },
+    { key: 'conditions', label: 'Condições de Execução' },
+    { key: 'service', label: 'Atendimento' },
+    { key: 'punctuality', label: 'Pontualidade' },
+  ]
+
   const criteria = isContractorToExecutor
-    ? [
-        { key: 'punctuality', label: 'Pontualidade' },
-        { key: 'execution', label: 'Execução Técnica' },
-        { key: 'executionTime', label: 'Prazo de Execução' },
-        { key: 'cleaning', label: 'Limpeza Pós-Obra' },
-        { key: 'service', label: 'Atendimento' },
-        { key: 'quality', label: 'Qualidade Geral' },
-      ]
-    : [
-        { key: 'jobDescription', label: 'Clareza na Descrição' },
-        { key: 'conditions', label: 'Condições de Execução' },
-        { key: 'service', label: 'Atendimento' },
-        { key: 'punctuality', label: 'Pontualidade no Pagamento' },
-      ]
+    ? contractorCriteria
+    : executorCriteria
 
   const handleScoreChange = (key: string, value: number[]) => {
     setScores((prev) => ({ ...prev, [key]: value[0] }))
@@ -70,7 +74,7 @@ export function EvaluationModal({ open }: EvaluationModalProps) {
       toast({
         variant: 'destructive',
         title: 'Comentário muito curto',
-        description: 'Por favor, detalhe sua experiência.',
+        description: 'Por favor, detalhe sua experiência nos comentários.',
       })
       return
     }
@@ -156,7 +160,7 @@ export function EvaluationModal({ open }: EvaluationModalProps) {
 
             {!isContractorToExecutor && (
               <div className="space-y-3 pt-2 border-t">
-                <Label className="text-base">Preço Oferecido</Label>
+                <Label className="text-base">Justiça do Preço</Label>
                 <RadioGroup
                   value={priceRating}
                   onValueChange={setPriceRating}
@@ -164,15 +168,15 @@ export function EvaluationModal({ open }: EvaluationModalProps) {
                 >
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="1" id="p1" />
-                    <Label htmlFor="p1">Abaixo da Média (Ruim)</Label>
+                    <Label htmlFor="p1">1 - Abaixo do esperado</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="2" id="p2" />
-                    <Label htmlFor="p2">Na Média (Justo)</Label>
+                    <Label htmlFor="p2">2 - Justo</Label>
                   </div>
                   <div className="flex items-center space-x-2">
                     <RadioGroupItem value="3" id="p3" />
-                    <Label htmlFor="p3">Acima da Média (Ótimo)</Label>
+                    <Label htmlFor="p3">3 - Acima do esperado</Label>
                   </div>
                 </RadioGroup>
               </div>
@@ -180,7 +184,7 @@ export function EvaluationModal({ open }: EvaluationModalProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>Comentários Detalhados</Label>
+            <Label>Comentários (Obrigatório)</Label>
             <Textarea
               placeholder="Descreva sua experiência, pontos positivos e negativos..."
               value={comment}

@@ -7,7 +7,15 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, User, Briefcase, Building2, UserCircle } from 'lucide-react'
+import {
+  Loader2,
+  User,
+  Briefcase,
+  Building2,
+  UserCircle,
+  MapPin,
+  CreditCard,
+} from 'lucide-react'
 import {
   Form,
   FormControl,
@@ -15,6 +23,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
@@ -24,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ScrollArea } from '@/components/ui/scroll-area'
 
 const registerSchema = z
   .object({
@@ -34,6 +44,13 @@ const registerSchema = z
     role: z.enum(['contractor', 'executor']),
     entityType: z.enum(['pf', 'pj']),
     businessArea: z.string().optional(),
+    address: z.string().min(5, 'Endereço completo é obrigatório'),
+    // Executor specific fields
+    category: z.string().optional(),
+    bank: z.string().optional(),
+    agency: z.string().optional(),
+    account: z.string().optional(),
+    document: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Senhas não conferem',
@@ -47,6 +64,28 @@ const registerSchema = z
     {
       message: 'Área de atuação é obrigatória para PJ',
       path: ['businessArea'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.role === 'executor' && !data.category) return false
+      return true
+    },
+    {
+      message: 'Categoria profissional é obrigatória para Executores',
+      path: ['category'],
+    },
+  )
+  .refine(
+    (data) => {
+      if (data.role === 'executor') {
+        return !!data.bank && !!data.agency && !!data.account && !!data.document
+      }
+      return true
+    },
+    {
+      message: 'Dados bancários são obrigatórios para Executores',
+      path: ['bank'],
     },
   )
 
@@ -66,21 +105,38 @@ export default function Register() {
       confirmPassword: '',
       role: 'contractor',
       entityType: 'pf',
+      address: '',
+      bank: '',
+      agency: '',
+      account: '',
+      document: '',
     },
   })
 
+  const role = form.watch('role')
   const entityType = form.watch('entityType')
 
   async function onSubmit(data: RegisterForm) {
     try {
-      await registerUser(
-        data.name,
-        data.email,
-        data.password,
-        data.role,
-        data.entityType,
-        data.businessArea,
-      )
+      await registerUser({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+        role: data.role,
+        entityType: data.entityType,
+        businessArea: data.businessArea,
+        category: data.category,
+        address: data.address,
+        bankingDetails:
+          data.role === 'executor'
+            ? {
+                bank: data.bank!,
+                agency: data.agency!,
+                account: data.account!,
+                document: data.document!,
+              }
+            : undefined,
+      })
       toast({
         title: 'Conta criada!',
         description: `Bem-vindo ao BIDWORK como ${data.role === 'contractor' ? 'Contratante' : 'Executor'}.`,
@@ -96,8 +152,8 @@ export default function Register() {
   }
 
   return (
-    <div className="space-y-6 max-w-lg mx-auto w-full">
-      <div className="space-y-2 text-center">
+    <div className="space-y-6 max-w-lg mx-auto w-full h-[calc(100vh-100px)] flex flex-col">
+      <div className="space-y-2 text-center shrink-0">
         <h1 className="text-3xl font-bold tracking-tight">
           Criar conta BIDWORK
         </h1>
@@ -106,200 +162,350 @@ export default function Register() {
         </p>
       </div>
 
-      <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Eu quero...</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="grid grid-cols-2 gap-4"
-                  >
-                    <div>
-                      <RadioGroupItem
-                        value="contractor"
-                        id="contractor"
-                        className="peer sr-only"
-                      />
-                      <label
-                        htmlFor="contractor"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
-                      >
-                        <User className="mb-3 h-6 w-6" />
-                        <span className="font-semibold">Contratar</span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          Publicar Jobs
-                        </span>
-                      </label>
-                    </div>
-                    <div>
-                      <RadioGroupItem
-                        value="executor"
-                        id="executor"
-                        className="peer sr-only"
-                      />
-                      <label
-                        htmlFor="executor"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
-                      >
-                        <Briefcase className="mb-3 h-6 w-6" />
-                        <span className="font-semibold">Trabalhar</span>
-                        <span className="text-xs text-muted-foreground mt-1">
-                          Fazer Lances
-                        </span>
-                      </label>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="entityType"
-            render={({ field }) => (
-              <FormItem className="space-y-3">
-                <FormLabel>Tipo de Pessoa</FormLabel>
-                <FormControl>
-                  <RadioGroup
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    className="flex gap-4"
-                  >
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="pf" id="pf" />
-                      <label
-                        htmlFor="pf"
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <UserCircle className="h-4 w-4" /> Pessoa Física (CPF)
-                      </label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="pj" id="pj" />
-                      <label
-                        htmlFor="pj"
-                        className="flex items-center gap-2 cursor-pointer"
-                      >
-                        <Building2 className="h-4 w-4" /> Pessoa Jurídica (CNPJ)
-                      </label>
-                    </div>
-                  </RadioGroup>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {entityType === 'pj' && (
+      <ScrollArea className="flex-1 pr-4">
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-4 pb-4"
+          >
             <FormField
               control={form.control}
-              name="businessArea"
+              name="role"
               render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Área de Atuação da Empresa</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
+                <FormItem className="space-y-3">
+                  <FormLabel>Eu quero...</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="grid grid-cols-2 gap-4"
+                    >
+                      <div>
+                        <RadioGroupItem
+                          value="contractor"
+                          id="contractor"
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor="contractor"
+                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                        >
+                          <User className="mb-3 h-6 w-6" />
+                          <span className="font-semibold">Contratar</span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Publicar Jobs
+                          </span>
+                        </label>
+                      </div>
+                      <div>
+                        <RadioGroupItem
+                          value="executor"
+                          id="executor"
+                          className="peer sr-only"
+                        />
+                        <label
+                          htmlFor="executor"
+                          className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
+                        >
+                          <Briefcase className="mb-3 h-6 w-6" />
+                          <span className="font-semibold">Trabalhar</span>
+                          <span className="text-xs text-muted-foreground mt-1">
+                            Fazer Lances
+                          </span>
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="entityType"
+              render={({ field }) => (
+                <FormItem className="space-y-3">
+                  <FormLabel>Tipo de Pessoa</FormLabel>
+                  <FormControl>
+                    <RadioGroup
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      className="flex gap-4"
+                    >
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pf" id="pf" />
+                        <label
+                          htmlFor="pf"
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <UserCircle className="h-4 w-4" /> Pessoa Física (CPF)
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="pj" id="pj" />
+                        <label
+                          htmlFor="pj"
+                          className="flex items-center gap-2 cursor-pointer"
+                        >
+                          <Building2 className="h-4 w-4" /> Pessoa Jurídica
+                          (CNPJ)
+                        </label>
+                      </div>
+                    </RadioGroup>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            {/* Business Area (PJ) */}
+            {entityType === 'pj' && (
+              <FormField
+                control={form.control}
+                name="businessArea"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Área de Atuação da Empresa</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a área" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="construction">
+                          Construção Civil
+                        </SelectItem>
+                        <SelectItem value="industry">Indústria</SelectItem>
+                        <SelectItem value="technology">Tecnologia</SelectItem>
+                        <SelectItem value="services">
+                          Serviços Gerais
+                        </SelectItem>
+                        <SelectItem value="retail">Varejo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Executor Category */}
+            {role === 'executor' && (
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Sua Categoria Profissional</FormLabel>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione sua especialidade" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="TI e Programação">
+                          TI e Programação
+                        </SelectItem>
+                        <SelectItem value="Reformas">Reformas</SelectItem>
+                        <SelectItem value="Design">Design</SelectItem>
+                        <SelectItem value="Marketing">Marketing</SelectItem>
+                        <SelectItem value="Serviços Domésticos">
+                          Serviços Domésticos
+                        </SelectItem>
+                        <SelectItem value="Enfermagem">Enfermagem</SelectItem>
+                        <SelectItem value="Limpeza">Limpeza</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Esta será sua categoria principal de atuação.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            <div className="grid grid-cols-1 gap-4">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {entityType === 'pj' ? 'Razão Social' : 'Nome Completo'}
+                    </FormLabel>
                     <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione a área" />
-                      </SelectTrigger>
+                      <Input
+                        placeholder={
+                          entityType === 'pj'
+                            ? 'Minha Empresa Ltda'
+                            : 'João Silva'
+                        }
+                        {...field}
+                      />
                     </FormControl>
-                    <SelectContent>
-                      <SelectItem value="construction">
-                        Construção Civil
-                      </SelectItem>
-                      <SelectItem value="industry">Indústria</SelectItem>
-                      <SelectItem value="technology">Tecnologia</SelectItem>
-                      <SelectItem value="services">Serviços Gerais</SelectItem>
-                      <SelectItem value="retail">Varejo</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          )}
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Endereço Completo</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          className="pl-9"
+                          placeholder="Rua, Número, Bairro, Cidade - UF"
+                          {...field}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Corporativo ou Pessoal</FormLabel>
+                    <FormControl>
+                      <Input placeholder="seu@email.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>
-                  {entityType === 'pj' ? 'Razão Social' : 'Nome Completo'}
-                </FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder={
-                      entityType === 'pj' ? 'Minha Empresa Ltda' : 'João Silva'
-                    }
-                    {...field}
+            {/* Banking Details for Executors */}
+            {role === 'executor' && (
+              <div className="space-y-4 pt-4 border-t">
+                <div className="flex items-center gap-2 text-primary">
+                  <CreditCard className="h-5 w-5" />
+                  <h3 className="font-semibold">
+                    Dados Bancários para Recebimento
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="bank"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Banco</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Nubank" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
+                  <FormField
+                    control={form.control}
+                    name="agency"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Agência</FormLabel>
+                        <FormControl>
+                          <Input placeholder="0000" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="account"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Conta</FormLabel>
+                        <FormControl>
+                          <Input placeholder="00000-0" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="document"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CPF/CNPJ Titular</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Documento" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </div>
             )}
-          />
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email Corporativo ou Pessoal</FormLabel>
-                <FormControl>
-                  <Input placeholder="seu@email.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Senha</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="confirmPassword"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Confirmar</FormLabel>
-                  <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Criar Conta
-          </Button>
-        </form>
-      </Form>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Senha</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="confirmPassword"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Confirmar</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="••••••••"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
 
-      <div className="text-center text-sm">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Criar Conta e Acessar
+            </Button>
+          </form>
+        </Form>
+      </ScrollArea>
+
+      <div className="text-center text-sm pt-4 shrink-0">
         Já tem uma conta?{' '}
         <Link to="/" className="font-semibold text-primary hover:underline">
           Entrar

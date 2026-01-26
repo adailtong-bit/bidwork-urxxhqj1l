@@ -8,12 +8,14 @@ export interface User {
   role: 'contractor' | 'executor' | 'admin'
   entityType: 'pf' | 'pj'
   businessArea?: string // For PJ
+  category?: string // For Executors (Electrician, etc.)
   reputation: number
+  address?: string
   bankingDetails?: {
     bank: string
     agency: string
     account: string
-    document: string // CPF/CNPJ (encrypted concept)
+    document: string // CPF/CNPJ
   }
   serviceRadius: number // in miles
   location: string // State code for ads (e.g., 'SP', 'RJ')
@@ -26,20 +28,30 @@ export interface User {
   isPremium: boolean // For visibility hierarchy
 }
 
+export interface RegisterData {
+  name: string
+  email: string
+  password: string
+  role: 'contractor' | 'executor'
+  entityType: 'pf' | 'pj'
+  businessArea?: string
+  category?: string
+  address: string
+  bankingDetails?: {
+    bank: string
+    agency: string
+    account: string
+    document: string
+  }
+}
+
 interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (email: string, password: string) => Promise<void>
   logout: () => void
-  register: (
-    name: string,
-    email: string,
-    password: string,
-    role: 'contractor' | 'executor',
-    entityType: 'pf' | 'pj',
-    businessArea?: string,
-  ) => Promise<void>
+  register: (data: RegisterData) => Promise<void>
   updateUserReputation: (newScore: number) => void
   updateSettings: (settings: Partial<User>) => void
   clearPendingEvaluation: () => void
@@ -74,7 +86,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         serviceRadius: 10,
         location: 'SP',
         isPremium: isPremium,
-        // Mock a pending evaluation for demo if email contains 'pending'
+        address: 'Av. Paulista, 1000 - São Paulo, SP',
+        category: isExecutor ? 'TI e Programação' : undefined,
         pendingEvaluation: email.includes('pending')
           ? {
               jobId: '1',
@@ -88,7 +101,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       },
     })
   },
-  register: async (name, email, password, role, entityType, businessArea) => {
+  register: async (data) => {
     set({ isLoading: true })
     await new Promise((resolve) => setTimeout(resolve, 1500))
     set({
@@ -96,12 +109,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       isAuthenticated: true,
       user: {
         id: Math.random().toString(36),
-        name,
-        email,
+        name: data.name,
+        email: data.email,
         avatar: `https://img.usecurling.com/ppl/medium?seed=${Math.floor(Math.random() * 100)}`,
-        role,
-        entityType,
-        businessArea,
+        role: data.role,
+        entityType: data.entityType,
+        businessArea: data.businessArea,
+        category: data.category,
+        address: data.address,
+        bankingDetails: data.bankingDetails,
         reputation: 0,
         serviceRadius: 50,
         location: 'SP',

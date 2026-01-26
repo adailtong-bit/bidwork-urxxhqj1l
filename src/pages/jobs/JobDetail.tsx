@@ -26,6 +26,7 @@ import {
   AlertOctagon,
   CheckCircle,
   MessageSquare,
+  Percent,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -44,7 +45,7 @@ export default function JobDetail() {
   const [messages, setMessages] = useState<{ user: string; text: string }[]>([
     {
       user: 'Sistema',
-      text: 'Chat seguro iniciado. Detalhes da execução podem ser discutidos aqui.',
+      text: 'Chat seguro iniciado. O pagamento está protegido em Escrow.',
     },
   ])
 
@@ -109,7 +110,6 @@ export default function JobDetail() {
       type: 'executor_to_contractor',
     })
     // Force trigger modal
-    // In a real app, this might just open the modal directly or refresh the route
     window.location.reload()
   }
 
@@ -266,7 +266,7 @@ export default function JobDetail() {
                     </span>
                     {job.status !== 'completed' &&
                       job.status !== 'cancelled' && (
-                        <Badge className="bg-indigo-500">
+                        <Badge className="bg-indigo-500 hover:bg-indigo-600">
                           Escrow: R$ {(acceptedBid?.amount || 0).toFixed(2)}
                         </Badge>
                       )}
@@ -278,10 +278,11 @@ export default function JobDetail() {
                         ? 'EM DISPUTA'
                         : 'Execução / Pagamento Retido'}
                     </span>
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground flex items-center gap-1">
+                      <Percent className="h-3 w-3" />
                       Taxa de plataforma (2%): R${' '}
-                      {((acceptedBid?.amount || 0) * 0.02).toFixed(2)} (Deduzido
-                      no repasse final ao Executor)
+                      {((acceptedBid?.amount || 0) * 0.02).toFixed(2)} será
+                      deduzido do repasse.
                     </span>
                   </CardDescription>
                 </CardHeader>
@@ -401,9 +402,15 @@ export default function JobDetail() {
                 <ShieldAlert className="h-4 w-4" /> Pagamento Protegido
               </CardTitle>
             </CardHeader>
-            <CardContent className="text-xs text-blue-700">
-              O pagamento fica retido (Escrow) e só é liberado após a conclusão
-              e avaliação mútua. Taxa de 2% para manutenção da plataforma.
+            <CardContent className="space-y-2 text-xs text-blue-700">
+              <p>
+                O pagamento fica retido (Escrow) e só é liberado após a
+                conclusão e avaliação mútua.
+              </p>
+              <p className="font-semibold">
+                Taxa de 2% para manutenção da plataforma será descontada do
+                valor final.
+              </p>
             </CardContent>
           </Card>
         </div>
