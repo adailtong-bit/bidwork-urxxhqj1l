@@ -1,8 +1,8 @@
-import { Bell, Search, Menu, CheckCircle2 } from 'lucide-react'
+import { Bell, Search, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
-import { useLocation } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,11 +12,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 
 export function MainHeader() {
   const location = useLocation()
-  const { toggleSidebar, isMobile } = useSidebar()
   const { user } = useAuthStore()
+  const { notifications, getUnreadCount, markAsRead } = useNotificationStore()
+
+  const unreadCount = user ? getUnreadCount(user.id) : 0
+  const userNotifications = notifications.filter((n) => n.userId === user?.id)
 
   const getPageTitle = () => {
     const path = location.pathname
@@ -61,41 +65,52 @@ export function MainHeader() {
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" className="relative">
               <Bell className="h-5 w-5" />
-              <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse" />
+              {unreadCount > 0 && (
+                <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-destructive border-2 border-background" />
+              )}
               <span className="sr-only">Notificações</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
             <DropdownMenuLabel>Notificações</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium">Novo comentário</span>
-                <span className="text-xs text-muted-foreground">
-                  João comentou no plano "Lançamento Q3"
-                </span>
+            {userNotifications.length === 0 ? (
+              <div className="p-4 text-sm text-center text-muted-foreground">
+                Nenhuma notificação nova.
               </div>
-            </DropdownMenuItem>
-            <DropdownMenuItem>
-              <div className="flex flex-col gap-1">
-                <span className="font-medium">Meta atingida</span>
-                <span className="text-xs text-muted-foreground">
-                  O plano "Vendas Q2" atingiu 100%
-                </span>
-              </div>
-            </DropdownMenuItem>
-            {user?.role === 'executor' && (
-              <DropdownMenuItem>
-                <div className="flex flex-col gap-1">
-                  <span className="font-medium text-purple-600">
-                    Recomendação IA
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    Novo Job compatível com seu perfil!
-                  </span>
-                </div>
-              </DropdownMenuItem>
+            ) : (
+              userNotifications.slice(0, 5).map((notification) => (
+                <DropdownMenuItem
+                  key={notification.id}
+                  className="cursor-pointer"
+                  onClick={() => markAsRead(notification.id)}
+                  asChild
+                >
+                  <Link
+                    to={notification.link || '#'}
+                    className="flex flex-col gap-1 items-start"
+                  >
+                    <div className="flex justify-between w-full">
+                      <span
+                        className={`font-medium ${!notification.read ? 'text-primary' : ''}`}
+                      >
+                        {notification.title}
+                      </span>
+                      {!notification.read && (
+                        <span className="h-2 w-2 rounded-full bg-primary mt-1" />
+                      )}
+                    </div>
+                    <span className="text-xs text-muted-foreground line-clamp-2">
+                      {notification.message}
+                    </span>
+                  </Link>
+                </DropdownMenuItem>
+              ))
             )}
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-center justify-center text-xs text-muted-foreground">
+              Ver todas as notificações
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

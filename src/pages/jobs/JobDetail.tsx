@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
@@ -43,8 +44,9 @@ import { ptBR } from 'date-fns/locale'
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { getJob, addBid, acceptBid, completeJob, openDispute } = useJobStore()
+  const { getJob, addBid, completeJob, openDispute } = useJobStore()
   const { user, setPendingEvaluation } = useAuthStore()
+  const { addNotification } = useNotificationStore()
   const { toast } = useToast()
 
   const job = getJob(id!)
@@ -99,6 +101,16 @@ export default function JobDetail() {
       description: bidDescription,
       executorReputation: user.reputation,
     })
+
+    // Notify Contractor
+    addNotification({
+      userId: job.ownerId,
+      title: 'Novo Lance Recebido!',
+      message: `Você recebeu um lance de R$ ${amount} no job "${job.title}".`,
+      type: 'info',
+      link: `/jobs/${job.id}`,
+    })
+
     toast({
       title: 'Lance enviado!',
       description: 'O contratante será notificado.',
@@ -108,11 +120,13 @@ export default function JobDetail() {
   }
 
   const handleAcceptBid = (bidId: string) => {
-    acceptBid(job.id, bidId)
-    toast({
-      title: 'Proposta Aceita!',
-      description: 'Job suspenso e pagamento em Escrow.',
-    })
+    // Redirect to checkout flow
+    navigate(`/payment/checkout/${job.id}/${bidId}`)
+  }
+
+  const handleHireFixed = () => {
+    // Redirect to checkout flow for fixed jobs (no bid id needed, assumes job budget)
+    navigate(`/payment/checkout/${job.id}/fixed`)
   }
 
   const handleComplete = () => {
@@ -333,7 +347,7 @@ export default function JobDetail() {
                             size="sm"
                             onClick={() => handleAcceptBid(bid.id)}
                           >
-                            Aceitar
+                            Aceitar e Pagar
                           </Button>
                         </div>
                       </div>

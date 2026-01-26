@@ -22,6 +22,8 @@ import FindJobs from '@/pages/jobs/FindJobs'
 import MyJobs from '@/pages/jobs/MyJobs'
 import JobDetail from '@/pages/jobs/JobDetail'
 import Dispute from '@/pages/jobs/Dispute'
+import PaymentCheckout from '@/pages/jobs/PaymentCheckout'
+import PaymentSuccess from '@/pages/jobs/PaymentSuccess'
 import SubscriptionPlans from '@/pages/subscription/SubscriptionPlans'
 import CreditsStore from '@/pages/billing/CreditsStore'
 import LoyaltyProgram from '@/pages/loyalty/LoyaltyProgram'
@@ -117,6 +119,13 @@ const App = () => {
               <Route path="/my-jobs" element={<MyJobs />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/disputes/new/:id" element={<Dispute />} />
+
+              {/* Payment Routes */}
+              <Route
+                path="/payment/checkout/:jobId/:bidId"
+                element={<PaymentCheckout />}
+              />
+              <Route path="/payment/success" element={<PaymentSuccess />} />
 
               {/* Finance Routes */}
               <Route path="/subscription" element={<SubscriptionPlans />} />

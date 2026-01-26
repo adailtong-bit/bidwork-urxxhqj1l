@@ -18,7 +18,15 @@ import {
 } from '@/components/ui/card'
 import { Switch } from '@/components/ui/switch'
 import { Badge } from '@/components/ui/badge'
-import { Trash2, ExternalLink, Plus } from 'lucide-react'
+import {
+  Trash2,
+  ExternalLink,
+  Plus,
+  BarChart2,
+  MousePointer2,
+  ThumbsUp,
+  ThumbsDown,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Label } from '@/components/ui/label'
 
@@ -71,19 +79,19 @@ export default function ManageAds() {
           Gestão de Publicidade
         </h1>
         <p className="text-muted-foreground">
-          Gerencie banners e anúncios exibidos na plataforma.
+          Gerencie banners, segmentação e acompanhe métricas de desempenho.
         </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-1 h-fit">
           <CardHeader>
-            <CardTitle>Novo Anúncio</CardTitle>
-            <CardDescription>Crie uma nova campanha.</CardDescription>
+            <CardTitle>Novo Anúncio Segmentado</CardTitle>
+            <CardDescription>Crie campanhas direcionadas.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Título</Label>
+              <Label>Título da Campanha</Label>
               <Input
                 placeholder="Ex: Promoção de Ferramentas"
                 value={newAd.title}
@@ -91,7 +99,7 @@ export default function ManageAds() {
               />
             </div>
             <div className="space-y-2">
-              <Label>URL da Imagem</Label>
+              <Label>URL da Imagem (Banner)</Label>
               <Input
                 placeholder="https://..."
                 value={newAd.imageUrl}
@@ -109,7 +117,7 @@ export default function ManageAds() {
               />
             </div>
             <div className="space-y-2">
-              <Label>Segmento</Label>
+              <Label>Local de Exibição (Segmento)</Label>
               <Select
                 value={newAd.segment}
                 onValueChange={(val: any) =>
@@ -128,7 +136,7 @@ export default function ManageAds() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label>Tipo</Label>
+              <Label>Tipo de Target</Label>
               <Select
                 value={newAd.type}
                 onValueChange={(val: any) => setNewAd({ ...newAd, type: val })}
@@ -137,19 +145,19 @@ export default function ManageAds() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="regional">Regional</SelectItem>
-                  <SelectItem value="segmented">Segmentado</SelectItem>
+                  <SelectItem value="regional">Regional (Geo)</SelectItem>
+                  <SelectItem value="segmented">Categoria/Interesse</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Button onClick={handleAdd} className="w-full">
-              <Plus className="mr-2 h-4 w-4" /> Criar Anúncio
+              <Plus className="mr-2 h-4 w-4" /> Criar Campanha
             </Button>
           </CardContent>
         </Card>
 
         <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-semibold">Anúncios Ativos</h2>
+          <h2 className="text-xl font-semibold">Anúncios Ativos e Métricas</h2>
           {ads.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
               Nenhum anúncio cadastrado.
@@ -159,15 +167,17 @@ export default function ManageAds() {
               {ads.map((ad) => (
                 <Card key={ad.id} className="overflow-hidden">
                   <div className="flex flex-col sm:flex-row h-full">
-                    <img
-                      src={ad.imageUrl}
-                      alt={ad.title}
-                      className="w-full sm:w-40 h-32 object-cover bg-muted"
-                    />
-                    <div className="flex-1 p-4 flex flex-col justify-between">
+                    <div className="w-full sm:w-48 bg-muted relative">
+                      <img
+                        src={ad.imageUrl}
+                        alt={ad.title}
+                        className="w-full h-full object-cover absolute inset-0"
+                      />
+                    </div>
+                    <div className="flex-1 p-4 flex flex-col gap-3">
                       <div className="flex justify-between items-start">
                         <div>
-                          <h3 className="font-bold flex items-center gap-2">
+                          <h3 className="font-bold flex items-center gap-2 text-lg">
                             {ad.title}
                             <Badge variant="outline">{ad.segment}</Badge>
                           </h3>
@@ -180,12 +190,6 @@ export default function ManageAds() {
                           </a>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Label
-                            htmlFor={`switch-${ad.id}`}
-                            className="text-xs"
-                          >
-                            {ad.active ? 'Ativo' : 'Inativo'}
-                          </Label>
                           <Switch
                             id={`switch-${ad.id}`}
                             checked={ad.active}
@@ -193,17 +197,45 @@ export default function ManageAds() {
                           />
                         </div>
                       </div>
-                      <div className="flex justify-between items-end mt-4">
+
+                      <div className="grid grid-cols-4 gap-2 py-2 border-y bg-muted/20 rounded-md px-2">
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <BarChart2 className="h-3 w-3" /> Views
+                          </span>
+                          <span className="font-bold">{ad.views}</span>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                            <MousePointer2 className="h-3 w-3" /> Clicks
+                          </span>
+                          <span className="font-bold">{ad.clicks}</span>
+                        </div>
+                        <div className="flex flex-col items-center text-green-600">
+                          <span className="text-xs flex items-center gap-1">
+                            <ThumbsUp className="h-3 w-3" /> Likes
+                          </span>
+                          <span className="font-bold">{ad.likes}</span>
+                        </div>
+                        <div className="flex flex-col items-center text-red-600">
+                          <span className="text-xs flex items-center gap-1">
+                            <ThumbsDown className="h-3 w-3" /> Dislikes
+                          </span>
+                          <span className="font-bold">{ad.dislikes}</span>
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center mt-auto">
                         <Badge variant="secondary" className="capitalize">
-                          {ad.type}
+                          Target: {ad.type}
                         </Badge>
                         <Button
                           variant="ghost"
-                          size="icon"
-                          className="text-destructive hover:bg-destructive/10"
+                          size="sm"
+                          className="text-destructive hover:bg-destructive/10 h-8"
                           onClick={() => handleDelete(ad.id)}
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
                         </Button>
                       </div>
                     </div>

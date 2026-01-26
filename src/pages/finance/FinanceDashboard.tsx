@@ -1,4 +1,5 @@
 import { useAuthStore } from '@/stores/useAuthStore'
+import { usePaymentStore } from '@/stores/usePaymentStore'
 import {
   Card,
   CardContent,
@@ -23,8 +24,6 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  LineChart,
-  Line,
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import {
@@ -36,18 +35,34 @@ import {
   ArrowUpRight,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { format } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
 
 export default function FinanceDashboard() {
   const { user } = useAuthStore()
+  const { getTransactionsByUser } = usePaymentStore()
   const { toast } = useToast()
 
-  if (!user || user.role !== 'executor') {
-    return (
-      <div className="flex items-center justify-center h-[50vh]">
-        Acesso restrito a Executores.
-      </div>
+  if (!user) return null
+
+  const transactions = getTransactionsByUser(user.id)
+
+  // Calculate Totals
+  const totalEarnings = transactions
+    .filter((t) => t.receiverId === user.id && t.status === 'completed')
+    .reduce((acc, curr) => acc + curr.amount, 0)
+
+  const totalSpent = transactions
+    .filter((t) => t.payerId === user.id)
+    .reduce((acc, curr) => acc + curr.amount, 0)
+
+  const pendingAmount = transactions
+    .filter(
+      (t) =>
+        (t.receiverId === user.id || t.payerId === user.id) &&
+        t.status === 'escrow',
     )
-  }
+    .reduce((acc, curr) => acc + curr.amount, 0)
 
   const handleExport = () => {
     toast({
@@ -56,50 +71,22 @@ export default function FinanceDashboard() {
     })
   }
 
-  // Mock Data
+  // Mock Data for Chart (Using dynamic data would require more complex grouping logic)
   const monthlyData = [
-    { month: 'Jan', earnings: 2500, pending: 500 },
-    { month: 'Fev', earnings: 3200, pending: 800 },
-    { month: 'Mar', earnings: 4100, pending: 200 },
-    { month: 'Abr', earnings: 3800, pending: 1200 },
-    { month: 'Mai', earnings: 5200, pending: 0 },
-    { month: 'Jun', earnings: 4800, pending: 600 },
+    { month: 'Jan', value: 2500 },
+    { month: 'Fev', value: 3200 },
+    { month: 'Mar', value: 4100 },
+    { month: 'Abr', value: 3800 },
+    { month: 'Mai', value: 5200 },
+    { month: 'Jun', value: totalEarnings > 0 ? totalEarnings : 4800 }, // Show mock or real
   ]
 
   const chartConfig = {
-    earnings: {
-      label: 'Recebimentos (R$)',
+    value: {
+      label: 'Movimentação (R$)',
       color: 'hsl(var(--primary))',
     },
-    pending: {
-      label: 'Pendente (R$)',
-      color: 'hsl(var(--chart-2))',
-    },
   }
-
-  const transactions = [
-    {
-      id: 'tx1',
-      date: '15/06/2024',
-      desc: 'Desenvolvimento App React Native',
-      amount: 4800,
-      status: 'completed',
-    },
-    {
-      id: 'tx2',
-      date: '22/06/2024',
-      desc: 'Manutenção Servidor',
-      amount: 600,
-      status: 'pending',
-    },
-    {
-      id: 'tx3',
-      date: '28/06/2024',
-      desc: 'Consultoria Técnica',
-      amount: 1200,
-      status: 'processing',
-    },
-  ]
 
   return (
     <div className="space-y-6">
@@ -109,7 +96,8 @@ export default function FinanceDashboard() {
             Gestão Financeira
           </h1>
           <p className="text-muted-foreground">
-            Acompanhe seus ganhos, pagamentos pendentes e extratos.
+            Painel financeiro para{' '}
+            {user.role === 'executor' ? 'Recebimentos' : 'Pagamentos'}.
           </p>
         </div>
         <Button onClick={handleExport} className="w-full md:w-auto">
@@ -120,26 +108,37 @@ export default function FinanceDashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Ganho</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {user.role === 'executor' ? 'Total Recebido' : 'Total Investido'}
+            </CardTitle>
             <Wallet className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 23.600,00</div>
+            <div className="text-2xl font-bold">
+              R${' '}
+              {(user.role === 'executor' ? totalEarnings : totalSpent).toFixed(
+                2,
+              )}
+            </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-emerald-500" /> +12% vs mês
-              anterior
+              <TrendingUp className="h-3 w-3 text-emerald-500" /> Atualizado
+              hoje
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">A Receber</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Em Escrow (Retido)
+            </CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 1.800,00</div>
+            <div className="text-2xl font-bold">
+              R$ {pendingAmount.toFixed(2)}
+            </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Liberação prevista em 5 dias
+              Liberação após conclusão
             </p>
           </CardContent>
         </Card>
@@ -149,8 +148,15 @@ export default function FinanceDashboard() {
             <DollarSign className="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 2.450,00</div>
-            <p className="text-xs text-muted-foreground mt-1">Por projeto</p>
+            <div className="text-2xl font-bold">
+              R${' '}
+              {transactions.length > 0
+                ? ((totalEarnings + totalSpent) / transactions.length).toFixed(
+                    2,
+                  )
+                : '0.00'}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">Por transação</p>
           </CardContent>
         </Card>
       </div>
@@ -158,10 +164,8 @@ export default function FinanceDashboard() {
       <div className="grid gap-6 md:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Fluxo de Caixa</CardTitle>
-            <CardDescription>
-              Comparativo de receitas e valores pendentes.
-            </CardDescription>
+            <CardTitle>Fluxo Financeiro</CardTitle>
+            <CardDescription>Histórico dos últimos 6 meses.</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -183,16 +187,9 @@ export default function FinanceDashboard() {
                   />
                   <Tooltip content={<ChartTooltipContent />} />
                   <Bar
-                    dataKey="earnings"
-                    fill="var(--color-earnings)"
+                    dataKey="value"
+                    fill="var(--color-value)"
                     radius={[4, 4, 0, 0]}
-                    name="Recebido"
-                  />
-                  <Bar
-                    dataKey="pending"
-                    fill="var(--color-pending)"
-                    radius={[4, 4, 0, 0]}
-                    name="Pendente"
                   />
                 </BarChart>
               </ChartContainer>
@@ -202,8 +199,10 @@ export default function FinanceDashboard() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Histórico Recente</CardTitle>
-            <CardDescription>Últimas transações na plataforma.</CardDescription>
+            <CardTitle>Transações Recentes</CardTitle>
+            <CardDescription>
+              Extrato completo de movimentações.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
@@ -216,39 +215,54 @@ export default function FinanceDashboard() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {transactions.map((tx) => (
-                  <TableRow key={tx.id}>
-                    <TableCell>{tx.date}</TableCell>
-                    <TableCell className="font-medium">{tx.desc}</TableCell>
-                    <TableCell>R$ {tx.amount.toFixed(2)}</TableCell>
-                    <TableCell>
-                      {tx.status === 'completed' && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-emerald-100 text-emerald-800"
-                        >
-                          Pago
-                        </Badge>
-                      )}
-                      {tx.status === 'pending' && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-yellow-100 text-yellow-800"
-                        >
-                          Pendente
-                        </Badge>
-                      )}
-                      {tx.status === 'processing' && (
-                        <Badge
-                          variant="secondary"
-                          className="bg-blue-100 text-blue-800"
-                        >
-                          Processando
-                        </Badge>
-                      )}
+                {transactions.length > 0 ? (
+                  transactions.map((tx) => (
+                    <TableRow key={tx.id}>
+                      <TableCell>
+                        {format(tx.date, 'dd/MM/yy', { locale: ptBR })}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {tx.jobTitle}
+                      </TableCell>
+                      <TableCell>R$ {tx.amount.toFixed(2)}</TableCell>
+                      <TableCell>
+                        {tx.status === 'completed' && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-emerald-100 text-emerald-800"
+                          >
+                            Pago
+                          </Badge>
+                        )}
+                        {tx.status === 'pending' && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-yellow-100 text-yellow-800"
+                          >
+                            Pendente
+                          </Badge>
+                        )}
+                        {tx.status === 'escrow' && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-100 text-blue-800"
+                          >
+                            Escrow
+                          </Badge>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={4}
+                      className="text-center text-muted-foreground py-8"
+                    >
+                      Nenhuma transação encontrada.
                     </TableCell>
                   </TableRow>
-                ))}
+                )}
               </TableBody>
             </Table>
             <div className="mt-4 flex justify-end">

@@ -257,7 +257,7 @@ export default function PostJob() {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Categoria</FormLabel>
+                      <FormLabel>Categoria (Dinâmico)</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -426,7 +426,7 @@ export default function PostJob() {
                       </FormControl>
                       <FormDescription>
                         {form.watch('type') === 'auction'
-                          ? 'Executores darão lances menores que este valor.'
+                          ? 'Valor teto. Executores só poderão dar lances MENORES que este.'
                           : 'Valor fixo que você pagará pelo serviço.'}
                       </FormDescription>
                       <FormMessage />
