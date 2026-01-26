@@ -18,6 +18,9 @@ import {
   Shield,
   Tags,
   Megaphone,
+  HardHat,
+  Package,
+  GraduationCap,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -49,6 +52,10 @@ export function MainSidebar() {
   const isContractor = user?.role === 'contractor'
   const isPJ = user?.entityType === 'pj'
   const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
+  const isExecutor = user?.role === 'executor'
+
+  // Construction Company Flag (Simplified logic)
+  const isConstrutora = isPJ && isContractor
 
   const commonItems = [
     {
@@ -76,6 +83,20 @@ export function MainSidebar() {
     },
   ]
 
+  // Items specific for Construction Companies (PJ)
+  const constructionItems = [
+    {
+      title: 'Gestão de Obras',
+      url: '/construction/dashboard',
+      icon: HardHat,
+    },
+    {
+      title: 'Materiais',
+      url: '/construction/materials',
+      icon: Package,
+    },
+  ]
+
   const executorItems = [
     {
       title: 'Encontrar Jobs',
@@ -86,6 +107,11 @@ export function MainSidebar() {
       title: 'Minhas Candidaturas',
       url: '/my-jobs',
       icon: Briefcase,
+    },
+    {
+      title: 'Treinamento',
+      url: '/training',
+      icon: GraduationCap,
     },
   ]
 
@@ -212,6 +238,35 @@ export function MainSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isConstrutora && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-orange-600 font-semibold">
+              Construtora
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {constructionItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={
+                        location.pathname === item.url ||
+                        location.pathname.startsWith(item.url)
+                      }
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         {isAdmin && (
           <SidebarGroup>

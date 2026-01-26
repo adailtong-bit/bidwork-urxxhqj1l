@@ -1,11 +1,12 @@
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useJobStore } from '@/stores/useJobStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useCategoryStore } from '@/stores/useCategoryStore'
+import { useProjectStore } from '@/stores/useProjectStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -37,8 +38,8 @@ import {
   Clock,
   Zap,
   Upload,
-  Image as ImageIcon,
   X,
+  HardHat,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -66,6 +67,8 @@ const jobSchema = z.object({
   }),
   publicationDate: z.date().default(new Date()),
   premiumType: z.enum(['none', 'region', 'category']),
+  projectId: z.string().optional(),
+  stageId: z.string().optional(),
 })
 
 type JobForm = z.infer<typeof jobSchema>
@@ -74,11 +77,16 @@ export default function PostJob() {
   const { addJob, hasActiveJob } = useJobStore()
   const { user } = useAuthStore()
   const { categories } = useCategoryStore()
+  const { projects, updateStageActuals } = useProjectStore()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const [searchParams] = useSearchParams()
 
   const [photos, setPhotos] = useState<string[]>([])
   const [photoInput, setPhotoInput] = useState('')
+
+  const preProjectId = searchParams.get('projectId') || ''
+  const preStageId = searchParams.get('stageId') || ''
 
   const form = useForm<JobForm>({
     resolver: zodResolver(jobSchema),
@@ -91,8 +99,15 @@ export default function PostJob() {
       budget: 0,
       publicationDate: new Date(),
       premiumType: 'none',
+      projectId: preProjectId,
+      stageId: preStageId,
     },
   })
+
+  // Watch projectId to filter stages
+  const selectedProjectId = form.watch('projectId')
+  const availableStages =
+    projects.find((p) => p.id === selectedProjectId)?.stages || []
 
   // Strict check for previous jobs being finished/finalized
   if (user && hasActiveJob(user.id)) {
@@ -120,7 +135,6 @@ export default function PostJob() {
   }
 
   const handleAddPhoto = () => {
-    // Mock upload by accepting image URLs or placeholder
     const url =
       photoInput ||
       `https://img.usecurling.com/p/300/200?q=service&r=${Math.random()}`
@@ -156,15 +170,30 @@ export default function PostJob() {
       auctionEndDate: data.auctionEndDate,
       maxExecutionDeadline: data.maxExecutionDeadline,
       premiumType: data.premiumType,
+      projectId: data.projectId,
+      stageId: data.stageId,
     })
+
+    // If part of a project, update financials immediately for budget tracking (simplified)
+    // In a real app, this would happen when bid is accepted
+    if (data.projectId && data.stageId && data.type === 'fixed') {
+      updateStageActuals(data.projectId, data.stageId, 'labor', data.budget)
+    }
 
     toast({
       title: 'Job Publicado com Sucesso!',
-      description:
-        'Notificando executores relevantes agora. Se ninguém aceitar em 24h, expandiremos para a região.',
+      description: 'Notificando executores relevantes agora.',
     })
-    navigate('/my-jobs')
+
+    if (data.projectId) {
+      navigate(`/construction/projects/${data.projectId}`)
+    } else {
+      navigate('/my-jobs')
+    }
   }
+
+  // Is Construction Company?
+  const isConstrutora = user?.entityType === 'pj' // Simplified check
 
   return (
     <div className="max-w-3xl mx-auto space-y-6">
@@ -177,6 +206,71 @@ export default function PostJob() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {isConstrutora && (
+            <Card className="border-l-4 border-l-orange-500">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HardHat className="h-5 w-5" /> Vínculo com Projeto
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="projectId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Projeto (Opcional)</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o projeto" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {projects.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                              {p.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="stageId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Etapa da Obra</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        disabled={!selectedProjectId}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione a etapa" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableStages.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Detalhes do Serviço</CardTitle>

@@ -15,9 +15,11 @@ export interface Job {
   id: string
   ownerId: string
   ownerName: string
+  projectId?: string // Linked Project ID
+  stageId?: string // Linked Stage ID
   title: string
   description: string
-  photos: string[] // Added photos array
+  photos: string[]
   type: 'fixed' | 'auction'
   status:
     | 'open'
@@ -29,7 +31,7 @@ export interface Job {
   category: string
   location: string
   regionCode: string
-  budget: number // This is the "Maximum Initial Price" for auctions
+  budget: number
   bids: Bid[]
   acceptedBidId?: string
   createdAt: Date
@@ -51,6 +53,7 @@ interface JobState {
   openDispute: (jobId: string) => void
   cancelJob: (jobId: string) => void
   getJob: (id: string) => Job | undefined
+  getJobsByProject: (projectId: string) => Job[]
   hasActiveJob: (userId: string) => boolean
 }
 
@@ -116,6 +119,35 @@ const mockJobs: Job[] = [
     ['https://img.usecurling.com/p/400/300?q=kitchen'],
     1,
   ),
+  {
+    ...createMockJob(
+      '3',
+      'Terraplanagem Residencial Alpha',
+      'auction',
+      'in_progress',
+      'SP',
+      'Reformas',
+      25000,
+      [],
+      10,
+    ),
+    ownerId: 'owner-1', // Match test user
+    projectId: 'proj-1',
+    stageId: 'st-1',
+    bids: [
+      {
+        id: 'bid-1',
+        jobId: '3',
+        executorId: 'exec-1',
+        executorName: 'Terraplanagem Silva',
+        amount: 24000,
+        description: 'Equipe completa com retroescavadeira.',
+        createdAt: new Date(),
+        executorReputation: 4.8,
+      },
+    ],
+    acceptedBidId: 'bid-1',
+  },
 ]
 
 export const useJobStore = create<JobState>((set, get) => ({
@@ -186,6 +218,8 @@ export const useJobStore = create<JobState>((set, get) => ({
       ),
     })),
   getJob: (id) => get().jobs.find((j) => j.id === id),
+  getJobsByProject: (projectId) =>
+    get().jobs.filter((j) => j.projectId === projectId),
   hasActiveJob: (userId) => {
     return get().jobs.some(
       (j) =>
