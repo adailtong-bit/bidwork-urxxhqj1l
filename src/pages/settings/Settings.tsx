@@ -24,9 +24,11 @@ import {
   AlertCircle,
   Clock,
   Trophy,
+  Award,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AdSection } from '@/components/AdSection'
+import { Badge } from '@/components/ui/badge'
 
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
@@ -127,6 +129,45 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+
+            {/* Badges Section */}
+            {user.role === 'executor' && (
+              <div className="mt-6 border-t pt-4">
+                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
+                  <Award className="h-4 w-4 text-yellow-600" /> Suas Conquistas
+                  (Badges)
+                </h3>
+                {user.badges && user.badges.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {user.badges.map((badge) => (
+                      <div
+                        key={badge.id}
+                        className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-3 py-2 rounded-lg"
+                        title={badge.description}
+                      >
+                        <Award className="h-4 w-4 text-yellow-600" />
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-yellow-900">
+                            {badge.name}
+                          </span>
+                          <span className="text-[10px] text-yellow-700">
+                            {new Date(badge.earnedAt).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    Você ainda não possui badges. Continue trabalhando para
+                    ganhar reconhecimento!
+                  </p>
+                )}
+                <Button variant="link" asChild className="px-0 mt-2">
+                  <Link to="/leaderboard">Ver Ranking Global</Link>
+                </Button>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -159,7 +200,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* KYC Verification - New Section */}
+        {/* KYC Verification */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

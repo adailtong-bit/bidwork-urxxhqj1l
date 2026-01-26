@@ -37,6 +37,9 @@ import ProjectDetail from '@/pages/construction/ProjectDetail'
 import ProjectList from '@/pages/construction/ProjectList'
 import MaterialsMarketplace from '@/pages/construction/MaterialsMarketplace'
 import EquipmentManager from '@/pages/construction/EquipmentManager'
+import Logistics from '@/pages/construction/Logistics'
+import InventoryManager from '@/pages/construction/InventoryManager'
+import Leaderboard from '@/pages/gamification/Leaderboard'
 import TrainingCenter from '@/pages/training/TrainingCenter'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
@@ -149,9 +152,15 @@ const App = () => {
                 path="/construction/equipment"
                 element={<EquipmentManager />}
               />
+              <Route path="/construction/logistics" element={<Logistics />} />
+              <Route
+                path="/construction/inventory"
+                element={<InventoryManager />}
+              />
 
-              {/* Training Routes */}
+              {/* Training & Gamification Routes */}
               <Route path="/training" element={<TrainingCenter />} />
+              <Route path="/leaderboard" element={<Leaderboard />} />
 
               {/* Payment Routes */}
               <Route

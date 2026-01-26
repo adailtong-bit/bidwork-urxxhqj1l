@@ -22,6 +22,9 @@ import {
   GraduationCap,
   Truck,
   FileSpreadsheet,
+  Route,
+  ClipboardList,
+  Medal,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -95,6 +98,16 @@ export function MainSidebar() {
       icon: Package,
     },
     {
+      title: 'Estoque & Inventário',
+      url: '/construction/inventory',
+      icon: ClipboardList,
+    },
+    {
+      title: 'Logística',
+      url: '/construction/logistics',
+      icon: Route,
+    },
+    {
       title: 'Maquinário & Frota',
       url: '/construction/equipment',
       icon: Truck,
@@ -116,6 +129,11 @@ export function MainSidebar() {
       title: 'Treinamento',
       url: '/training',
       icon: GraduationCap,
+    },
+    {
+      title: 'Ranking (Leaderboard)',
+      url: '/leaderboard',
+      icon: Medal,
     },
   ]
 

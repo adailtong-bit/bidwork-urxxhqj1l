@@ -18,6 +18,14 @@ export interface LoyaltyTransaction {
   type: 'earned' | 'redeemed'
 }
 
+export interface Badge {
+  id: string
+  name: string
+  icon: string // Lucide icon name or url
+  description: string
+  earnedAt: Date
+}
+
 export interface User {
   id: string
   name: string
@@ -51,6 +59,7 @@ export interface User {
   loyaltyPoints: number
   loyaltyHistory: LoyaltyTransaction[]
   teamMembers?: TeamMember[]
+  badges: Badge[]
 }
 
 export interface RegisterData {
@@ -102,8 +111,27 @@ export const useAuthStore = create<AuthState>((set) => ({
     let entityType: 'pf' | 'pj' = 'pf'
     let name = 'Usuário Padrão'
     let teamMembers: TeamMember[] | undefined = undefined
+    let badges: Badge[] = []
 
-    if (email.includes('executor')) role = 'executor'
+    if (email.includes('executor')) {
+      role = 'executor'
+      badges = [
+        {
+          id: 'b1',
+          name: 'Fast Delivery',
+          icon: 'Zap',
+          description: 'Entregou 5 projetos antes do prazo.',
+          earnedAt: new Date(Date.now() - 10000000),
+        },
+        {
+          id: 'b2',
+          name: '5-Star Pro',
+          icon: 'Star',
+          description: 'Manteve média 5.0 em 10 jobs.',
+          earnedAt: new Date(Date.now() - 5000000),
+        },
+      ]
+    }
     if (email.includes('admin')) role = 'admin'
     if (email.includes('pj')) entityType = 'pj'
 
@@ -209,6 +237,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           },
         ],
         teamMembers,
+        badges,
       },
     })
   },
@@ -239,6 +268,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         kycStatus: 'none',
         loyaltyPoints: 0,
         loyaltyHistory: [],
+        badges: [],
       },
     })
   },

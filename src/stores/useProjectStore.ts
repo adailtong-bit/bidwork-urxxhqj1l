@@ -10,6 +10,15 @@ export interface CostItem {
   sourceId?: string // Job ID or Order ID
 }
 
+export interface BimFile {
+  id: string
+  name: string
+  url: string
+  type: string
+  uploadedAt: Date
+  size: string
+}
+
 export interface Stage {
   id: string
   name: string
@@ -21,6 +30,7 @@ export interface Stage {
   actualMaterial: number
   actualLabor: number
   description: string
+  bimFiles: BimFile[]
 }
 
 export interface Project {
@@ -43,7 +53,7 @@ interface ProjectState {
   updateProject: (id: string, data: Partial<Project>) => void
   addStage: (
     projectId: string,
-    stage: Omit<Stage, 'id' | 'actualMaterial' | 'actualLabor'>,
+    stage: Omit<Stage, 'id' | 'actualMaterial' | 'actualLabor' | 'bimFiles'>,
   ) => void
   updateStageActuals: (
     projectId: string,
@@ -55,6 +65,7 @@ interface ProjectState {
     projectId: string,
     budgetData: { stageName: string; material: number; labor: number }[],
   ) => void
+  addBimFile: (projectId: string, stageId: string, file: BimFile) => void
   getProject: (id: string) => Project | undefined
 }
 
@@ -83,6 +94,16 @@ const mockProjects: Project[] = [
         actualMaterial: 82000,
         actualLabor: 38000,
         description: 'Terraplanagem, sapatas e vigas baldrame.',
+        bimFiles: [
+          {
+            id: 'bim-1',
+            name: 'Projeto_Fundacao_V3.ifc',
+            url: '#',
+            type: 'IFC',
+            size: '12MB',
+            uploadedAt: new Date(Date.now() - 86400000 * 35),
+          },
+        ],
       },
       {
         id: 'st-2',
@@ -95,6 +116,7 @@ const mockProjects: Project[] = [
         actualMaterial: 45000,
         actualLabor: 20000,
         description: 'Levantamento de paredes, pilares e lajes.',
+        bimFiles: [],
       },
       {
         id: 'st-3',
@@ -107,6 +129,7 @@ const mockProjects: Project[] = [
         actualMaterial: 0,
         actualLabor: 0,
         description: 'Elétrica, hidráulica e ar condicionado.',
+        bimFiles: [],
       },
     ],
   },
@@ -144,6 +167,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                 id: Math.random().toString(36).substr(2, 9),
                 actualMaterial: 0,
                 actualLabor: 0,
+                bimFiles: [],
               },
             ],
           }
@@ -195,12 +219,25 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
             return s
           })
-          // Recalculate total budget
           const totalBudget = newStages.reduce(
             (acc, s) => acc + s.budgetMaterial + s.budgetLabor,
             0,
           )
           return { ...p, stages: newStages, totalBudget }
+        }
+        return p
+      }),
+    })),
+  addBimFile: (projectId, stageId, file) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) =>
+              s.id === stageId ? { ...s, bimFiles: [...s.bimFiles, file] } : s,
+            ),
+          }
         }
         return p
       }),
