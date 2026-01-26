@@ -35,6 +35,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   return (
     <>
+      {/* If there is a pending evaluation, show modal and it will block interaction via overlay */}
       {user?.pendingEvaluation && <EvaluationModal open={true} />}
       {children}
     </>

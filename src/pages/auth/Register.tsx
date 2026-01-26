@@ -17,7 +17,13 @@ import {
   FormMessage,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import { Card, CardContent } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 const registerSchema = z
   .object({
@@ -27,11 +33,22 @@ const registerSchema = z
     confirmPassword: z.string(),
     role: z.enum(['contractor', 'executor']),
     entityType: z.enum(['pf', 'pj']),
+    businessArea: z.string().optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Senhas não conferem',
     path: ['confirmPassword'],
   })
+  .refine(
+    (data) => {
+      if (data.entityType === 'pj' && !data.businessArea) return false
+      return true
+    },
+    {
+      message: 'Área de atuação é obrigatória para PJ',
+      path: ['businessArea'],
+    },
+  )
 
 type RegisterForm = z.infer<typeof registerSchema>
 
@@ -52,6 +69,8 @@ export default function Register() {
     },
   })
 
+  const entityType = form.watch('entityType')
+
   async function onSubmit(data: RegisterForm) {
     try {
       await registerUser(
@@ -60,6 +79,7 @@ export default function Register() {
         data.password,
         data.role,
         data.entityType,
+        data.businessArea,
       )
       toast({
         title: 'Conta criada!',
@@ -108,7 +128,7 @@ export default function Register() {
                       />
                       <label
                         htmlFor="contractor"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                       >
                         <User className="mb-3 h-6 w-6" />
                         <span className="font-semibold">Contratar</span>
@@ -125,7 +145,7 @@ export default function Register() {
                       />
                       <label
                         htmlFor="executor"
-                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer"
+                        className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                       >
                         <Briefcase className="mb-3 h-6 w-6" />
                         <span className="font-semibold">Trabalhar</span>
@@ -178,14 +198,53 @@ export default function Register() {
             )}
           />
 
+          {entityType === 'pj' && (
+            <FormField
+              control={form.control}
+              name="businessArea"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Área de Atuação da Empresa</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione a área" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="construction">
+                        Construção Civil
+                      </SelectItem>
+                      <SelectItem value="industry">Indústria</SelectItem>
+                      <SelectItem value="technology">Tecnologia</SelectItem>
+                      <SelectItem value="services">Serviços Gerais</SelectItem>
+                      <SelectItem value="retail">Varejo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nome Completo / Razão Social</FormLabel>
+                <FormLabel>
+                  {entityType === 'pj' ? 'Razão Social' : 'Nome Completo'}
+                </FormLabel>
                 <FormControl>
-                  <Input placeholder="João Silva" {...field} />
+                  <Input
+                    placeholder={
+                      entityType === 'pj' ? 'Minha Empresa Ltda' : 'João Silva'
+                    }
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -196,7 +255,7 @@ export default function Register() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Email Corporativo ou Pessoal</FormLabel>
                 <FormControl>
                   <Input placeholder="seu@email.com" {...field} />
                 </FormControl>

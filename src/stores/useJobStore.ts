@@ -20,7 +20,7 @@ export interface Job {
   type: 'fixed' | 'auction'
   status:
     | 'open'
-    | 'suspended'
+    | 'suspended' // Agreement reached, waiting execution/completion
     | 'in_progress'
     | 'completed'
     | 'dispute'
@@ -30,12 +30,11 @@ export interface Job {
   budget: number
   bids: Bid[]
   acceptedBidId?: string
-  // New Fields
   createdAt: Date
   publicationDate: Date
   auctionEndDate?: Date
   maxExecutionDeadline?: Date
-  isPremiumVisibility: boolean // "Superior" ranking
+  premiumType: 'none' | 'region' | 'category' // Visibility Tier
 }
 
 interface JobState {
@@ -73,21 +72,11 @@ const mockJobs: Job[] = [
         createdAt: new Date(),
         executorReputation: 4.9,
       },
-      {
-        id: 'b2',
-        jobId: '1',
-        executorId: '98',
-        executorName: 'Web Master',
-        amount: 2300,
-        description: 'Tenho portfolio na área.',
-        createdAt: new Date(),
-        executorReputation: 4.5,
-      },
     ],
     createdAt: new Date(),
     publicationDate: new Date(),
     maxExecutionDeadline: new Date(Date.now() + 86400000 * 30),
-    isPremiumVisibility: true,
+    premiumType: 'category',
   },
   {
     id: '2',
@@ -104,7 +93,23 @@ const mockJobs: Job[] = [
     createdAt: new Date(Date.now() - 86400000),
     publicationDate: new Date(Date.now() - 86400000),
     auctionEndDate: new Date(Date.now() + 86400000 * 2),
-    isPremiumVisibility: false,
+    premiumType: 'none',
+  },
+  {
+    id: '3',
+    ownerId: '3',
+    ownerName: 'Carlos Silva',
+    title: 'Instalação de Ar Condicionado',
+    description: 'Instalação de 2 unidades split.',
+    type: 'fixed',
+    status: 'open',
+    category: 'Reformas',
+    location: 'São Paulo, SP',
+    budget: 800,
+    bids: [],
+    createdAt: new Date(Date.now() - 100000000),
+    publicationDate: new Date(Date.now() - 100000000),
+    premiumType: 'region',
   },
 ]
 
@@ -147,7 +152,11 @@ export const useJobStore = create<JobState>((set, get) => ({
     set((state) => ({
       jobs: state.jobs.map((job) =>
         job.id === jobId
-          ? { ...job, status: 'in_progress', acceptedBidId: bidId }
+          ? {
+              ...job,
+              status: 'suspended', // Hidden from public lists, waiting execution start
+              acceptedBidId: bidId,
+            }
           : job,
       ),
     })),
@@ -171,7 +180,6 @@ export const useJobStore = create<JobState>((set, get) => ({
     })),
   getJob: (id) => get().jobs.find((j) => j.id === id),
   hasActiveJob: (userId) => {
-    // Check if user has any job that is NOT completed and NOT cancelled
     return get().jobs.some(
       (j) =>
         j.ownerId === userId && !['completed', 'cancelled'].includes(j.status),

@@ -7,8 +7,8 @@ export interface User {
   avatar?: string
   role: 'contractor' | 'executor' | 'admin'
   entityType: 'pf' | 'pj'
+  businessArea?: string // For PJ
   reputation: number
-  // New fields
   bankingDetails?: {
     bank: string
     agency: string
@@ -16,7 +16,7 @@ export interface User {
     document: string // CPF/CNPJ (encrypted concept)
   }
   serviceRadius: number // in miles
-  location: string // State code for ads
+  location: string // State code for ads (e.g., 'SP', 'RJ')
   pendingEvaluation?: {
     jobId: string
     targetId: string
@@ -38,6 +38,7 @@ interface AuthState {
     password: string,
     role: 'contractor' | 'executor',
     entityType: 'pf' | 'pj',
+    businessArea?: string,
   ) => Promise<void>
   updateUserReputation: (newScore: number) => void
   updateSettings: (settings: Partial<User>) => void
@@ -87,7 +88,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       },
     })
   },
-  register: async (name, email, password, role, entityType) => {
+  register: async (name, email, password, role, entityType, businessArea) => {
     set({ isLoading: true })
     await new Promise((resolve) => setTimeout(resolve, 1500))
     set({
@@ -100,6 +101,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         avatar: `https://img.usecurling.com/ppl/medium?seed=${Math.floor(Math.random() * 100)}`,
         role,
         entityType,
+        businessArea,
         reputation: 0,
         serviceRadius: 50,
         location: 'SP',

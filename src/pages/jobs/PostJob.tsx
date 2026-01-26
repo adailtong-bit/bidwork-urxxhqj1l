@@ -25,13 +25,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Calendar as CalendarIcon,
   Gavel,
@@ -39,7 +33,7 @@ import {
   MapPin,
   DollarSign,
   Clock,
-  AlertTriangle,
+  Zap,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -66,6 +60,7 @@ const jobSchema = z.object({
     required_error: 'Prazo máximo é obrigatório',
   }),
   publicationDate: z.date().default(new Date()),
+  premiumType: z.enum(['none', 'region', 'category']),
 })
 
 type JobForm = z.infer<typeof jobSchema>
@@ -86,26 +81,24 @@ export default function PostJob() {
       location: user?.location || '',
       budget: 0,
       publicationDate: new Date(),
+      premiumType: 'none',
     },
   })
 
-  // Restriction Check
+  // Restriction Check for non-completed jobs
   if (user && hasActiveJob(user.id)) {
     return (
-      <div className="max-w-2xl mx-auto py-10">
+      <div className="max-w-2xl mx-auto py-10 px-4">
         <Card className="border-destructive/50 bg-destructive/10">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-destructive">
-              <AlertTriangle /> Ação Bloqueada
+              Ação Bloqueada
             </CardTitle>
-            <CardDescription className="text-destructive font-medium">
-              Você possui um Job Ativo pendente de finalização ou avaliação.
-            </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="mb-4">
-              Para garantir a qualidade da plataforma, finalize seus processos
-              atuais antes de abrir novos chamados.
+              Você possui um Job Ativo pendente de finalização ou avaliação.
+              Finalize seus processos atuais antes de abrir novos chamados.
             </p>
             <Button variant="outline" onClick={() => navigate('/my-jobs')}>
               Ir para Meus Jobs
@@ -138,7 +131,7 @@ export default function PostJob() {
       publicationDate: data.publicationDate,
       auctionEndDate: data.auctionEndDate,
       maxExecutionDeadline: data.maxExecutionDeadline,
-      isPremiumVisibility: user.isPremium,
+      premiumType: data.premiumType,
     })
 
     toast({
@@ -222,6 +215,8 @@ export default function PostJob() {
                           <SelectItem value="Serviços Domésticos">
                             Serviços Domésticos
                           </SelectItem>
+                          <SelectItem value="Enfermagem">Enfermagem</SelectItem>
+                          <SelectItem value="Limpeza">Limpeza</SelectItem>
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -420,6 +415,78 @@ export default function PostJob() {
                   />
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Visibilidade e Destaque</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="premiumType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormControl>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="grid grid-cols-1 md:grid-cols-3 gap-4"
+                      >
+                        <FormItem>
+                          <FormControl>
+                            <RadioGroupItem
+                              value="none"
+                              className="peer sr-only"
+                            />
+                          </FormControl>
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                            <span className="font-semibold">Gratuito</span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              Visibilidade por proximidade
+                            </span>
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem>
+                          <FormControl>
+                            <RadioGroupItem
+                              value="region"
+                              className="peer sr-only"
+                            />
+                          </FormControl>
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden">
+                            <Zap className="mb-2 h-5 w-5 text-blue-500" />
+                            <span className="font-semibold text-center">
+                              Superior na Região
+                            </span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              +R$ 19,90
+                            </span>
+                          </FormLabel>
+                        </FormItem>
+                        <FormItem>
+                          <FormControl>
+                            <RadioGroupItem
+                              value="category"
+                              className="peer sr-only"
+                            />
+                          </FormControl>
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden">
+                            <Zap className="mb-2 h-5 w-5 text-yellow-500 fill-yellow-500" />
+                            <span className="font-semibold text-center">
+                              Superior na Categoria
+                            </span>
+                            <span className="text-xs text-muted-foreground mt-1">
+                              +R$ 39,90
+                            </span>
+                          </FormLabel>
+                        </FormItem>
+                      </RadioGroup>
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </CardContent>
           </Card>
 

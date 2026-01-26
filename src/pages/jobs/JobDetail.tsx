@@ -14,21 +14,20 @@ import {
   CardDescription,
   CardFooter,
 } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
 import {
   MapPin,
   Calendar,
   DollarSign,
   Gavel,
-  User,
-  CheckCircle,
   ShieldAlert,
   Send,
   Clock,
   AlertOctagon,
+  CheckCircle,
+  MessageSquare,
 } from 'lucide-react'
-import { formatDistanceToNow, format } from 'date-fns'
+import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function JobDetail() {
@@ -43,7 +42,10 @@ export default function JobDetail() {
   const [bidDescription, setBidDescription] = useState('')
   const [chatMessage, setChatMessage] = useState('')
   const [messages, setMessages] = useState<{ user: string; text: string }[]>([
-    { user: 'System', text: 'Chat iniciado para registro e suporte.' },
+    {
+      user: 'Sistema',
+      text: 'Chat seguro iniciado. Detalhes da execução podem ser discutidos aqui.',
+    },
   ])
 
   if (!job) return <div className="p-8">Job não encontrado</div>
@@ -78,12 +80,12 @@ export default function JobDetail() {
     acceptBid(job.id, bidId)
     toast({
       title: 'Proposta Aceita!',
-      description: 'Pagamento enviado para Escrow (2% taxa).',
+      description: 'Job suspenso e pagamento em Escrow.',
     })
   }
 
   const handleComplete = () => {
-    // Before completing, trigger mandatory evaluation flow
+    // Before completing, trigger mandatory evaluation flow for Contractor
     setPendingEvaluation({
       jobId: job.id,
       targetId: acceptedBid?.executorId || '',
@@ -93,10 +95,22 @@ export default function JobDetail() {
 
     completeJob(job.id)
     toast({
-      title: 'Processo de Finalização',
+      title: 'Job Finalizado',
       description: 'Por favor, avalie o executor para liberar o pagamento.',
     })
-    // The App.tsx Guard will pick up the pending evaluation and show the modal
+  }
+
+  const handleExecutorEvaluation = () => {
+    if (!isExecutor) return
+    setPendingEvaluation({
+      jobId: job.id,
+      targetId: job.ownerId,
+      targetName: job.ownerName,
+      type: 'executor_to_contractor',
+    })
+    // Force trigger modal
+    // In a real app, this might just open the modal directly or refresh the route
+    window.location.reload()
   }
 
   const handleDispute = () => {
@@ -110,6 +124,8 @@ export default function JobDetail() {
     setChatMessage('')
   }
 
+  const canViewChat = isOwner || isExecutor
+
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       {/* Header */}
@@ -120,11 +136,13 @@ export default function JobDetail() {
             <Badge variant={job.status === 'open' ? 'secondary' : 'outline'}>
               {job.status === 'open'
                 ? 'Aberto'
-                : job.status === 'in_progress'
-                  ? 'Executando'
-                  : job.status === 'completed'
-                    ? 'Finalizado'
-                    : job.status}
+                : job.status === 'suspended'
+                  ? 'Aguardando Execução'
+                  : job.status === 'in_progress'
+                    ? 'Em Execução'
+                    : job.status === 'completed'
+                      ? 'Finalizado'
+                      : job.status}
             </Badge>
           </div>
           <h1 className="text-3xl font-bold">{job.title}</h1>
@@ -233,35 +251,42 @@ export default function JobDetail() {
             </Card>
           )}
 
-          {/* Execution Area */}
-          {(job.status === 'in_progress' ||
+          {/* Execution & Chat Area */}
+          {(job.status === 'suspended' ||
+            job.status === 'in_progress' ||
             job.status === 'completed' ||
             job.status === 'dispute') &&
-            (isOwner || isExecutor) && (
+            canViewChat && (
               <Card className="border-primary/20 shadow-md">
                 <CardHeader className="bg-muted/30">
                   <CardTitle className="flex items-center justify-between">
-                    <span>Sala de Execução</span>
-                    {job.status === 'in_progress' && (
-                      <Badge className="bg-indigo-500">
-                        Escrow: R$ {(acceptedBid?.amount || 0).toFixed(2)}
-                      </Badge>
-                    )}
+                    <span className="flex items-center gap-2">
+                      <MessageSquare className="h-5 w-5" /> Sala de Execução
+                      Segura
+                    </span>
+                    {job.status !== 'completed' &&
+                      job.status !== 'cancelled' && (
+                        <Badge className="bg-indigo-500">
+                          Escrow: R$ {(acceptedBid?.amount || 0).toFixed(2)}
+                        </Badge>
+                      )}
                   </CardTitle>
                   <CardDescription className="flex flex-col gap-1">
                     <span>
                       Status:{' '}
-                      {job.status === 'dispute' ? 'EM DISPUTA' : 'Em Andamento'}
+                      {job.status === 'dispute'
+                        ? 'EM DISPUTA'
+                        : 'Execução / Pagamento Retido'}
                     </span>
                     <span className="text-xs text-muted-foreground">
                       Taxa de plataforma (2%): R${' '}
                       {((acceptedBid?.amount || 0) * 0.02).toFixed(2)} (Deduzido
-                      no repasse final)
+                      no repasse final ao Executor)
                     </span>
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="h-[300px] overflow-y-auto p-4 space-y-4">
+                  <div className="h-[300px] overflow-y-auto p-4 space-y-4 bg-background">
                     {messages.map((msg, idx) => (
                       <div
                         key={idx}
@@ -286,46 +311,48 @@ export default function JobDetail() {
                       onKeyDown={(e) =>
                         e.key === 'Enter' && handleSendMessage()
                       }
-                      disabled={job.status === 'completed'}
+                      disabled={
+                        job.status === 'completed' || job.status === 'dispute'
+                      }
                     />
                     <Button
                       size="icon"
                       onClick={handleSendMessage}
-                      disabled={job.status === 'completed'}
+                      disabled={
+                        job.status === 'completed' || job.status === 'dispute'
+                      }
                     >
                       <Send className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
-                <CardFooter className="flex justify-between bg-muted/30 p-4 border-t">
+                <CardFooter className="flex flex-col md:flex-row justify-between bg-muted/30 p-4 border-t gap-2">
                   <Button
                     variant="outline"
-                    className="text-destructive hover:bg-destructive/10 border-destructive/20"
+                    className="text-destructive hover:bg-destructive/10 border-destructive/20 w-full md:w-auto"
                     onClick={handleDispute}
+                    disabled={
+                      job.status === 'completed' || job.status === 'dispute'
+                    }
                   >
                     <AlertOctagon className="mr-2 h-4 w-4" /> Abrir Disputa
                   </Button>
 
-                  {isOwner && job.status === 'in_progress' && (
-                    <Button
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      onClick={handleComplete}
-                    >
-                      <CheckCircle className="mr-2 h-4 w-4" /> Finalizar &
-                      Avaliar
-                    </Button>
-                  )}
+                  {isOwner &&
+                    (job.status === 'suspended' ||
+                      job.status === 'in_progress') && (
+                      <Button
+                        className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto"
+                        onClick={handleComplete}
+                      >
+                        <CheckCircle className="mr-2 h-4 w-4" /> Finalizar &
+                        Avaliar
+                      </Button>
+                    )}
                   {isExecutor && job.status === 'completed' && (
                     <Button
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => {
-                        setPendingEvaluation({
-                          jobId: job.id,
-                          targetId: job.ownerId,
-                          targetName: job.ownerName,
-                          type: 'executor_to_contractor',
-                        })
-                      }}
+                      className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto"
+                      onClick={handleExecutorEvaluation}
                     >
                       <CheckCircle className="mr-2 h-4 w-4" /> Avaliar
                       Contratante
@@ -356,13 +383,13 @@ export default function JobDetail() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Proposta</label>
                   <Textarea
-                    placeholder="Detalhes..."
+                    placeholder="Detalhes sobre sua execução..."
                     value={bidDescription}
                     onChange={(e) => setBidDescription(e.target.value)}
                   />
                 </div>
                 <Button className="w-full" onClick={handleBid}>
-                  Enviar
+                  Enviar Lance
                 </Button>
               </CardContent>
             </Card>
@@ -376,7 +403,7 @@ export default function JobDetail() {
             </CardHeader>
             <CardContent className="text-xs text-blue-700">
               O pagamento fica retido (Escrow) e só é liberado após a conclusão
-              e avaliação mútua. Taxa de 2% aplicável.
+              e avaliação mútua. Taxa de 2% para manutenção da plataforma.
             </CardContent>
           </Card>
         </div>

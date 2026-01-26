@@ -20,16 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import {
-  Search,
-  MapPin,
-  Gavel,
-  Tag,
-  Calendar,
-  Filter,
-  Star,
-  Zap,
-} from 'lucide-react'
+import { Search, MapPin, Gavel, Tag, Calendar, Filter, Zap } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AdBanner } from '@/components/AdBanner'
@@ -55,16 +46,32 @@ export default function FindJobs() {
         categoryFilter === 'all' || job.category === categoryFilter
       const matchesType = typeFilter === 'all' || job.type === typeFilter
 
-      // Mock geofencing check - assume everything matches if radius is large
-      // In real app, we calculate distance between user.location and job.location
-      const inRadius = radiusFilter[0] > 10
+      // Mock geofencing check - simply checking if user has radius settings
+      // In real world, we would calculate Haversine distance
+      const inRadius = radiusFilter[0] > 0 // Placeholder logic
 
       return matchesSearch && matchesCategory && matchesType && inRadius
     })
     .sort((a, b) => {
-      // Hierarchical Sorting: Premium (Superior) first
-      if (a.isPremiumVisibility && !b.isPremiumVisibility) return -1
-      if (!a.isPremiumVisibility && b.isPremiumVisibility) return 1
+      // Hierarchical Sorting:
+      // 1. Paid "Superior in Category" (premiumType === 'category')
+      // 2. Paid "Superior in Region" (premiumType === 'region')
+      // 3. Proximity-based (Free) (premiumType === 'none')
+
+      const getScore = (type: string) => {
+        if (type === 'category') return 3
+        if (type === 'region') return 2
+        return 1
+      }
+
+      const scoreA = getScore(a.premiumType)
+      const scoreB = getScore(b.premiumType)
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA
+      }
+
+      // If same tier, sort by date (newest first)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
 
@@ -134,24 +141,38 @@ export default function FindJobs() {
         {filteredJobs.map((job) => (
           <Card
             key={job.id}
-            className={`flex flex-col hover:border-primary/50 transition-colors ${job.isPremiumVisibility ? 'border-l-4 border-l-yellow-500 shadow-sm' : ''}`}
+            className={`flex flex-col hover:border-primary/50 transition-colors ${
+              job.premiumType === 'category'
+                ? 'border-l-4 border-l-yellow-500 shadow-md bg-yellow-50/10'
+                : job.premiumType === 'region'
+                  ? 'border-l-4 border-l-blue-500 shadow-sm'
+                  : ''
+            }`}
           >
             <CardHeader>
               <div className="flex justify-between items-start mb-2">
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Badge variant="outline" className="text-xs">
                     {job.category}
                   </Badge>
-                  {job.isPremiumVisibility && (
+                  {job.premiumType === 'category' && (
                     <Badge
                       variant="secondary"
-                      className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1"
+                      className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
                     >
-                      <Zap className="h-3 w-3 fill-current" /> Destaque
+                      <Zap className="h-3 w-3 fill-current" /> Super Destaque
+                    </Badge>
+                  )}
+                  {job.premiumType === 'region' && (
+                    <Badge
+                      variant="secondary"
+                      className="bg-blue-100 text-blue-700 hover:bg-blue-100 gap-1 text-[10px]"
+                    >
+                      <Zap className="h-3 w-3" /> Destaque Regional
                     </Badge>
                   )}
                 </div>
-                <span className="text-xs text-muted-foreground flex items-center gap-1">
+                <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                   <Calendar className="h-3 w-3" />
                   {formatDistanceToNow(job.createdAt, {
                     addSuffix: true,
@@ -159,7 +180,9 @@ export default function FindJobs() {
                   })}
                 </span>
               </div>
-              <CardTitle className="line-clamp-1">{job.title}</CardTitle>
+              <CardTitle className="line-clamp-1 text-lg">
+                {job.title}
+              </CardTitle>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
               <p className="text-sm text-muted-foreground line-clamp-3">
@@ -202,10 +225,7 @@ export default function FindJobs() {
         {filteredJobs.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
             <Filter className="h-10 w-10 mb-4 opacity-20" />
-            <p>
-              Nenhum job encontrado dentro do seu raio de atuação (
-              {radiusFilter[0]}mi).
-            </p>
+            <p>Nenhum job encontrado com os filtros atuais.</p>
           </div>
         )}
       </div>
