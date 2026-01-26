@@ -14,6 +14,7 @@ import {
   Trophy,
   TestTube2,
   Users,
+  Wallet,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -104,6 +105,14 @@ export function MainSidebar() {
       icon: Trophy,
     },
   ]
+
+  if (!isContractor) {
+    financeItems.unshift({
+      title: 'Minhas Finanças',
+      url: '/finance',
+      icon: Wallet,
+    })
+  }
 
   const utilityItems = [
     {

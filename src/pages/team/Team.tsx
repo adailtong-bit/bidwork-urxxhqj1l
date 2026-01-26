@@ -20,7 +20,15 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Mail, Plus, Trash2, Shield, User as UserIcon } from 'lucide-react'
+import {
+  Mail,
+  Plus,
+  Trash2,
+  Shield,
+  User as UserIcon,
+  Briefcase,
+  Activity,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Team() {
@@ -56,8 +64,9 @@ export default function Team() {
       name: 'Você',
       role: 'Administrador',
       email: user.email,
-      avatar: user.avatar,
-      status: 'active',
+      avatar: user.avatar || '',
+      status: 'active' as const,
+      performance: 0,
     },
   ]
 
@@ -140,7 +149,15 @@ export default function Team() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {members.map((member, i) => (
           <Card key={i} className="flex flex-col relative overflow-hidden">
-            <div className="absolute top-0 left-0 w-full h-1 bg-primary/20" />
+            <div
+              className={`absolute top-0 left-0 w-full h-1 ${
+                member.status === 'busy'
+                  ? 'bg-yellow-500'
+                  : member.status === 'inactive'
+                    ? 'bg-gray-300'
+                    : 'bg-green-500'
+              }`}
+            />
             <CardContent className="pt-6 flex flex-col items-center text-center flex-1">
               <Avatar className="h-20 w-20 mb-4 border-2 border-background shadow-sm">
                 <AvatarImage src={member.avatar} />
@@ -151,9 +168,27 @@ export default function Team() {
 
               <div className="space-y-1 mb-4">
                 <h3 className="font-semibold text-lg">{member.name}</h3>
-                <Badge variant="secondary" className="font-normal">
-                  {member.role}
-                </Badge>
+                <div className="flex items-center gap-2 justify-center">
+                  <Badge variant="secondary" className="font-normal">
+                    {member.role}
+                  </Badge>
+                  {member.status === 'busy' && (
+                    <Badge
+                      variant="outline"
+                      className="text-yellow-600 bg-yellow-50 border-yellow-200"
+                    >
+                      Ocupado
+                    </Badge>
+                  )}
+                  {member.status === 'active' && (
+                    <Badge
+                      variant="outline"
+                      className="text-green-600 bg-green-50 border-green-200"
+                    >
+                      Disponível
+                    </Badge>
+                  )}
+                </div>
               </div>
 
               <div className="w-full space-y-3 mt-auto">
@@ -161,12 +196,26 @@ export default function Team() {
                   <Mail className="h-3 w-3" /> {member.email}
                 </div>
 
-                {isPJ &&
-                  member.id !== user.id && ( // Can't delete self
-                    <div className="pt-2 border-t w-full flex justify-between items-center text-xs text-muted-foreground">
-                      <span>
-                        Performance: {member.performance?.toFixed(1) || 'N/A'}
+                {isPJ && member.id !== user.id && (
+                  <div className="pt-2 border-t w-full space-y-2">
+                    <div className="flex justify-between items-center text-xs text-muted-foreground px-2">
+                      <span className="flex items-center gap-1">
+                        <Activity className="h-3 w-3" /> Performance
                       </span>
+                      <span className="font-bold text-primary">
+                        {member.performance?.toFixed(1) || '0.0'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xs text-muted-foreground px-2">
+                      <span className="flex items-center gap-1">
+                        <Briefcase className="h-3 w-3" /> Atribuição
+                      </span>
+                      <span>
+                        {member.status === 'busy' ? 'Em Projeto' : 'Aguardando'}
+                      </span>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
                       <Button
                         variant="ghost"
                         size="icon"
@@ -176,7 +225,8 @@ export default function Team() {
                         <Trash2 className="h-3 w-3" />
                       </Button>
                     </div>
-                  )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>

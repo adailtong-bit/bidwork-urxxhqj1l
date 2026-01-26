@@ -18,6 +18,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
+import { TestProfileSwitcher } from '@/components/TestProfileSwitcher'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -151,6 +152,8 @@ export default function Login() {
           Cadastre-se
         </Link>
       </div>
+
+      <TestProfileSwitcher />
     </div>
   )
 }

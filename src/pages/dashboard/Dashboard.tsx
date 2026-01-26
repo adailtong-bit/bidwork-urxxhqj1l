@@ -29,6 +29,7 @@ import {
   Line,
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
+import { AINotifications } from '@/components/AINotifications'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
@@ -116,6 +117,8 @@ export default function Dashboard() {
           )}
         </div>
       </div>
+
+      <AINotifications />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

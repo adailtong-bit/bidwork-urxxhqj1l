@@ -1,4 +1,4 @@
-import { Bell, Search, Menu } from 'lucide-react'
+import { Bell, Search, Menu, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
@@ -11,10 +11,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import { useAuthStore } from '@/stores/useAuthStore'
 
 export function MainHeader() {
   const location = useLocation()
   const { toggleSidebar, isMobile } = useSidebar()
+  const { user } = useAuthStore()
 
   const getPageTitle = () => {
     const path = location.pathname
@@ -24,6 +26,7 @@ export function MainHeader() {
     if (path.includes('/reports')) return 'Relatórios'
     if (path.includes('/team')) return 'Equipe'
     if (path.includes('/settings')) return 'Configurações'
+    if (path.includes('/finance')) return 'Minhas Finanças'
     return 'BIDWORK'
   }
 
@@ -37,6 +40,11 @@ export function MainHeader() {
         <h1 className="text-lg font-semibold text-foreground hidden md:block">
           {getPageTitle()}
         </h1>
+        {user?.isVerified && (
+          <div className="hidden md:flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+            <CheckCircle2 className="h-3 w-3" /> Verificado
+          </div>
+        )}
       </div>
 
       <div className="flex items-center gap-4">
@@ -76,6 +84,18 @@ export function MainHeader() {
                 </span>
               </div>
             </DropdownMenuItem>
+            {user?.role === 'executor' && (
+              <DropdownMenuItem>
+                <div className="flex flex-col gap-1">
+                  <span className="font-medium text-purple-600">
+                    Recomendação IA
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    Novo Job compatível com seu perfil!
+                  </span>
+                </div>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>

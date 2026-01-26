@@ -89,7 +89,7 @@ const createMockJob = (
 })
 
 const mockJobs: Job[] = [
-  // 3 Active Auctions
+  // 5 Active Auctions (Required by AC)
   createMockJob(
     '1',
     'Desenvolvimento App React Native',
@@ -120,6 +120,26 @@ const mockJobs: Job[] = [
     3000,
     3,
   ),
+  createMockJob(
+    '11',
+    'Consultoria de SEO Avançada',
+    'auction',
+    'open',
+    'SP',
+    'Marketing',
+    2500,
+    0,
+  ),
+  createMockJob(
+    '12',
+    'Automação Residencial Smart Home',
+    'auction',
+    'open',
+    'RS',
+    'TI e Programação',
+    4200,
+    1,
+  ),
 
   // 2 Active Fixed
   createMockJob(
@@ -143,7 +163,7 @@ const mockJobs: Job[] = [
     4,
   ),
 
-  // 5 Historical (Completed)
+  // 3 Completed Jobs with Ratings (Required by AC)
   createMockJob(
     '6',
     'Consultoria Financeira PJ',
@@ -174,26 +194,42 @@ const mockJobs: Job[] = [
     6000,
     60,
   ),
-  createMockJob(
-    '9',
-    'Manutenção Ar Condicionado',
-    'fixed',
-    'completed',
-    'RS',
-    'Serviços Gerais',
-    300,
-    20,
-  ),
-  createMockJob(
-    '10',
-    'Fotografia de Evento Corporativo',
-    'fixed',
-    'completed',
-    'BA',
-    'Design',
-    1500,
-    15,
-  ),
+]
+
+// Add Mock Bids to Active Auctions
+mockJobs[0].bids = [
+  {
+    id: 'b1',
+    jobId: '1',
+    executorId: 'ex1',
+    executorName: 'Dev Pro',
+    amount: 4800,
+    description: 'Entrego em 30 dias',
+    createdAt: new Date(),
+    executorReputation: 4.9,
+  },
+]
+mockJobs[1].bids = [
+  {
+    id: 'b2',
+    jobId: '2',
+    executorId: 'ex2',
+    executorName: 'Mestre de Obras',
+    amount: 8000,
+    description: 'Equipe completa',
+    createdAt: new Date(),
+    executorReputation: 4.5,
+  },
+  {
+    id: 'b3',
+    jobId: '2',
+    executorId: 'ex3',
+    executorName: 'Construtora XYZ',
+    amount: 8200,
+    description: 'Garantia de 5 anos',
+    createdAt: new Date(),
+    executorReputation: 4.8,
+  },
 ]
 
 export const useJobStore = create<JobState>((set, get) => ({

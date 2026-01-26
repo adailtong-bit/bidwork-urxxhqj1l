@@ -26,6 +26,7 @@ import SubscriptionPlans from '@/pages/subscription/SubscriptionPlans'
 import CreditsStore from '@/pages/billing/CreditsStore'
 import LoyaltyProgram from '@/pages/loyalty/LoyaltyProgram'
 import TestingHub from '@/pages/testing/TestingHub'
+import FinanceDashboard from '@/pages/finance/FinanceDashboard'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
@@ -91,6 +92,7 @@ const App = () => {
               <Route path="/subscription" element={<SubscriptionPlans />} />
               <Route path="/credits" element={<CreditsStore />} />
               <Route path="/loyalty" element={<LoyaltyProgram />} />
+              <Route path="/finance" element={<FinanceDashboard />} />
 
               {/* Common Routes */}
               <Route path="/documents" element={<Documents />} />

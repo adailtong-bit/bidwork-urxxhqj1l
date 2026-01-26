@@ -6,7 +6,7 @@ export interface TeamMember {
   role: string
   email: string
   avatar: string
-  status: 'active' | 'inactive'
+  status: 'active' | 'inactive' | 'busy'
   performance: number
 }
 
@@ -85,8 +85,9 @@ interface AuthState {
   buyCredits: (amount: number) => void
   upgradeSubscription: (tier: 'pro' | 'business') => void
   submitKYC: (file: File) => Promise<void>
-  // New Actions
-  addTeamMember: (member: Omit<TeamMember, 'id' | 'avatar'>) => void
+  addTeamMember: (
+    member: Omit<TeamMember, 'id' | 'avatar' | 'status' | 'performance'>,
+  ) => void
   removeTeamMember: (id: string) => void
 }
 
@@ -97,9 +98,9 @@ export const useAuthStore = create<AuthState>((set) => ({
   login: async (email, password) => {
     set({ isLoading: true })
     // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000))
+    await new Promise((resolve) => setTimeout(resolve, 800))
 
-    // Determine user type based on email for Testing Hub
+    // Determine user type based on email for Testing Hub and Switcher
     let role: 'contractor' | 'executor' = 'contractor'
     let entityType: 'pf' | 'pj' = 'pf'
     let name = 'Usuário Padrão'
@@ -110,6 +111,8 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     if (email === 'contractor.pj@bidwork.app') {
       name = 'Construtora Tech Corp'
+      role = 'contractor'
+      entityType = 'pj'
       teamMembers = [
         {
           id: 't1',
@@ -128,12 +131,14 @@ export const useAuthStore = create<AuthState>((set) => ({
           email: 'carlos@techcorp.com',
           avatar:
             'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=11',
-          status: 'active',
+          status: 'busy',
           performance: 8.8,
         },
       ]
     } else if (email === 'executor.pj@bidwork.app') {
       name = 'Soluções Rápidas Ltda'
+      role = 'executor'
+      entityType = 'pj'
       teamMembers = [
         {
           id: 't3',
@@ -156,10 +161,14 @@ export const useAuthStore = create<AuthState>((set) => ({
           performance: 9.0,
         },
       ]
-    } else if (role === 'contractor') {
+    } else if (email === 'executor.pf@bidwork.app') {
+      name = 'João Freelancer'
+      role = 'executor'
+      entityType = 'pf'
+    } else if (email === 'contractor.pf@bidwork.app') {
       name = 'Maria Contratante'
-    } else {
-      name = 'João Executor'
+      role = 'contractor'
+      entityType = 'pf'
     }
 
     set({
@@ -179,10 +188,15 @@ export const useAuthStore = create<AuthState>((set) => ({
         subscriptionTier: entityType === 'pj' ? 'business' : 'free',
         credits: 100,
         isVerified: true,
-        kycStatus: 'verified',
+        kycStatus: 'verified', // Pre-verified for test users as per AC
         address: 'Av. Paulista, 1000 - São Paulo, SP',
-        category: role === 'executor' ? 'Serviços Gerais' : undefined,
-        // Loyalty Mock
+        category: role === 'executor' ? 'TI e Programação' : undefined,
+        bankingDetails: {
+          bank: 'Test Bank',
+          agency: '0001',
+          account: '12345-6',
+          document: '12.345.678/0001-99',
+        },
         loyaltyPoints: 1250,
         loyaltyHistory: [
           {
