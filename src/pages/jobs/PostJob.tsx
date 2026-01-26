@@ -1,9 +1,11 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useJobStore } from '@/stores/useJobStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useCategoryStore } from '@/stores/useCategoryStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
@@ -34,6 +36,9 @@ import {
   DollarSign,
   Clock,
   Zap,
+  Upload,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -68,8 +73,12 @@ type JobForm = z.infer<typeof jobSchema>
 export default function PostJob() {
   const { addJob, hasActiveJob } = useJobStore()
   const { user } = useAuthStore()
+  const { categories } = useCategoryStore()
   const navigate = useNavigate()
   const { toast } = useToast()
+
+  const [photos, setPhotos] = useState<string[]>([])
+  const [photoInput, setPhotoInput] = useState('')
 
   const form = useForm<JobForm>({
     resolver: zodResolver(jobSchema),
@@ -110,6 +119,19 @@ export default function PostJob() {
     )
   }
 
+  const handleAddPhoto = () => {
+    // Mock upload by accepting image URLs or placeholder
+    const url =
+      photoInput ||
+      `https://img.usecurling.com/p/300/200?q=service&r=${Math.random()}`
+    setPhotos([...photos, url])
+    setPhotoInput('')
+  }
+
+  const handleRemovePhoto = (index: number) => {
+    setPhotos(photos.filter((_, i) => i !== index))
+  }
+
   const onSubmit = (data: JobForm) => {
     if (!user) return
 
@@ -123,6 +145,7 @@ export default function PostJob() {
     addJob({
       title: data.title,
       description: data.description,
+      photos,
       type: data.type,
       category: data.category,
       location: data.location,
@@ -135,7 +158,6 @@ export default function PostJob() {
       premiumType: data.premiumType,
     })
 
-    // Notification Logic Mock
     toast({
       title: 'Job Publicado com Sucesso!',
       description:
@@ -191,6 +213,44 @@ export default function PostJob() {
                 )}
               />
 
+              <div className="space-y-2">
+                <FormLabel>Fotos do Local/Serviço (Opcional)</FormLabel>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Cole uma URL de imagem ou clique para adicionar mock"
+                    value={photoInput}
+                    onChange={(e) => setPhotoInput(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddPhoto}
+                  >
+                    <Upload className="h-4 w-4 mr-2" /> Adicionar
+                  </Button>
+                </div>
+                {photos.length > 0 && (
+                  <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
+                    {photos.map((photo, idx) => (
+                      <div key={idx} className="relative group shrink-0">
+                        <img
+                          src={photo}
+                          alt="Job preview"
+                          className="w-24 h-24 object-cover rounded-md border"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemovePhoto(idx)}
+                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
@@ -208,17 +268,11 @@ export default function PostJob() {
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="TI e Programação">
-                            TI e Programação
-                          </SelectItem>
-                          <SelectItem value="Reformas">Reformas</SelectItem>
-                          <SelectItem value="Design">Design</SelectItem>
-                          <SelectItem value="Marketing">Marketing</SelectItem>
-                          <SelectItem value="Serviços Domésticos">
-                            Serviços Domésticos
-                          </SelectItem>
-                          <SelectItem value="Enfermagem">Enfermagem</SelectItem>
-                          <SelectItem value="Limpeza">Limpeza</SelectItem>
+                          {categories.map((cat) => (
+                            <SelectItem key={cat.id} value={cat.name}>
+                              {cat.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                       <FormMessage />
@@ -316,7 +370,7 @@ export default function PostJob() {
                               className="peer sr-only"
                             />
                           </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
                             <Tag className="mb-3 h-6 w-6" />
                             <span className="font-semibold">Preço Fixo</span>
                             <span className="text-xs text-muted-foreground mt-1 text-center">
@@ -331,13 +385,13 @@ export default function PostJob() {
                               className="peer sr-only"
                             />
                           </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
                             <Gavel className="mb-3 h-6 w-6" />
                             <span className="font-semibold">
-                              Leilão (Bidding)
+                              Leilão Reverso
                             </span>
                             <span className="text-xs text-muted-foreground mt-1 text-center">
-                              Executores competem com lances.
+                              Executores ofertam lances menores.
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -356,7 +410,7 @@ export default function PostJob() {
                     <FormItem>
                       <FormLabel>
                         {form.watch('type') === 'auction'
-                          ? 'Valor Máximo Inicial'
+                          ? 'Preço Máximo Inicial'
                           : 'Valor Ofertado'}
                       </FormLabel>
                       <FormControl>
@@ -370,6 +424,11 @@ export default function PostJob() {
                           />
                         </div>
                       </FormControl>
+                      <FormDescription>
+                        {form.watch('type') === 'auction'
+                          ? 'Executores darão lances menores que este valor.'
+                          : 'Valor fixo que você pagará pelo serviço.'}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -443,7 +502,7 @@ export default function PostJob() {
                               className="peer sr-only"
                             />
                           </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer">
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <span className="font-semibold">Gratuito</span>
                             <span className="text-xs text-muted-foreground mt-1">
                               Visibilidade por proximidade
@@ -457,7 +516,7 @@ export default function PostJob() {
                               className="peer sr-only"
                             />
                           </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden">
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <Zap className="mb-2 h-5 w-5 text-blue-500" />
                             <span className="font-semibold text-center">
                               Superior na Região
@@ -474,7 +533,7 @@ export default function PostJob() {
                               className="peer sr-only"
                             />
                           </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden">
+                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <Zap className="mb-2 h-5 w-5 text-yellow-500 fill-yellow-500" />
                             <span className="font-semibold text-center">
                               Superior na Categoria

@@ -18,18 +18,10 @@ import {
   Zap,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-  LineChart,
-  Line,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { AINotifications } from '@/components/AINotifications'
+import { AdSection } from '@/components/AdSection'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
@@ -37,7 +29,6 @@ export default function Dashboard() {
 
   const isContractor = user?.role === 'contractor'
 
-  // Filter jobs based on role
   const activeJobs = isContractor
     ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'in_progress')
         .length
@@ -60,7 +51,6 @@ export default function Dashboard() {
           j.status === 'completed',
       ).length
 
-  // Mock Data for Charts
   const earningsData = [
     { month: 'Jan', value: 1200 },
     { month: 'Fev', value: 1900 },
@@ -119,6 +109,9 @@ export default function Dashboard() {
       </div>
 
       <AINotifications />
+
+      {/* Targeted Ads - Dashboard Segment */}
+      <AdSection segment="dashboard" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>

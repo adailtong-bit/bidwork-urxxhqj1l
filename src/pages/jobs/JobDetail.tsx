@@ -35,6 +35,7 @@ import {
   Percent,
   CalendarDays,
   ExternalLink,
+  ImageIcon,
 } from 'lucide-react'
 import { format, addHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -67,13 +68,34 @@ export default function JobDetail() {
     : null
   const isExecutor = acceptedBid?.executorId === user.id
 
+  // Calculate current lowest bid for validation
+  const lowestBid =
+    job.bids.length > 0
+      ? Math.min(...job.bids.map((b) => b.amount))
+      : job.budget
+
   const handleBid = () => {
     if (!bidAmount || !bidDescription) return
+
+    const amount = Number(bidAmount)
+
+    // Reverse Auction Validation: Must be lower than current max/lowest
+    if (job.type === 'auction') {
+      if (amount >= lowestBid) {
+        toast({
+          variant: 'destructive',
+          title: 'Lance inválido',
+          description: `Seu lance deve ser menor que o atual valor de referência: R$ ${lowestBid}`,
+        })
+        return
+      }
+    }
+
     addBid(job.id, {
       jobId: job.id,
       executorId: user.id,
       executorName: user.name,
-      amount: Number(bidAmount),
+      amount: amount,
       description: bidDescription,
       executorReputation: user.reputation,
     })
@@ -94,7 +116,6 @@ export default function JobDetail() {
   }
 
   const handleComplete = () => {
-    // Before completing, trigger mandatory evaluation flow for Contractor
     setPendingEvaluation({
       jobId: job.id,
       targetId: acceptedBid?.executorId || '',
@@ -117,7 +138,6 @@ export default function JobDetail() {
       targetName: job.ownerName,
       type: 'executor_to_contractor',
     })
-    // Force trigger modal
     window.location.reload()
   }
 
@@ -132,12 +152,10 @@ export default function JobDetail() {
     setChatMessage('')
   }
 
-  // Calendar Links Generation
   const generateCalendarLink = (type: 'google' | 'outlook') => {
     const title = encodeURIComponent(job.title)
     const description = encodeURIComponent(job.description)
     const location = encodeURIComponent(job.location)
-    // Mock duration: starts now, ends in 2 hours for calendar event
     const startDate = job.maxExecutionDeadline || new Date()
     const endDate = addHours(startDate, 2)
 
@@ -186,21 +204,25 @@ export default function JobDetail() {
         <div className="flex flex-col items-end gap-2">
           <div className="text-right">
             <div className="text-sm text-muted-foreground">
-              Orçamento / Valor
+              {job.type === 'auction' ? 'Máximo Inicial' : 'Orçamento'}
             </div>
             <div className="text-2xl font-bold text-primary">
               R$ {job.budget.toLocaleString('pt-BR')}
             </div>
+            {job.type === 'auction' && job.bids.length > 0 && (
+              <div className="text-xs font-semibold text-emerald-600">
+                Melhor oferta atual: R$ {lowestBid.toLocaleString('pt-BR')}
+              </div>
+            )}
             <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
               {job.type === 'auction' ? (
                 <Gavel className="h-3 w-3" />
               ) : (
                 <DollarSign className="h-3 w-3" />
               )}
-              {job.type === 'auction' ? 'Leilão' : 'Preço Fixo'}
+              {job.type === 'auction' ? 'Leilão Reverso' : 'Preço Fixo'}
             </div>
           </div>
-          {/* Calendar Sync Button */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="mt-2">
@@ -232,27 +254,42 @@ export default function JobDetail() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Descrição</CardTitle>
             </CardHeader>
-            <CardContent>
+            <CardContent className="space-y-4">
               <p className="whitespace-pre-line leading-relaxed">
                 {job.description}
               </p>
+              {job.photos && job.photos.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                    <ImageIcon className="h-4 w-4" /> Fotos
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                    {job.photos.map((photo, i) => (
+                      <img
+                        key={i}
+                        src={photo}
+                        alt={`Job photo ${i + 1}`}
+                        className="rounded-lg border object-cover w-full h-32 hover:scale-105 transition-transform cursor-pointer"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
-          {/* Bids Section */}
           {isOwner && job.status === 'open' && (
             <Card>
               <CardHeader>
                 <CardTitle>Propostas ({job.bids.length})</CardTitle>
                 <CardDescription>
                   {job.type === 'auction'
-                    ? 'Leilão Ativo. O vencedor será notificado ao final do prazo.'
+                    ? 'Leilão Ativo. Escolha a melhor (e menor) oferta.'
                     : 'Escolha a melhor oferta.'}
                 </CardDescription>
               </CardHeader>
@@ -262,49 +299,50 @@ export default function JobDetail() {
                     Aguardando ofertas...
                   </div>
                 ) : (
-                  job.bids.map((bid) => (
-                    <div
-                      key={bid.id}
-                      className="border rounded-lg p-4 flex flex-col md:flex-row gap-4 justify-between items-start bg-card/50"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">
-                            {bid.executorName}
+                  job.bids
+                    .sort((a, b) => a.amount - b.amount)
+                    .map((bid) => (
+                      <div
+                        key={bid.id}
+                        className="border rounded-lg p-4 flex flex-col md:flex-row gap-4 justify-between items-start bg-card/50"
+                      >
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">
+                              {bid.executorName}
+                            </span>
+                            <Badge
+                              variant="outline"
+                              className="text-yellow-600 border-yellow-200 bg-yellow-50"
+                            >
+                              ★ {bid.executorReputation.toFixed(1)}
+                            </Badge>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {bid.description}
+                          </p>
+                          <div className="text-xs text-muted-foreground">
+                            {format(bid.createdAt, 'dd/MM/yyyy HH:mm')}
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2 min-w-[120px]">
+                          <span className="text-xl font-bold text-primary">
+                            R$ {bid.amount}
                           </span>
-                          <Badge
-                            variant="outline"
-                            className="text-yellow-600 border-yellow-200 bg-yellow-50"
+                          <Button
+                            size="sm"
+                            onClick={() => handleAcceptBid(bid.id)}
                           >
-                            ★ {bid.executorReputation.toFixed(1)}
-                          </Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {bid.description}
-                        </p>
-                        <div className="text-xs text-muted-foreground">
-                          {format(bid.createdAt, 'dd/MM/yyyy HH:mm')}
+                            Aceitar
+                          </Button>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-2 min-w-[120px]">
-                        <span className="text-xl font-bold text-primary">
-                          R$ {bid.amount}
-                        </span>
-                        <Button
-                          size="sm"
-                          onClick={() => handleAcceptBid(bid.id)}
-                        >
-                          Aceitar
-                        </Button>
-                      </div>
-                    </div>
-                  ))
+                    ))
                 )}
               </CardContent>
             </Card>
           )}
 
-          {/* Execution & Chat Area */}
           {(job.status === 'suspended' ||
             job.status === 'in_progress' ||
             job.status === 'completed' ||
@@ -330,12 +368,6 @@ export default function JobDetail() {
                       {job.status === 'dispute'
                         ? 'EM DISPUTA'
                         : 'Execução / Pagamento Retido'}
-                    </span>
-                    <span className="text-xs text-muted-foreground flex items-center gap-1">
-                      <Percent className="h-3 w-3" />
-                      Taxa de plataforma (2%): R${' '}
-                      {((acceptedBid?.amount || 0) * 0.02).toFixed(2)} será
-                      deduzido do repasse.
                     </span>
                   </CardDescription>
                 </CardHeader>
@@ -417,12 +449,17 @@ export default function JobDetail() {
             )}
         </div>
 
-        {/* Sidebar Info */}
         <div className="space-y-6">
           {!isOwner && job.status === 'open' && !hasBidded && (
             <Card>
               <CardHeader>
                 <CardTitle>Fazer Oferta</CardTitle>
+                {job.type === 'auction' && (
+                  <CardDescription className="text-amber-600 font-medium">
+                    Leilão Reverso: Seu lance deve ser menor que R${' '}
+                    {lowestBid.toLocaleString('pt-BR')}
+                  </CardDescription>
+                )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
@@ -432,6 +469,7 @@ export default function JobDetail() {
                     placeholder="0.00"
                     value={bidAmount}
                     onChange={(e) => setBidAmount(e.target.value)}
+                    max={job.type === 'auction' ? lowestBid - 1 : undefined}
                   />
                 </div>
                 <div className="space-y-2">
@@ -459,10 +497,6 @@ export default function JobDetail() {
               <p>
                 O pagamento fica retido (Escrow) e só é liberado após a
                 conclusão e avaliação mútua.
-              </p>
-              <p className="font-semibold">
-                Taxa de 2% para manutenção da plataforma será descontada do
-                valor final.
               </p>
             </CardContent>
           </Card>

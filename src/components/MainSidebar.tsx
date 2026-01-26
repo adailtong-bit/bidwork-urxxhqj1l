@@ -15,6 +15,9 @@ import {
   TestTube2,
   Users,
   Wallet,
+  Shield,
+  Tags,
+  Megaphone,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -45,8 +48,8 @@ export function MainSidebar() {
   const { state } = useSidebar()
   const isContractor = user?.role === 'contractor'
   const isPJ = user?.entityType === 'pj'
+  const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
 
-  // Common items
   const commonItems = [
     {
       title: 'Dashboard',
@@ -60,7 +63,6 @@ export function MainSidebar() {
     },
   ]
 
-  // Role specific items
   const contractorItems = [
     {
       title: 'Publicar Job',
@@ -87,7 +89,6 @@ export function MainSidebar() {
     },
   ]
 
-  // Finance & Premium Items
   const financeItems = [
     {
       title: 'Planos & Assinatura',
@@ -141,7 +142,19 @@ export function MainSidebar() {
     })
   }
 
-  // Testing Hub Link (Always visible for now)
+  const adminItems = [
+    {
+      title: 'Categorias',
+      url: '/admin/categories',
+      icon: Tags,
+    },
+    {
+      title: 'Publicidade',
+      url: '/admin/ads',
+      icon: Megaphone,
+    },
+  ]
+
   const devItems = [
     {
       title: 'Testing Hub',
@@ -199,6 +212,32 @@ export function MainSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+
+        {isAdmin && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-destructive font-bold">
+              Administração
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {adminItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Financeiro</SidebarGroupLabel>

@@ -25,33 +25,32 @@ export interface User {
   avatar?: string
   role: 'contractor' | 'executor' | 'admin'
   entityType: 'pf' | 'pj'
-  businessArea?: string // For PJ
-  category?: string // For Executors (Electrician, etc.)
+  businessArea?: string
+  category?: string
   reputation: number
   address?: string
   bankingDetails?: {
     bank: string
     agency: string
     account: string
-    document: string // CPF/CNPJ
+    document: string
   }
-  serviceRadius: number // in miles
-  location: string // State code for ads (e.g., 'SP', 'RJ')
+  serviceRadius: number
+  location: string
   pendingEvaluation?: {
     jobId: string
     targetId: string
     targetName: string
     type: 'contractor_to_executor' | 'executor_to_contractor'
   }
-  isPremium: boolean // For visibility hierarchy
+  isPremium: boolean
   subscriptionTier: 'free' | 'pro' | 'business'
   credits: number
   isVerified: boolean
   kycStatus: 'none' | 'pending' | 'verified' | 'rejected'
-  // New Features
   loyaltyPoints: number
   loyaltyHistory: LoyaltyTransaction[]
-  teamMembers?: TeamMember[] // For PJ Corporate
+  teamMembers?: TeamMember[]
 }
 
 export interface RegisterData {
@@ -97,16 +96,15 @@ export const useAuthStore = create<AuthState>((set) => ({
   isLoading: false,
   login: async (email, password) => {
     set({ isLoading: true })
-    // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 800))
 
-    // Determine user type based on email for Testing Hub and Switcher
-    let role: 'contractor' | 'executor' = 'contractor'
+    let role: 'contractor' | 'executor' | 'admin' = 'contractor'
     let entityType: 'pf' | 'pj' = 'pf'
     let name = 'Usuário Padrão'
     let teamMembers: TeamMember[] | undefined = undefined
 
     if (email.includes('executor')) role = 'executor'
+    if (email.includes('admin')) role = 'admin'
     if (email.includes('pj')) entityType = 'pj'
 
     if (email === 'contractor.pj@bidwork.app') {
@@ -169,6 +167,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       name = 'Maria Contratante'
       role = 'contractor'
       entityType = 'pf'
+    } else if (email === 'admin@bidwork.app') {
+      name = 'Administrador do Sistema'
+      role = 'admin'
     }
 
     set({
@@ -188,7 +189,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         subscriptionTier: entityType === 'pj' ? 'business' : 'free',
         credits: 100,
         isVerified: true,
-        kycStatus: 'verified', // Pre-verified for test users as per AC
+        kycStatus: 'verified',
         address: 'Av. Paulista, 1000 - São Paulo, SP',
         category: role === 'executor' ? 'TI e Programação' : undefined,
         bankingDetails: {
@@ -205,20 +206,6 @@ export const useAuthStore = create<AuthState>((set) => ({
             description: 'Job Finalizado com 5 estrelas',
             points: 100,
             type: 'earned',
-          },
-          {
-            id: 'l2',
-            date: new Date(Date.now() - 86400000 * 10),
-            description: 'Bônus de Cadastro',
-            points: 500,
-            type: 'earned',
-          },
-          {
-            id: 'l3',
-            date: new Date(Date.now() - 86400000 * 5),
-            description: 'Resgate de Cupom de Desconto',
-            points: -200,
-            type: 'redeemed',
           },
         ],
         teamMembers,

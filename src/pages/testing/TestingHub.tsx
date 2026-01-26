@@ -17,7 +17,14 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { User, Building2, Briefcase, Zap, CheckCircle2 } from 'lucide-react'
+import {
+  User,
+  Building2,
+  Briefcase,
+  Zap,
+  CheckCircle2,
+  Shield,
+} from 'lucide-react'
 import { useJobStore } from '@/stores/useJobStore'
 import { useToast } from '@/hooks/use-toast'
 
@@ -60,6 +67,12 @@ export default function TestingHub() {
       desc: 'Prestador empresa com equipe.',
       icon: Building2,
     },
+    {
+      role: 'Admin',
+      email: 'admin@bidwork.app',
+      desc: 'Administrador do sistema.',
+      icon: Shield,
+    },
   ]
 
   const activeJobs = jobs.filter((j) => j.status === 'open')
@@ -78,24 +91,25 @@ export default function TestingHub() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         {testUsers.map((user, i) => (
           <Card key={i} className="hover:border-primary transition-all">
-            <CardHeader>
+            <CardHeader className="p-4">
               <div className="h-10 w-10 bg-primary/10 rounded-lg flex items-center justify-center mb-2">
                 <user.icon className="h-6 w-6 text-primary" />
               </div>
               <CardTitle className="text-lg">{user.role}</CardTitle>
-              <CardDescription>{user.desc}</CardDescription>
+              <CardDescription className="text-xs">{user.desc}</CardDescription>
             </CardHeader>
-            <CardContent>
-              <code className="text-xs bg-muted p-1 rounded block mb-2">
+            <CardContent className="p-4 pt-0">
+              <code className="text-xs bg-muted p-1 rounded block mb-2 overflow-hidden text-ellipsis">
                 {user.email}
               </code>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="p-4 pt-0">
               <Button
                 className="w-full"
+                size="sm"
                 onClick={() => handleTestLogin(user.email)}
               >
                 <Zap className="mr-2 h-4 w-4" /> Acessar

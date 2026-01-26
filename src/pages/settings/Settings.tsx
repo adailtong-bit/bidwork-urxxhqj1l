@@ -26,6 +26,7 @@ import {
   Trophy,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import { AdSection } from '@/components/AdSection'
 
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
@@ -74,6 +75,8 @@ export default function Settings() {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      <AdSection segment="profile" />
+
       <h1 className="text-3xl font-bold tracking-tight">
         Configurações da Conta
       </h1>

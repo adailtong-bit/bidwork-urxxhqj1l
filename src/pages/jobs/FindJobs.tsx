@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { Slider } from '@/components/ui/slider'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
 import {
@@ -31,10 +30,11 @@ import {
   Filter,
   Zap,
   Sparkles,
+  ImageIcon,
 } from 'lucide-react'
 import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { AdBanner } from '@/components/AdBanner'
+import { AdSection } from '@/components/AdSection'
 
 export default function FindJobs() {
   const { jobs } = useJobStore()
@@ -44,11 +44,10 @@ export default function FindJobs() {
   const [typeFilter, setTypeFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
   const [regionFilter, setRegionFilter] = useState('all')
-  const [isSmartSort, setIsSmartSort] = useState(false) // AI Toggle
+  const [isSmartSort, setIsSmartSort] = useState(false)
 
   const availableJobs = jobs.filter((job) => job.status === 'open')
 
-  // Available regions for dropdown
   const regions = Array.from(new Set(jobs.map((j) => j.regionCode))).filter(
     Boolean,
   )
@@ -66,7 +65,6 @@ export default function FindJobs() {
       const matchesRegion =
         regionFilter === 'all' || job.regionCode === regionFilter
 
-      // Date Filter Logic
       let matchesDate = true
       if (dateFilter !== 'all') {
         const now = new Date()
@@ -87,14 +85,12 @@ export default function FindJobs() {
       )
     })
     .sort((a, b) => {
-      // AI Smart Sort Logic
       if (isSmartSort) {
         const scoreA = a.smartMatchScore || 0
         const scoreB = b.smartMatchScore || 0
         return scoreB - scoreA
       }
 
-      // Default Logic
       const getScore = (type: string) => {
         if (type === 'category') return 3
         if (type === 'region') return 2
@@ -113,10 +109,7 @@ export default function FindJobs() {
 
   return (
     <div className="space-y-6">
-      <AdBanner
-        region={user?.location || 'SP'}
-        category={categoryFilter === 'all' ? 'Geral' : categoryFilter}
-      />
+      <AdSection segment="search" />
 
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">Encontrar Jobs</h1>
@@ -137,7 +130,6 @@ export default function FindJobs() {
             />
           </div>
 
-          {/* Smart Sort Toggle */}
           <div className="flex items-center space-x-2 bg-background p-2 rounded-md border shadow-sm">
             <Switch
               id="smart-mode"
@@ -257,11 +249,16 @@ export default function FindJobs() {
               <p className="text-sm text-muted-foreground line-clamp-3">
                 {job.description}
               </p>
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center justify-between text-sm text-muted-foreground">
                 <div className="flex items-center gap-1">
                   <MapPin className="h-4 w-4" />
                   <span>{job.location}</span>
                 </div>
+                {job.photos && job.photos.length > 0 && (
+                  <div className="flex items-center gap-1 text-xs">
+                    <ImageIcon className="h-3 w-3" /> {job.photos.length} fotos
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {job.type === 'auction' ? (

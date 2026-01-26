@@ -27,10 +27,11 @@ import CreditsStore from '@/pages/billing/CreditsStore'
 import LoyaltyProgram from '@/pages/loyalty/LoyaltyProgram'
 import TestingHub from '@/pages/testing/TestingHub'
 import FinanceDashboard from '@/pages/finance/FinanceDashboard'
+import ManageCategories from '@/pages/admin/ManageCategories'
+import ManageAds from '@/pages/admin/ManageAds'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
-// Protected Route Wrapper with Mandatory Evaluation Check
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated, user } = useAuthStore()
 
@@ -40,11 +41,22 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   return (
     <>
-      {/* If there is a pending evaluation, show modal and it will block interaction via overlay */}
       {user?.pendingEvaluation && <EvaluationModal open={true} />}
       {children}
     </>
   )
+}
+
+const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const { user } = useAuthStore()
+  // Allow admin based on role or specific email for testing
+  const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
+
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />
+  }
+
+  return children
 }
 
 const App = () => {
@@ -77,6 +89,24 @@ const App = () => {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
+
+              {/* Admin Routes */}
+              <Route
+                path="/admin/categories"
+                element={
+                  <AdminRoute>
+                    <ManageCategories />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/ads"
+                element={
+                  <AdminRoute>
+                    <ManageAds />
+                  </AdminRoute>
+                }
+              />
 
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
