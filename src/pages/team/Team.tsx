@@ -20,6 +20,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import {
   Mail,
   Plus,
@@ -28,6 +29,8 @@ import {
   User as UserIcon,
   Briefcase,
   Activity,
+  Settings,
+  ShieldCheck
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -81,7 +84,7 @@ export default function Team() {
           </h1>
           <p className="text-muted-foreground mt-1">
             {isPJ
-              ? 'Gerencie acessos, colaboradores e desempenho do time.'
+              ? 'Gerencie acessos, colaboradores e permissões do time.'
               : 'Visualização dos membros da conta.'}
           </p>
         </div>
@@ -116,13 +119,21 @@ export default function Team() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Função</Label>
-                  <Input
-                    value={newMember.role}
-                    onChange={(e) =>
-                      setNewMember({ ...newMember, role: e.target.value })
-                    }
-                  />
+                  <Label>Nível de Acesso</Label>
+                  <Select 
+                    value={newMember.role} 
+                    onValueChange={(val) => setNewMember({...newMember, role: val})}
+                  >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Admin">Admin (Acesso Total)</SelectItem>
+                        <SelectItem value="Gerente de Projetos">Gerente de Projetos</SelectItem>
+                        <SelectItem value="Contador">Contador (Financeiro)</SelectItem>
+                        <SelectItem value="Colaborador">Colaborador (Visualização)</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <DialogFooter>
@@ -148,7 +159,7 @@ export default function Team() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {members.map((member, i) => (
-          <Card key={i} className="flex flex-col relative overflow-hidden">
+          <Card key={i} className="flex flex-col relative overflow-hidden group">
             <div
               className={`absolute top-0 left-0 w-full h-1 ${
                 member.status === 'busy'
@@ -168,26 +179,11 @@ export default function Team() {
 
               <div className="space-y-1 mb-4">
                 <h3 className="font-semibold text-lg">{member.name}</h3>
-                <div className="flex items-center gap-2 justify-center">
-                  <Badge variant="secondary" className="font-normal">
+                <div className="flex items-center gap-2 justify-center flex-wrap">
+                  <Badge variant="secondary" className="font-normal flex items-center gap-1">
+                    {member.role === 'Admin' ? <ShieldCheck className="h-3 w-3" /> : <Briefcase className="h-3 w-3" />}
                     {member.role}
                   </Badge>
-                  {member.status === 'busy' && (
-                    <Badge
-                      variant="outline"
-                      className="text-yellow-600 bg-yellow-50 border-yellow-200"
-                    >
-                      Ocupado
-                    </Badge>
-                  )}
-                  {member.status === 'active' && (
-                    <Badge
-                      variant="outline"
-                      className="text-green-600 bg-green-50 border-green-200"
-                    >
-                      Disponível
-                    </Badge>
-                  )}
                 </div>
               </div>
 
@@ -206,20 +202,15 @@ export default function Team() {
                         {member.performance?.toFixed(1) || '0.0'}
                       </span>
                     </div>
-                    <div className="flex justify-between items-center text-xs text-muted-foreground px-2">
-                      <span className="flex items-center gap-1">
-                        <Briefcase className="h-3 w-3" /> Atribuição
-                      </span>
-                      <span>
-                        {member.status === 'busy' ? 'Em Projeto' : 'Aguardando'}
-                      </span>
-                    </div>
 
-                    <div className="flex justify-end pt-2">
+                    <div className="flex justify-between gap-2 pt-2">
+                       <Button variant="outline" size="sm" className="w-full h-8 text-xs">
+                         <Settings className="h-3 w-3 mr-1" /> Permissões
+                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                         onClick={() => removeTeamMember(member.id)}
                       >
                         <Trash2 className="h-3 w-3" />

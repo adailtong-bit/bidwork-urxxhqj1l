@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useProjectStore, Stage } from '@/stores/useProjectStore'
 import { useJobStore } from '@/stores/useJobStore'
@@ -28,37 +29,59 @@ import {
   HardHat,
   Package,
   CheckCircle2,
-  AlertTriangle,
   Calendar as CalendarIcon,
   MapPin,
-  DollarSign,
   UserCheck,
+  Upload,
+  FileSpreadsheet,
 } from 'lucide-react'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useToast } from '@/hooks/use-toast'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
-  const { getProject } = useProjectStore()
+  const { getProject, importExternalBudget } = useProjectStore()
   const { getJobsByProject } = useJobStore()
   const { getOrdersByProject } = useMaterialStore()
-  const { userCertifications } = useTrainingStore()
+  const { toast } = useToast()
 
   const project = getProject(id!)
   const jobs = id ? getJobsByProject(id) : []
   const orders = id ? getOrdersByProject(id) : []
 
+  const [isImportOpen, setIsImportOpen] = useState(false)
+
   if (!project) return <div>Projeto não encontrado</div>
 
-  // Helper to calculate stage totals
-  const getStageFinancials = (stage: Stage) => {
-    // Filter jobs linked to this stage
-    const stageJobs = jobs.filter((j) => j.stageId === stage.id)
-    // Filter orders linked to this stage
-    const stageOrders = orders.filter((o) => o.stageId === stage.id)
+  const handleImportBudget = () => {
+    // Mock parsing of a file
+    importExternalBudget(project.id, [
+      { stageName: 'Fundação', material: 85000, labor: 42000 },
+      { stageName: 'Alvenaria', material: 160000, labor: 95000 },
+      { stageName: 'Instalações', material: 65000, labor: 52000 },
+    ])
+    setIsImportOpen(false)
+    toast({
+      title: 'Orçamento Importado',
+      description:
+        'Os valores estimados foram atualizados com base no arquivo externo.',
+    })
+  }
 
-    // Calculate actuals from linked items (Alternative to store stored actuals if we wanted dynamic recalc)
-    // For now we use the store values which should be updated via actions
+  const getStageFinancials = (stage: Stage) => {
+    const stageJobs = jobs.filter((j) => j.stageId === stage.id)
+    const stageOrders = orders.filter((o) => o.stageId === stage.id)
 
     return {
       jobs: stageJobs,
@@ -149,7 +172,6 @@ export default function ProjectDetail() {
                   <Progress value={percent} className="h-2 mt-4" />
                 </CardHeader>
                 <CardContent className="pt-6 grid md:grid-cols-2 gap-6">
-                  {/* Labor Section */}
                   <div className="space-y-4">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold flex items-center gap-2">
@@ -202,7 +224,6 @@ export default function ProjectDetail() {
                     </div>
                   </div>
 
-                  {/* Materials Section */}
                   <div className="space-y-4 border-l pl-0 md:pl-6 border-dashed md:border-solid">
                     <div className="flex items-center justify-between">
                       <h3 className="font-semibold flex items-center gap-2">
@@ -254,7 +275,6 @@ export default function ProjectDetail() {
                     </div>
                   </div>
 
-                  {/* AI Suggestions */}
                   <div className="col-span-1 md:col-span-2 mt-2 pt-4 border-t">
                     <div className="flex items-center gap-2 text-sm text-purple-700 font-medium mb-3">
                       <UserCheck className="h-4 w-4" /> Sugestões Inteligentes
@@ -309,9 +329,50 @@ export default function ProjectDetail() {
 
         <TabsContent value="financial">
           <Card>
-            <CardHeader>
-              <CardTitle>Resumo Financeiro</CardTitle>
-              <CardDescription>Consolidado de todas as etapas.</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Resumo Financeiro</CardTitle>
+                <CardDescription>
+                  Consolidado de todas as etapas.
+                </CardDescription>
+              </div>
+              <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+                <DialogTrigger asChild>
+                  <Button variant="outline">
+                    <Upload className="mr-2 h-4 w-4" /> Importar Orçamento
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Importar Orçamento Externo</DialogTitle>
+                    <DialogDescription>
+                      Faça upload de um arquivo CSV ou Excel com as estimativas
+                      atualizadas.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-colors">
+                      <FileSpreadsheet className="h-10 w-10 text-muted-foreground mb-4" />
+                      <p className="font-medium">
+                        Clique para selecionar o arquivo
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        .CSV, .XLSX (Max 5MB)
+                      </p>
+                    </div>
+                    <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-xs flex gap-2">
+                      <Upload className="h-4 w-4 shrink-0" />
+                      Os valores importados substituirão as estimativas atuais
+                      de todas as etapas correspondentes.
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleImportBudget}>
+                      Processar Arquivo (Mock)
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
               <Table>
@@ -386,7 +447,6 @@ export default function ProjectDetail() {
                       )
                       if (!bid) return null
 
-                      // Mock certification check
                       const hasCerts = Math.random() > 0.5
 
                       return (

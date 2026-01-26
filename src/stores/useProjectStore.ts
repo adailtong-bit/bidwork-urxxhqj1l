@@ -51,13 +51,17 @@ interface ProjectState {
     type: 'material' | 'labor',
     amount: number,
   ) => void
+  importExternalBudget: (
+    projectId: string,
+    budgetData: { stageName: string; material: number; labor: number }[],
+  ) => void
   getProject: (id: string) => Project | undefined
 }
 
 const mockProjects: Project[] = [
   {
     id: 'proj-1',
-    ownerId: 'owner-1', // Assuming user match for testing
+    ownerId: 'owner-1',
     name: 'Residencial Alphaville',
     description:
       'Construção de residência de alto padrão com 4 suítes e área de lazer.',
@@ -165,12 +169,38 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
             return s
           })
-          // Recalculate total spent
           const totalSpent = newStages.reduce(
             (acc, s) => acc + s.actualMaterial + s.actualLabor,
             0,
           )
           return { ...p, stages: newStages, totalSpent }
+        }
+        return p
+      }),
+    })),
+  importExternalBudget: (projectId, budgetData) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newStages = p.stages.map((s) => {
+            const external = budgetData.find((b) =>
+              b.stageName.includes(s.name),
+            )
+            if (external) {
+              return {
+                ...s,
+                budgetMaterial: external.material,
+                budgetLabor: external.labor,
+              }
+            }
+            return s
+          })
+          // Recalculate total budget
+          const totalBudget = newStages.reduce(
+            (acc, s) => acc + s.budgetMaterial + s.budgetLabor,
+            0,
+          )
+          return { ...p, stages: newStages, totalBudget }
         }
         return p
       }),

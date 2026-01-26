@@ -15,12 +15,13 @@ import {
   TestTube2,
   Users,
   Wallet,
-  Shield,
   Tags,
   Megaphone,
   HardHat,
   Package,
   GraduationCap,
+  Truck,
+  FileSpreadsheet,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -52,9 +53,8 @@ export function MainSidebar() {
   const isContractor = user?.role === 'contractor'
   const isPJ = user?.entityType === 'pj'
   const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
-  const isExecutor = user?.role === 'executor'
 
-  // Construction Company Flag (Simplified logic)
+  // Construction Company Flag
   const isConstrutora = isPJ && isContractor
 
   const commonItems = [
@@ -83,7 +83,6 @@ export function MainSidebar() {
     },
   ]
 
-  // Items specific for Construction Companies (PJ)
   const constructionItems = [
     {
       title: 'Gestão de Obras',
@@ -94,6 +93,11 @@ export function MainSidebar() {
       title: 'Materiais',
       url: '/construction/materials',
       icon: Package,
+    },
+    {
+      title: 'Maquinário & Frota',
+      url: '/construction/equipment',
+      icon: Truck,
     },
   ]
 
@@ -117,6 +121,11 @@ export function MainSidebar() {
 
   const financeItems = [
     {
+      title: 'Minhas Finanças',
+      url: '/finance',
+      icon: Wallet,
+    },
+    {
       title: 'Planos & Assinatura',
       url: '/subscription',
       icon: Crown,
@@ -133,11 +142,11 @@ export function MainSidebar() {
     },
   ]
 
-  if (!isContractor) {
-    financeItems.unshift({
-      title: 'Minhas Finanças',
-      url: '/finance',
-      icon: Wallet,
+  if (isPJ) {
+    financeItems.splice(1, 0, {
+      title: 'Relatórios Contábeis',
+      url: '/finance/accounting',
+      icon: FileSpreadsheet,
     })
   }
 

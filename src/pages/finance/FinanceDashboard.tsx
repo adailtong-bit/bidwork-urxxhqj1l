@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { usePaymentStore } from '@/stores/usePaymentStore'
 import {
@@ -17,13 +18,16 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
   Tooltip,
-  ResponsiveContainer,
+  AreaChart,
+  Area,
+  CartesianGrid,
 } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import {
@@ -33,19 +37,42 @@ import {
   Clock,
   DollarSign,
   ArrowUpRight,
+  Calendar,
+  Plus,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import { Link } from 'react-router-dom'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export default function FinanceDashboard() {
   const { user } = useAuthStore()
-  const { getTransactionsByUser } = usePaymentStore()
+  const { getTransactionsByUser, schedulePayment, getScheduledPayments } =
+    usePaymentStore()
   const { toast } = useToast()
+
+  const [isScheduleOpen, setIsScheduleOpen] = useState(false)
+  const [scheduleData, setScheduleData] = useState({
+    title: '',
+    amount: '',
+    date: '',
+  })
 
   if (!user) return null
 
+  const isPJ = user.entityType === 'pj'
   const transactions = getTransactionsByUser(user.id)
+  const scheduled = getScheduledPayments(user.id)
 
   // Calculate Totals
   const totalEarnings = transactions
@@ -64,28 +91,44 @@ export default function FinanceDashboard() {
     )
     .reduce((acc, curr) => acc + curr.amount, 0)
 
-  const handleExport = () => {
-    toast({
-      title: 'Relatório Gerado',
-      description: 'O download do relatório financeiro começará em instantes.',
-    })
-  }
-
-  // Mock Data for Chart (Using dynamic data would require more complex grouping logic)
-  const monthlyData = [
-    { month: 'Jan', value: 2500 },
-    { month: 'Fev', value: 3200 },
-    { month: 'Mar', value: 4100 },
-    { month: 'Abr', value: 3800 },
-    { month: 'Mai', value: 5200 },
-    { month: 'Jun', value: totalEarnings > 0 ? totalEarnings : 4800 }, // Show mock or real
+  // Mock Cash Flow Data
+  const cashFlowData = [
+    { month: 'Jan', entrada: 4000, saida: 2400 },
+    { month: 'Fev', entrada: 3000, saida: 1398 },
+    { month: 'Mar', entrada: 2000, saida: 9800 },
+    { month: 'Abr', entrada: 2780, saida: 3908 },
+    { month: 'Mai', entrada: 1890, saida: 4800 },
+    { month: 'Jun', entrada: 2390, saida: 3800 },
+    { month: 'Jul (Proj)', entrada: 3490, saida: 4300 },
   ]
 
   const chartConfig = {
-    value: {
-      label: 'Movimentação (R$)',
+    entrada: {
+      label: 'Entradas',
       color: 'hsl(var(--primary))',
     },
+    saida: {
+      label: 'Saídas',
+      color: 'hsl(var(--destructive))',
+    },
+  }
+
+  const handleSchedule = () => {
+    schedulePayment(
+      {
+        jobTitle: scheduleData.title,
+        payerId: user.id,
+        payerName: user.name,
+        receiverId: 'mock-receiver',
+        receiverName: 'Fornecedor Externo',
+        amount: Number(scheduleData.amount),
+        category: 'other',
+      },
+      new Date(scheduleData.date),
+    )
+
+    setIsScheduleOpen(false)
+    toast({ title: 'Pagamento Agendado' })
   }
 
   return (
@@ -93,16 +136,22 @@ export default function FinanceDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Gestão Financeira
+            Gestão Financeira {isPJ && 'Corporativa'}
           </h1>
           <p className="text-muted-foreground">
             Painel financeiro para{' '}
             {user.role === 'executor' ? 'Recebimentos' : 'Pagamentos'}.
           </p>
         </div>
-        <Button onClick={handleExport} className="w-full md:w-auto">
-          <Download className="mr-2 h-4 w-4" /> Exportar Relatório Mensal
-        </Button>
+        <div className="flex gap-2">
+          {isPJ && (
+            <Button variant="outline" asChild>
+              <Link to="/finance/accounting">
+                <Download className="mr-2 h-4 w-4" /> Relatórios Contábeis
+              </Link>
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -161,118 +210,304 @@ export default function FinanceDashboard() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Fluxo Financeiro</CardTitle>
-            <CardDescription>Histórico dos últimos 6 meses.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[300px]">
-              <ChartContainer config={chartConfig} className="w-full h-full">
-                <BarChart data={monthlyData}>
-                  <XAxis
-                    dataKey="month"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => `R$${value}`}
-                  />
-                  <Tooltip content={<ChartTooltipContent />} />
-                  <Bar
-                    dataKey="value"
-                    fill="var(--color-value)"
-                    radius={[4, 4, 0, 0]}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </div>
-          </CardContent>
-        </Card>
+      <Tabs defaultValue="overview" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          {isPJ && (
+            <TabsTrigger value="cashflow">
+              Fluxo de Caixa (Advanced)
+            </TabsTrigger>
+          )}
+          <TabsTrigger value="scheduled">Agendamentos</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Transações Recentes</CardTitle>
-            <CardDescription>
-              Extrato completo de movimentações.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Descrição</TableHead>
-                  <TableHead>Valor</TableHead>
-                  <TableHead>Status</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {transactions.length > 0 ? (
-                  transactions.map((tx) => (
+        <TabsContent value="overview" className="space-y-4">
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Fluxo Financeiro Simples</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-[300px]">
+                  <ChartContainer
+                    config={chartConfig}
+                    className="w-full h-full"
+                  >
+                    <BarChart data={cashFlowData.slice(0, 6)}>
+                      <XAxis
+                        dataKey="month"
+                        stroke="#888888"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                      />
+                      <YAxis
+                        stroke="#888888"
+                        fontSize={12}
+                        tickLine={false}
+                        axisLine={false}
+                        tickFormatter={(value) => `R$${value}`}
+                      />
+                      <Tooltip content={<ChartTooltipContent />} />
+                      <Bar
+                        dataKey={user.role === 'executor' ? 'entrada' : 'saida'}
+                        fill="var(--color-entrada)"
+                        radius={[4, 4, 0, 0]}
+                      />
+                    </BarChart>
+                  </ChartContainer>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Transações Recentes</CardTitle>
+                <CardDescription>
+                  Extrato completo de movimentações.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {transactions.length > 0 ? (
+                      transactions.slice(0, 5).map((tx) => (
+                        <TableRow key={tx.id}>
+                          <TableCell>
+                            {format(tx.date, 'dd/MM/yy', { locale: ptBR })}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            {tx.jobTitle}
+                          </TableCell>
+                          <TableCell>R$ {tx.amount.toFixed(2)}</TableCell>
+                          <TableCell>
+                            {tx.status === 'completed' && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-emerald-100 text-emerald-800"
+                              >
+                                Pago
+                              </Badge>
+                            )}
+                            {tx.status === 'pending' && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-yellow-100 text-yellow-800"
+                              >
+                                Pendente
+                              </Badge>
+                            )}
+                            {tx.status === 'escrow' && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-blue-100 text-blue-800"
+                              >
+                                Escrow
+                              </Badge>
+                            )}
+                            {tx.status === 'scheduled' && (
+                              <Badge
+                                variant="secondary"
+                                className="bg-purple-100 text-purple-800"
+                              >
+                                Agendado
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ) : (
+                      <TableRow>
+                        <TableCell
+                          colSpan={4}
+                          className="text-center text-muted-foreground py-8"
+                        >
+                          Nenhuma transação encontrada.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="cashflow" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Fluxo de Caixa Projetado</CardTitle>
+              <CardDescription>
+                Comparativo de Entradas vs Saídas com projeção futura.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[400px]">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <AreaChart data={cashFlowData}>
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      dataKey="month"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => `R$${value}`}
+                    />
+                    <Tooltip
+                      content={<ChartTooltipContent indicator="dot" />}
+                    />
+                    <Area
+                      dataKey="saida"
+                      type="natural"
+                      fill="var(--color-saida)"
+                      fillOpacity={0.4}
+                      stroke="var(--color-saida)"
+                      stackId="a"
+                    />
+                    <Area
+                      dataKey="entrada"
+                      type="natural"
+                      fill="var(--color-entrada)"
+                      fillOpacity={0.4}
+                      stroke="var(--color-entrada)"
+                      stackId="a"
+                    />
+                  </AreaChart>
+                </ChartContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="scheduled" className="space-y-4">
+          <div className="flex justify-end">
+            <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
+              <DialogTrigger asChild>
+                <Button>
+                  <Plus className="mr-2 h-4 w-4" /> Agendar Pagamento
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Novo Agendamento</DialogTitle>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Descrição</Label>
+                    <Input
+                      value={scheduleData.title}
+                      onChange={(e) =>
+                        setScheduleData({
+                          ...scheduleData,
+                          title: e.target.value,
+                        })
+                      }
+                      placeholder="Ex: Pagamento Fornecedor Aço"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Valor (R$)</Label>
+                    <Input
+                      value={scheduleData.amount}
+                      onChange={(e) =>
+                        setScheduleData({
+                          ...scheduleData,
+                          amount: e.target.value,
+                        })
+                      }
+                      type="number"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Data</Label>
+                    <Input
+                      value={scheduleData.date}
+                      onChange={(e) =>
+                        setScheduleData({
+                          ...scheduleData,
+                          date: e.target.value,
+                        })
+                      }
+                      type="date"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button onClick={handleSchedule}>
+                    Confirmar Agendamento
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Pagamentos Futuros</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data Programada</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Beneficiário</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {scheduled.map((tx) => (
                     <TableRow key={tx.id}>
-                      <TableCell>
-                        {format(tx.date, 'dd/MM/yy', { locale: ptBR })}
+                      <TableCell className="font-medium text-purple-700">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          {tx.scheduledDate
+                            ? format(tx.scheduledDate, 'dd/MM/yyyy')
+                            : '-'}
+                        </div>
                       </TableCell>
-                      <TableCell className="font-medium">
-                        {tx.jobTitle}
-                      </TableCell>
+                      <TableCell>{tx.jobTitle}</TableCell>
+                      <TableCell>{tx.receiverName}</TableCell>
                       <TableCell>R$ {tx.amount.toFixed(2)}</TableCell>
                       <TableCell>
-                        {tx.status === 'completed' && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-emerald-100 text-emerald-800"
-                          >
-                            Pago
-                          </Badge>
-                        )}
-                        {tx.status === 'pending' && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-yellow-100 text-yellow-800"
-                          >
-                            Pendente
-                          </Badge>
-                        )}
-                        {tx.status === 'escrow' && (
-                          <Badge
-                            variant="secondary"
-                            className="bg-blue-100 text-blue-800"
-                          >
-                            Escrow
-                          </Badge>
-                        )}
+                        <Badge
+                          variant="outline"
+                          className="border-purple-200 bg-purple-50 text-purple-700"
+                        >
+                          Agendado
+                        </Badge>
                       </TableCell>
                     </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={4}
-                      className="text-center text-muted-foreground py-8"
-                    >
-                      Nenhuma transação encontrada.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-            <div className="mt-4 flex justify-end">
-              <Button variant="ghost" size="sm" className="gap-1">
-                Ver extrato completo <ArrowUpRight className="h-4 w-4" />
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+                  ))}
+                  {scheduled.length === 0 && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={5}
+                        className="text-center py-8 text-muted-foreground"
+                      >
+                        Nenhum pagamento agendado.
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

@@ -29,12 +29,14 @@ import CreditsStore from '@/pages/billing/CreditsStore'
 import LoyaltyProgram from '@/pages/loyalty/LoyaltyProgram'
 import TestingHub from '@/pages/testing/TestingHub'
 import FinanceDashboard from '@/pages/finance/FinanceDashboard'
+import AccountingExport from '@/pages/finance/AccountingExport'
 import ManageCategories from '@/pages/admin/ManageCategories'
 import ManageAds from '@/pages/admin/ManageAds'
 import ConstructionDashboard from '@/pages/construction/ConstructionDashboard'
 import ProjectDetail from '@/pages/construction/ProjectDetail'
 import ProjectList from '@/pages/construction/ProjectList'
 import MaterialsMarketplace from '@/pages/construction/MaterialsMarketplace'
+import EquipmentManager from '@/pages/construction/EquipmentManager'
 import TrainingCenter from '@/pages/training/TrainingCenter'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
@@ -96,6 +98,7 @@ const App = () => {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
+
               {/* Admin Routes */}
               <Route
                 path="/admin/categories"
@@ -113,14 +116,17 @@ const App = () => {
                   </AdminRoute>
                 }
               />
+
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
+
               {/* Marketplace Routes */}
               <Route path="/post-job" element={<PostJob />} />
               <Route path="/find-jobs" element={<FindJobs />} />
               <Route path="/my-jobs" element={<MyJobs />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/disputes/new/:id" element={<Dispute />} />
+
               {/* Construction Management Routes */}
               <Route
                 path="/construction/dashboard"
@@ -129,8 +135,7 @@ const App = () => {
               <Route
                 path="/construction/projects/new"
                 element={<ConstructionDashboard />}
-              />{' '}
-              {/* Mock redirect */}
+              />
               <Route path="/construction/projects" element={<ProjectList />} />
               <Route
                 path="/construction/projects/:id"
@@ -140,25 +145,38 @@ const App = () => {
                 path="/construction/materials"
                 element={<MaterialsMarketplace />}
               />
+              <Route
+                path="/construction/equipment"
+                element={<EquipmentManager />}
+              />
+
               {/* Training Routes */}
               <Route path="/training" element={<TrainingCenter />} />
+
               {/* Payment Routes */}
               <Route
                 path="/payment/checkout/:jobId/:bidId"
                 element={<PaymentCheckout />}
               />
               <Route path="/payment/success" element={<PaymentSuccess />} />
+
               {/* Finance Routes */}
               <Route path="/subscription" element={<SubscriptionPlans />} />
               <Route path="/credits" element={<CreditsStore />} />
               <Route path="/loyalty" element={<LoyaltyProgram />} />
               <Route path="/finance" element={<FinanceDashboard />} />
+              <Route
+                path="/finance/accounting"
+                element={<AccountingExport />}
+              />
+
               {/* Common Routes */}
               <Route path="/documents" element={<Documents />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/team" element={<Team />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/testing" element={<TestingHub />} />
+
               <Route
                 path="/messages"
                 element={<Navigate to="/dashboard" replace />}
