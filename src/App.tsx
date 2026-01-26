@@ -22,6 +22,8 @@ import FindJobs from '@/pages/jobs/FindJobs'
 import MyJobs from '@/pages/jobs/MyJobs'
 import JobDetail from '@/pages/jobs/JobDetail'
 import Dispute from '@/pages/jobs/Dispute'
+import SubscriptionPlans from '@/pages/subscription/SubscriptionPlans'
+import CreditsStore from '@/pages/billing/CreditsStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
@@ -82,6 +84,10 @@ const App = () => {
               <Route path="/my-jobs" element={<MyJobs />} />
               <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/disputes/new/:id" element={<Dispute />} />
+
+              {/* Finance Routes */}
+              <Route path="/subscription" element={<SubscriptionPlans />} />
+              <Route path="/credits" element={<CreditsStore />} />
 
               {/* Common Routes */}
               <Route path="/documents" element={<Documents />} />

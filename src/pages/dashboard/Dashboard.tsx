@@ -15,8 +15,20 @@ import {
   TrendingUp,
   Wallet,
   ShieldCheck,
+  Zap,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  LineChart,
+  Line,
+} from 'recharts'
+import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
@@ -36,7 +48,43 @@ export default function Dashboard() {
 
   const openJobs = isContractor
     ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'open').length
-    : jobs.filter((j) => j.status === 'open').length // Total available jobs for executor
+    : jobs.filter((j) => j.status === 'open').length
+
+  const completedJobs = isContractor
+    ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'completed')
+        .length
+    : jobs.filter(
+        (j) =>
+          j.bids.some((b) => b.executorId === user?.id) &&
+          j.status === 'completed',
+      ).length
+
+  // Mock Data for Charts
+  const earningsData = [
+    { month: 'Jan', value: 1200 },
+    { month: 'Fev', value: 1900 },
+    { month: 'Mar', value: 1500 },
+    { month: 'Abr', value: 2200 },
+    { month: 'Mai', value: 2800 },
+  ]
+
+  const marketInsightsData = [
+    { category: 'TI', avgPrice: 2500 },
+    { category: 'Design', avgPrice: 1200 },
+    { category: 'Reformas', avgPrice: 1800 },
+    { category: 'Mkt', avgPrice: 1500 },
+  ]
+
+  const chartConfig = {
+    value: {
+      label: isContractor ? 'Gastos (R$)' : 'Ganhos (R$)',
+      color: 'hsl(var(--primary))',
+    },
+    avgPrice: {
+      label: 'Preço Médio (R$)',
+      color: 'hsl(var(--chart-2))',
+    },
+  }
 
   return (
     <div className="space-y-6">
@@ -46,8 +94,10 @@ export default function Dashboard() {
             Olá, {user?.name}
           </h2>
           <p className="text-muted-foreground">
-            Bem-vindo ao seu painel de controle{' '}
-            {isContractor ? '(Contratante)' : '(Executor)'}.
+            Painel de {isContractor ? 'Contratante' : 'Executor'} |{' '}
+            <span className="font-semibold text-primary capitalize">
+              Plano {user?.subscriptionTier}
+            </span>
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -78,7 +128,7 @@ export default function Dashboard() {
               {user?.reputation.toFixed(1)}/5.0
             </div>
             <p className="text-xs text-muted-foreground">
-              Baseado em avaliações recentes
+              {completedJobs} trabalhos finalizados
             </p>
           </CardContent>
         </Card>
@@ -101,97 +151,109 @@ export default function Dashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {isContractor ? 'Jobs Abertos' : 'Oportunidades'}
-            </CardTitle>
-            <Search className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{openJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              {isContractor ? 'Aguardando propostas' : 'Disponíveis para lance'}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Saldo em Escrow
+              {isContractor ? 'Total Gasto' : 'Total Ganho'}
             </CardTitle>
             <Wallet className="h-4 w-4 text-indigo-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">R$ 0,00</div>
+            <div className="text-2xl font-bold">R$ 9.600,00</div>
             <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" /> Protegido pelo BIDWORK
+              <ShieldCheck className="h-3 w-3" /> Protegido pelo Escrow
             </p>
           </CardContent>
         </Card>
+
+        {user?.role === 'executor' && (
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Créditos</CardTitle>
+              <Zap className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{user.credits}</div>
+              <Button
+                variant="link"
+                className="h-auto p-0 text-xs text-primary"
+                asChild
+              >
+                <Link to="/credits">Adquirir mais</Link>
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>
-            <CardTitle>Atividade Recente</CardTitle>
+            <CardTitle>
+              {isContractor ? 'Histórico de Gastos' : 'Desempenho Financeiro'}
+            </CardTitle>
             <CardDescription>
-              Suas últimas interações na plataforma.
+              Evolução mensal dos últimos 5 meses.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center py-10 text-center text-muted-foreground">
-              <p>Nenhuma atividade recente encontrada.</p>
+          <CardContent className="pl-2">
+            <div className="h-[250px]">
+              <ChartContainer config={chartConfig} className="w-full h-full">
+                <LineChart data={earningsData}>
+                  <XAxis
+                    dataKey="month"
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="#888888"
+                    fontSize={12}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(value) => `R$${value}`}
+                  />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Line
+                    type="monotone"
+                    dataKey="value"
+                    strokeWidth={2}
+                    activeDot={{ r: 8 }}
+                    stroke="var(--color-value)"
+                  />
+                </LineChart>
+              </ChartContainer>
             </div>
           </CardContent>
         </Card>
 
         <Card className="col-span-3">
           <CardHeader>
-            <CardTitle>
-              Dicas de {isContractor ? 'Contratação' : 'Sucesso'}
-            </CardTitle>
-            <CardDescription>Melhore sua experiência.</CardDescription>
+            <CardTitle>Insights de Mercado</CardTitle>
+            <CardDescription>
+              Média de preços por categoria na sua região.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <ul className="space-y-4 text-sm">
-              {isContractor ? (
-                <>
-                  <li className="flex items-start gap-2">
-                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                      1
-                    </span>
-                    <span>
-                      Descreva seu projeto com detalhes para atrair melhores
-                      propostas.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                      2
-                    </span>
-                    <span>
-                      Verifique a reputação dos executores antes de aceitar.
-                    </span>
-                  </li>
-                </>
-              ) : (
-                <>
-                  <li className="flex items-start gap-2">
-                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                      1
-                    </span>
-                    <span>
-                      Complete seu perfil para aumentar sua credibilidade.
-                    </span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-bold shrink-0">
-                      2
-                    </span>
-                    <span>Envie propostas personalizadas e competitivas.</span>
-                  </li>
-                </>
-              )}
-            </ul>
+            <div className="h-[250px]">
+              <ChartContainer config={chartConfig} className="w-full h-full">
+                <BarChart data={marketInsightsData} layout="vertical">
+                  <XAxis type="number" hide />
+                  <YAxis
+                    dataKey="category"
+                    type="category"
+                    tickLine={false}
+                    axisLine={false}
+                    fontSize={12}
+                  />
+                  <Tooltip content={<ChartTooltipContent />} />
+                  <Bar
+                    dataKey="avgPrice"
+                    fill="var(--color-avgPrice)"
+                    radius={[0, 4, 4, 0]}
+                    barSize={20}
+                  />
+                </BarChart>
+              </ChartContainer>
+            </div>
           </CardContent>
         </Card>
       </div>

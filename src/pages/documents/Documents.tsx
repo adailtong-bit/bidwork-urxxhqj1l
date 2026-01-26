@@ -1,7 +1,6 @@
 import { useState, useRef, useCallback } from 'react'
 import { useDocumentStore, Document } from '@/stores/useDocumentStore'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -47,11 +46,9 @@ import {
   MoreVertical,
   Trash2,
   Eye,
-  X,
   FileSpreadsheet,
-  CheckCircle2,
-  AlertCircle,
 } from 'lucide-react'
+import { DocumentPreviewModal } from '@/components/DocumentPreviewModal'
 
 export default function Documents() {
   const { documents, addDocument, deleteDocument } = useDocumentStore()
@@ -59,6 +56,7 @@ export default function Documents() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadProgress, setUploadProgress] = useState(0)
   const [currentFile, setCurrentFile] = useState<File | null>(null)
+  const [previewDoc, setPreviewDoc] = useState<Document | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { toast } = useToast()
 
@@ -85,7 +83,6 @@ export default function Documents() {
     setCurrentFile(file)
     setUploadProgress(0)
 
-    // Simulate upload progress
     const interval = setInterval(() => {
       setUploadProgress((prev) => {
         if (prev >= 100) {
@@ -96,7 +93,6 @@ export default function Documents() {
       })
     }, 200)
 
-    // Wait for simulation to finish
     await new Promise((resolve) => setTimeout(resolve, 2500))
     clearInterval(interval)
 
@@ -122,11 +118,8 @@ export default function Documents() {
 
   const handleFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return
-
     const file = files[0]
-    // Simple validation
     if (file.size > 10 * 1024 * 1024) {
-      // 10MB limit
       toast({
         variant: 'destructive',
         title: 'Arquivo muito grande',
@@ -134,7 +127,6 @@ export default function Documents() {
       })
       return
     }
-
     simulateUpload(file)
   }
 
@@ -288,15 +280,7 @@ export default function Documents() {
                           </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              toast({
-                                title: 'Visualização',
-                                description:
-                                  'Esta funcionalidade é apenas uma demonstração.',
-                              })
-                            }
-                          >
+                          <DropdownMenuItem onClick={() => setPreviewDoc(doc)}>
                             <Eye className="mr-2 h-4 w-4" />
                             Visualizar
                           </DropdownMenuItem>
@@ -317,13 +301,7 @@ export default function Documents() {
                                   Você tem certeza?
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Esta ação não pode ser desfeita. Isso excluirá
-                                  permanentemente o arquivo
-                                  <span className="font-medium text-foreground">
-                                    {' '}
-                                    {doc.name}{' '}
-                                  </span>
-                                  dos servidores.
+                                  Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -354,6 +332,12 @@ export default function Documents() {
           </div>
         )}
       </div>
+
+      <DocumentPreviewModal
+        open={!!previewDoc}
+        onClose={() => setPreviewDoc(null)}
+        document={previewDoc}
+      />
     </div>
   )
 }

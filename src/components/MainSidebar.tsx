@@ -1,7 +1,5 @@
 import {
   LayoutDashboard,
-  FileText,
-  Users,
   Settings,
   LogOut,
   ChevronUp,
@@ -11,6 +9,8 @@ import {
   Search,
   MessageSquare,
   Briefcase,
+  Crown,
+  Coins,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -77,8 +77,22 @@ export function MainSidebar() {
     },
     {
       title: 'Minhas Candidaturas',
-      url: '/my-jobs', // Reusing route but filtered for executor logic
+      url: '/my-jobs',
       icon: Briefcase,
+    },
+  ]
+
+  // Finance & Premium Items
+  const financeItems = [
+    {
+      title: 'Planos & Assinatura',
+      url: '/subscription',
+      icon: Crown,
+    },
+    {
+      title: 'Créditos',
+      url: '/credits',
+      icon: Coins,
     },
   ]
 
@@ -98,7 +112,6 @@ export function MainSidebar() {
   const menuItems = [
     ...commonItems,
     ...(isContractor ? contractorItems : executorItems),
-    ...utilityItems,
   ]
 
   return (
@@ -133,6 +146,50 @@ export function MainSidebar() {
                       location.pathname === item.url ||
                       location.pathname.startsWith(`${item.url}/`)
                     }
+                    tooltip={item.title}
+                  >
+                    <Link to={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {financeItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.url}
+                    tooltip={item.title}
+                  >
+                    <Link to={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Utilitários</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {utilityItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.url}
                     tooltip={item.title}
                   >
                     <Link to={item.url}>

@@ -14,6 +14,12 @@ import {
   CardDescription,
   CardFooter,
 } from '@/components/ui/card'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/use-toast'
 import {
   MapPin,
@@ -27,8 +33,10 @@ import {
   CheckCircle,
   MessageSquare,
   Percent,
+  CalendarDays,
+  ExternalLink,
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, addHours } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function JobDetail() {
@@ -124,6 +132,25 @@ export default function JobDetail() {
     setChatMessage('')
   }
 
+  // Calendar Links Generation
+  const generateCalendarLink = (type: 'google' | 'outlook') => {
+    const title = encodeURIComponent(job.title)
+    const description = encodeURIComponent(job.description)
+    const location = encodeURIComponent(job.location)
+    // Mock duration: starts now, ends in 2 hours for calendar event
+    const startDate = job.maxExecutionDeadline || new Date()
+    const endDate = addHours(startDate, 2)
+
+    const formatDateGoogle = (date: Date) =>
+      date.toISOString().replace(/-|:|\.\d\d\d/g, '')
+
+    if (type === 'google') {
+      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${description}&location=${location}&dates=${formatDateGoogle(startDate)}/${formatDateGoogle(endDate)}`
+    } else {
+      return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&body=${description}&location=${location}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}`
+    }
+  }
+
   const canViewChat = isOwner || isExecutor
 
   return (
@@ -156,25 +183,51 @@ export default function JobDetail() {
             </span>
           </div>
         </div>
-        <div className="text-right">
-          <div className="text-sm text-muted-foreground">Orçamento / Valor</div>
-          <div className="text-2xl font-bold text-primary">
-            R$ {job.budget.toLocaleString('pt-BR')}
-          </div>
-          <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
-            {job.type === 'auction' ? (
-              <Gavel className="h-3 w-3" />
-            ) : (
-              <DollarSign className="h-3 w-3" />
-            )}
-            {job.type === 'auction' ? 'Leilão' : 'Preço Fixo'}
-          </div>
-          {job.type === 'auction' && job.auctionEndDate && (
-            <div className="text-xs font-semibold text-orange-600 flex items-center justify-end gap-1 mt-1">
-              <Clock className="h-3 w-3" /> Fim:{' '}
-              {format(job.auctionEndDate, 'dd/MM HH:mm')}
+        <div className="flex flex-col items-end gap-2">
+          <div className="text-right">
+            <div className="text-sm text-muted-foreground">
+              Orçamento / Valor
             </div>
-          )}
+            <div className="text-2xl font-bold text-primary">
+              R$ {job.budget.toLocaleString('pt-BR')}
+            </div>
+            <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
+              {job.type === 'auction' ? (
+                <Gavel className="h-3 w-3" />
+              ) : (
+                <DollarSign className="h-3 w-3" />
+              )}
+              {job.type === 'auction' ? 'Leilão' : 'Preço Fixo'}
+            </div>
+          </div>
+          {/* Calendar Sync Button */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="mt-2">
+                <CalendarDays className="mr-2 h-4 w-4" /> Agendar
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <a
+                  href={generateCalendarLink('google')}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" /> Google Calendar
+                </a>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <a
+                  href={generateCalendarLink('outlook')}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  <ExternalLink className="mr-2 h-4 w-4" /> Outlook
+                </a>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </div>
 

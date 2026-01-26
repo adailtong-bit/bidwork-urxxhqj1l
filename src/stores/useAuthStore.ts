@@ -26,6 +26,10 @@ export interface User {
     type: 'contractor_to_executor' | 'executor_to_contractor'
   }
   isPremium: boolean // For visibility hierarchy
+  subscriptionTier: 'free' | 'pro' | 'business'
+  credits: number
+  isVerified: boolean
+  kycStatus: 'none' | 'pending' | 'verified' | 'rejected'
 }
 
 export interface RegisterData {
@@ -56,6 +60,9 @@ interface AuthState {
   updateSettings: (settings: Partial<User>) => void
   clearPendingEvaluation: () => void
   setPendingEvaluation: (evaluation: User['pendingEvaluation']) => void
+  buyCredits: (amount: number) => void
+  upgradeSubscription: (tier: 'pro' | 'business') => void
+  submitKYC: (file: File) => Promise<void>
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -98,6 +105,10 @@ export const useAuthStore = create<AuthState>((set) => ({
                 : 'contractor_to_executor',
             }
           : undefined,
+        subscriptionTier: isPremium ? 'pro' : 'free',
+        credits: 50,
+        isVerified: isExecutor, // Mock verification
+        kycStatus: isExecutor ? 'verified' : 'none',
       },
     })
   },
@@ -122,6 +133,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         serviceRadius: 50,
         location: 'SP',
         isPremium: false,
+        subscriptionTier: 'free',
+        credits: 0,
+        isVerified: false,
+        kycStatus: 'none',
       },
     })
   },
@@ -146,4 +161,28 @@ export const useAuthStore = create<AuthState>((set) => ({
         ? { ...state.user, pendingEvaluation: evaluation }
         : null,
     })),
+  buyCredits: (amount) =>
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, credits: (state.user.credits || 0) + amount }
+        : null,
+    })),
+  upgradeSubscription: (tier) =>
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, subscriptionTier: tier, isPremium: true }
+        : null,
+    })),
+  submitKYC: async (file) => {
+    set((state) => ({
+      user: state.user ? { ...state.user, kycStatus: 'pending' } : null,
+    }))
+    // Mock processing delay
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    set((state) => ({
+      user: state.user
+        ? { ...state.user, kycStatus: 'verified', isVerified: true }
+        : null,
+    }))
+  },
 }))
