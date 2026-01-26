@@ -24,6 +24,8 @@ import JobDetail from '@/pages/jobs/JobDetail'
 import Dispute from '@/pages/jobs/Dispute'
 import SubscriptionPlans from '@/pages/subscription/SubscriptionPlans'
 import CreditsStore from '@/pages/billing/CreditsStore'
+import LoyaltyProgram from '@/pages/loyalty/LoyaltyProgram'
+import TestingHub from '@/pages/testing/TestingHub'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
@@ -88,12 +90,15 @@ const App = () => {
               {/* Finance Routes */}
               <Route path="/subscription" element={<SubscriptionPlans />} />
               <Route path="/credits" element={<CreditsStore />} />
+              <Route path="/loyalty" element={<LoyaltyProgram />} />
 
               {/* Common Routes */}
               <Route path="/documents" element={<Documents />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/team" element={<Team />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/testing" element={<TestingHub />} />
+
               <Route
                 path="/messages"
                 element={<Navigate to="/dashboard" replace />}

@@ -20,13 +20,14 @@ export interface Job {
   type: 'fixed' | 'auction'
   status:
     | 'open'
-    | 'suspended' // Agreement reached, waiting execution/completion
+    | 'suspended'
     | 'in_progress'
     | 'completed'
     | 'dispute'
     | 'cancelled'
   category: string
-  location: string
+  location: string // e.g. "São Paulo, SP"
+  regionCode: string // e.g. "SP", "RJ"
   budget: number
   bids: Bid[]
   acceptedBidId?: string
@@ -34,12 +35,15 @@ export interface Job {
   publicationDate: Date
   auctionEndDate?: Date
   maxExecutionDeadline?: Date
-  premiumType: 'none' | 'region' | 'category' // Visibility Tier
+  premiumType: 'none' | 'region' | 'category'
+  smartMatchScore?: number // Mocked AI score
 }
 
 interface JobState {
   jobs: Job[]
-  addJob: (job: Omit<Job, 'id' | 'createdAt' | 'bids' | 'status'>) => void
+  addJob: (
+    job: Omit<Job, 'id' | 'createdAt' | 'bids' | 'status' | 'smartMatchScore'>,
+  ) => void
   addBid: (jobId: string, bid: Omit<Bid, 'id' | 'createdAt'>) => void
   acceptBid: (jobId: string, bidId: string) => void
   completeJob: (jobId: string) => void
@@ -49,68 +53,147 @@ interface JobState {
   hasActiveJob: (userId: string) => boolean
 }
 
+// Seed Data Configuration
+const baseDate = new Date()
+
+const createMockJob = (
+  id: string,
+  title: string,
+  type: 'fixed' | 'auction',
+  status: Job['status'],
+  region: string,
+  category: string,
+  budget: number,
+  offsetDays: number = 0,
+): Job => ({
+  id,
+  ownerId: `owner-${id}`,
+  ownerName: `Cliente ${region}`,
+  title,
+  description: `Descrição detalhada para o serviço de ${title} na região de ${region}. Necessário experiência e ferramentas próprias.`,
+  type,
+  status,
+  category,
+  location: `${region} Capital, ${region}`,
+  regionCode: region,
+  budget,
+  bids: [],
+  createdAt: new Date(baseDate.getTime() - offsetDays * 86400000),
+  publicationDate: new Date(baseDate.getTime() - offsetDays * 86400000),
+  auctionEndDate:
+    type === 'auction'
+      ? new Date(baseDate.getTime() + 86400000 * 5)
+      : undefined,
+  premiumType: Math.random() > 0.7 ? 'region' : 'none',
+  smartMatchScore: Math.floor(Math.random() * 30) + 70, // 70-100 score
+})
+
 const mockJobs: Job[] = [
-  {
-    id: '1',
-    ownerId: '1',
-    ownerName: 'Maria Contratante',
-    title: 'Desenvolvimento de Site Institucional',
-    description: 'Preciso de um site Wordpress para minha clínica.',
-    type: 'fixed',
-    status: 'open',
-    category: 'TI e Programação',
-    location: 'São Paulo, SP',
-    budget: 2500,
-    bids: [
-      {
-        id: 'b1',
-        jobId: '1',
-        executorId: '99',
-        executorName: 'Dev Expert',
-        amount: 2500,
-        description: 'Entrego em 10 dias.',
-        createdAt: new Date(),
-        executorReputation: 4.9,
-      },
-    ],
-    createdAt: new Date(),
-    publicationDate: new Date(),
-    maxExecutionDeadline: new Date(Date.now() + 86400000 * 30),
-    premiumType: 'category',
-  },
-  {
-    id: '2',
-    ownerId: '2',
-    ownerName: 'Empresa ABC Ltda',
-    title: 'Reforma de Escritório',
-    description: 'Pintura e reparos elétricos em sala comercial de 50m2.',
-    type: 'auction',
-    status: 'open',
-    category: 'Reformas',
-    location: 'Rio de Janeiro, RJ',
-    budget: 1500,
-    bids: [],
-    createdAt: new Date(Date.now() - 86400000),
-    publicationDate: new Date(Date.now() - 86400000),
-    auctionEndDate: new Date(Date.now() + 86400000 * 2),
-    premiumType: 'none',
-  },
-  {
-    id: '3',
-    ownerId: '3',
-    ownerName: 'Carlos Silva',
-    title: 'Instalação de Ar Condicionado',
-    description: 'Instalação de 2 unidades split.',
-    type: 'fixed',
-    status: 'open',
-    category: 'Reformas',
-    location: 'São Paulo, SP',
-    budget: 800,
-    bids: [],
-    createdAt: new Date(Date.now() - 100000000),
-    publicationDate: new Date(Date.now() - 100000000),
-    premiumType: 'region',
-  },
+  // 3 Active Auctions
+  createMockJob(
+    '1',
+    'Desenvolvimento App React Native',
+    'auction',
+    'open',
+    'SP',
+    'TI e Programação',
+    5000,
+    2,
+  ),
+  createMockJob(
+    '2',
+    'Reforma Completa Cozinha',
+    'auction',
+    'open',
+    'RJ',
+    'Reformas',
+    8500,
+    1,
+  ),
+  createMockJob(
+    '3',
+    'Marketing Digital Campanha Q4',
+    'auction',
+    'open',
+    'MG',
+    'Marketing',
+    3000,
+    3,
+  ),
+
+  // 2 Active Fixed
+  createMockJob(
+    '4',
+    'Instalação Elétrica Residencial',
+    'fixed',
+    'open',
+    'SP',
+    'Serviços Gerais',
+    450,
+    5,
+  ),
+  createMockJob(
+    '5',
+    'Design de Logo e Identidade',
+    'fixed',
+    'open',
+    'SC',
+    'Design',
+    1200,
+    4,
+  ),
+
+  // 5 Historical (Completed)
+  createMockJob(
+    '6',
+    'Consultoria Financeira PJ',
+    'fixed',
+    'completed',
+    'SP',
+    'Financeiro',
+    2000,
+    30,
+  ),
+  createMockJob(
+    '7',
+    'Limpeza Pós-Obra',
+    'auction',
+    'completed',
+    'RJ',
+    'Limpeza',
+    800,
+    45,
+  ),
+  createMockJob(
+    '8',
+    'Criação de Site E-commerce',
+    'auction',
+    'completed',
+    'MG',
+    'TI e Programação',
+    6000,
+    60,
+  ),
+  createMockJob(
+    '9',
+    'Manutenção Ar Condicionado',
+    'fixed',
+    'completed',
+    'RS',
+    'Serviços Gerais',
+    300,
+    20,
+  ),
+  createMockJob(
+    '10',
+    'Fotografia de Evento Corporativo',
+    'fixed',
+    'completed',
+    'BA',
+    'Design',
+    1500,
+    15,
+  ),
 ]
 
 export const useJobStore = create<JobState>((set, get) => ({
@@ -124,6 +207,8 @@ export const useJobStore = create<JobState>((set, get) => ({
           createdAt: new Date(),
           status: 'open',
           bids: [],
+          regionCode: jobData.location.split(' ').pop() || 'SP', // Simple mock extraction
+          smartMatchScore: 100, // New jobs get boost
         },
         ...state.jobs,
       ],
@@ -154,7 +239,7 @@ export const useJobStore = create<JobState>((set, get) => ({
         job.id === jobId
           ? {
               ...job,
-              status: 'suspended', // Hidden from public lists, waiting execution start
+              status: 'suspended',
               acceptedBidId: bidId,
             }
           : job,

@@ -13,6 +13,8 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -20,7 +22,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, MapPin, Gavel, Tag, Calendar, Filter, Zap } from 'lucide-react'
+import {
+  Search,
+  MapPin,
+  Gavel,
+  Tag,
+  Calendar,
+  Filter,
+  Zap,
+  Sparkles,
+} from 'lucide-react'
 import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { AdBanner } from '@/components/AdBanner'
@@ -32,9 +43,15 @@ export default function FindJobs() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [dateFilter, setDateFilter] = useState('all')
-  const [radiusFilter, setRadiusFilter] = useState([user?.serviceRadius || 50])
+  const [regionFilter, setRegionFilter] = useState('all')
+  const [isSmartSort, setIsSmartSort] = useState(false) // AI Toggle
 
   const availableJobs = jobs.filter((job) => job.status === 'open')
+
+  // Available regions for dropdown
+  const regions = Array.from(new Set(jobs.map((j) => j.regionCode))).filter(
+    Boolean,
+  )
 
   const filteredJobs = availableJobs
     .filter((job) => {
@@ -46,9 +63,8 @@ export default function FindJobs() {
       const matchesCategory =
         categoryFilter === 'all' || job.category === categoryFilter
       const matchesType = typeFilter === 'all' || job.type === typeFilter
-
-      // Mock geofencing check
-      const inRadius = radiusFilter[0] > 0
+      const matchesRegion =
+        regionFilter === 'all' || job.regionCode === regionFilter
 
       // Date Filter Logic
       let matchesDate = true
@@ -66,16 +82,19 @@ export default function FindJobs() {
         matchesSearch &&
         matchesCategory &&
         matchesType &&
-        inRadius &&
+        matchesRegion &&
         matchesDate
       )
     })
     .sort((a, b) => {
-      // Hierarchical Sorting:
-      // 1. Paid "Superior in Category" (premiumType === 'category')
-      // 2. Paid "Superior in Region" (premiumType === 'region')
-      // 3. Proximity-based (Free) (premiumType === 'none')
+      // AI Smart Sort Logic
+      if (isSmartSort) {
+        const scoreA = a.smartMatchScore || 0
+        const scoreB = b.smartMatchScore || 0
+        return scoreB - scoreA
+      }
 
+      // Default Logic
       const getScore = (type: string) => {
         if (type === 'category') return 3
         if (type === 'region') return 2
@@ -89,7 +108,6 @@ export default function FindJobs() {
         return scoreB - scoreA
       }
 
-      // If same tier, sort by date (newest first)
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     })
 
@@ -108,29 +126,50 @@ export default function FindJobs() {
       </div>
 
       <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg border">
-        <div className="flex-1 relative w-full">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por título, descrição ou cidade..."
-            className="pl-9 bg-background w-full"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+        <div className="flex flex-col md:flex-row gap-4 items-center">
+          <div className="flex-1 relative w-full">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por título, descrição ou cidade..."
+              className="pl-9 bg-background w-full"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          {/* Smart Sort Toggle */}
+          <div className="flex items-center space-x-2 bg-background p-2 rounded-md border shadow-sm">
+            <Switch
+              id="smart-mode"
+              checked={isSmartSort}
+              onCheckedChange={setIsSmartSort}
+            />
+            <Label
+              htmlFor="smart-mode"
+              className="flex items-center gap-1 cursor-pointer"
+            >
+              <Sparkles
+                className={`h-4 w-4 ${isSmartSort ? 'text-purple-500 fill-purple-100' : 'text-muted-foreground'}`}
+              />
+              Relevância IA
+            </Label>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="px-2">
-            <div className="flex justify-between text-xs mb-1.5 text-muted-foreground">
-              <span>Raio</span>
-              <span>{radiusFilter[0]} mi</span>
-            </div>
-            <Slider
-              value={radiusFilter}
-              onValueChange={setRadiusFilter}
-              max={100}
-              step={5}
-            />
-          </div>
+          <Select value={regionFilter} onValueChange={setRegionFilter}>
+            <SelectTrigger className="bg-background">
+              <SelectValue placeholder="Estado / Região" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Todo Brasil</SelectItem>
+              {regions.map((r) => (
+                <SelectItem key={r} value={r}>
+                  {r}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
           <Select value={categoryFilter} onValueChange={setCategoryFilter}>
             <SelectTrigger className="bg-background">
@@ -188,20 +227,17 @@ export default function FindJobs() {
                   <Badge variant="outline" className="text-xs">
                     {job.category}
                   </Badge>
-                  {job.premiumType === 'category' && (
+                  {isSmartSort && job.smartMatchScore && (
+                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">
+                      {job.smartMatchScore}% Match
+                    </Badge>
+                  )}
+                  {job.premiumType === 'category' && !isSmartSort && (
                     <Badge
                       variant="secondary"
                       className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
                     >
                       <Zap className="h-3 w-3 fill-current" /> Super Destaque
-                    </Badge>
-                  )}
-                  {job.premiumType === 'region' && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-blue-100 text-blue-700 hover:bg-blue-100 gap-1 text-[10px]"
-                    >
-                      <Zap className="h-3 w-3" /> Destaque Regional
                     </Badge>
                   )}
                 </div>

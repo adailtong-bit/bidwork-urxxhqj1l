@@ -11,6 +11,9 @@ import {
   Briefcase,
   Crown,
   Coins,
+  Trophy,
+  TestTube2,
+  Users,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -40,6 +43,7 @@ export function MainSidebar() {
   const location = useLocation()
   const { state } = useSidebar()
   const isContractor = user?.role === 'contractor'
+  const isPJ = user?.entityType === 'pj'
 
   // Common items
   const commonItems = [
@@ -94,6 +98,11 @@ export function MainSidebar() {
       url: '/credits',
       icon: Coins,
     },
+    {
+      title: 'Fidelidade',
+      url: '/loyalty',
+      icon: Trophy,
+    },
   ]
 
   const utilityItems = [
@@ -106,6 +115,29 @@ export function MainSidebar() {
       title: 'Configurações',
       url: '/settings',
       icon: Settings,
+    },
+  ]
+
+  if (isPJ) {
+    utilityItems.unshift({
+      title: 'Gestão de Equipe',
+      url: '/team',
+      icon: Users,
+    })
+  } else {
+    utilityItems.unshift({
+      title: 'Minha Equipe',
+      url: '/team',
+      icon: Users,
+    })
+  }
+
+  // Testing Hub Link (Always visible for now)
+  const devItems = [
+    {
+      title: 'Testing Hub',
+      url: '/testing',
+      icon: TestTube2,
     },
   ]
 
@@ -191,6 +223,29 @@ export function MainSidebar() {
                     asChild
                     isActive={location.pathname === item.url}
                     tooltip={item.title}
+                  >
+                    <Link to={item.url}>
+                      <item.icon />
+                      <span>{item.title}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>Desenvolvimento</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {devItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === item.url}
+                    tooltip={item.title}
+                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                   >
                     <Link to={item.url}>
                       <item.icon />

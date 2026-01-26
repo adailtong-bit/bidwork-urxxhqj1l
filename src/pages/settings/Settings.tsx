@@ -23,7 +23,9 @@ import {
   CheckCircle2,
   AlertCircle,
   Clock,
+  Trophy,
 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
@@ -122,6 +124,35 @@ export default function Settings() {
                 </div>
               </div>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Loyalty Program Summary */}
+        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-orange-100">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Trophy className="h-5 w-5" /> Programa de Fidelidade
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center justify-between">
+            <div>
+              <p className="text-3xl font-bold text-orange-900">
+                {user.loyaltyPoints}{' '}
+                <span className="text-sm font-normal text-orange-700">
+                  pontos
+                </span>
+              </p>
+              <p className="text-sm text-orange-700">
+                Continue usando a plataforma para ganhar recompensas.
+              </p>
+            </div>
+            <Button
+              asChild
+              variant="outline"
+              className="border-orange-200 text-orange-800 hover:bg-orange-100"
+            >
+              <Link to="/loyalty">Ver Extrato</Link>
+            </Button>
           </CardContent>
         </Card>
 
