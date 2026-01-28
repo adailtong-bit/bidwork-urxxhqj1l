@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/select'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface TeamMemberModalProps {
   open: boolean
@@ -32,8 +33,9 @@ export function TeamMemberModal({
   projectId,
   partnerId,
 }: TeamMemberModalProps) {
-  const { addPartnerTeamMember } = useProjectStore()
+  const { addPartnerTeamMember, getProject } = useProjectStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const [member, setMember] = useState({
     name: '',
@@ -43,17 +45,36 @@ export function TeamMemberModal({
     registrationId: '',
   })
 
+  const project = getProject(projectId)
+
   const handleSave = () => {
     if (!member.name || !member.role || !member.registrationId) {
       toast({
         variant: 'destructive',
-        title: 'Preencha os campos obrigatórios',
+        title: t('error'),
+        description: t('val.required'),
       })
       return
     }
 
+    // Duplicate Check
+    const partner = project?.partners.find((p) => p.id === partnerId)
+    if (partner) {
+      const exists = partner.team.some(
+        (m) => m.registrationId === member.registrationId,
+      )
+      if (exists) {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('team.error.duplicate'),
+        })
+        return
+      }
+    }
+
     addPartnerTeamMember(projectId, partnerId, member)
-    toast({ title: 'Membro adicionado à equipe' })
+    toast({ title: t('success'), description: t('team.added') })
     setMember({
       name: '',
       role: '' as any,
@@ -135,7 +156,7 @@ export function TeamMemberModal({
         </div>
 
         <DialogFooter>
-          <Button onClick={handleSave}>Salvar Registro</Button>
+          <Button onClick={handleSave}>{t('save')}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

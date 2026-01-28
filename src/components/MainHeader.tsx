@@ -1,7 +1,7 @@
-import { Bell, Search, CheckCircle2 } from 'lucide-react'
+import { Bell, Search, CheckCircle2, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar'
+import { SidebarTrigger } from '@/components/ui/sidebar'
 import { useLocation, Link } from 'react-router-dom'
 import {
   DropdownMenu,
@@ -13,25 +13,27 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export function MainHeader() {
   const location = useLocation()
   const { user } = useAuthStore()
   const { notifications, getUnreadCount, markAsRead } = useNotificationStore()
+  const { t, currentLanguage, setLanguage } = useLanguageStore()
 
   const unreadCount = user ? getUnreadCount(user.id) : 0
   const userNotifications = notifications.filter((n) => n.userId === user?.id)
 
   const getPageTitle = () => {
     const path = location.pathname
-    if (path.includes('/dashboard')) return 'Dashboard'
-    if (path.includes('/plans/new')) return 'Criar Novo Plano'
-    if (path.includes('/plans')) return 'Meus Planos'
+    if (path.includes('/dashboard')) return t('nav.dashboard')
+    if (path.includes('/plans/new')) return t('nav.plans')
+    if (path.includes('/plans')) return t('nav.plans')
     if (path.includes('/reports')) return 'Relatórios'
-    if (path.includes('/team')) return 'Equipe'
-    if (path.includes('/settings')) return 'Configurações'
-    if (path.includes('/finance')) return 'Minhas Finanças'
-    return 'BIDWORK'
+    if (path.includes('/team')) return t('nav.team')
+    if (path.includes('/settings')) return t('nav.settings')
+    if (path.includes('/finance')) return t('nav.finance')
+    return t('app.title')
   }
 
   return (
@@ -46,7 +48,7 @@ export function MainHeader() {
         </h1>
         {user?.isVerified && (
           <div className="hidden md:flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
-            <CheckCircle2 className="h-3 w-3" /> Verificado
+            <CheckCircle2 className="h-3 w-3" /> {t('header.verified')}
           </div>
         )}
       </div>
@@ -56,10 +58,31 @@ export function MainHeader() {
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
             type="search"
-            placeholder="Buscar..."
+            placeholder={t('search.placeholder')}
             className="w-full bg-background pl-8 md:w-[200px] lg:w-[300px]"
           />
         </div>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+              <Globe className="h-5 w-5" />
+              <span className="sr-only">Language</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setLanguage('pt')}>
+              <span className={currentLanguage === 'pt' ? 'font-bold' : ''}>
+                Português (BR)
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage('en')}>
+              <span className={currentLanguage === 'en' ? 'font-bold' : ''}>
+                English (US)
+              </span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -68,11 +91,11 @@ export function MainHeader() {
               {unreadCount > 0 && (
                 <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-destructive border-2 border-background" />
               )}
-              <span className="sr-only">Notificações</span>
+              <span className="sr-only">{t('header.notifications')}</span>
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-80">
-            <DropdownMenuLabel>Notificações</DropdownMenuLabel>
+            <DropdownMenuLabel>{t('header.notifications')}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             {userNotifications.length === 0 ? (
               <div className="p-4 text-sm text-center text-muted-foreground">

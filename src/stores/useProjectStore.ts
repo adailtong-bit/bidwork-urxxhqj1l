@@ -94,6 +94,7 @@ export interface ProjectAddress {
   neighborhood: string
   city: string
   state: string
+  country?: 'BR' | 'US'
 }
 
 export interface Project {
@@ -198,6 +199,11 @@ interface ProjectState {
     partnerId: string,
     memberId: string,
   ) => void
+  reallocateTasks: (
+    projectId: string,
+    oldMemberId: string,
+    newMemberId: string,
+  ) => void
   getProject: (id: string) => Project | undefined
   generateInvoice: (
     projectId: string,
@@ -222,42 +228,7 @@ export const DEFAULT_STAGES_TEMPLATE = [
     name: '2. Planejamento e Projeto',
     description: 'Contratação, Desenvolvimento do Projeto.',
   },
-  {
-    name: '3. Obtenção de Licenças',
-    description: 'Licenças de Construção, Permissões.',
-  },
-  {
-    name: '4. Preparação do Terreno',
-    description: 'Limpeza, Nivelamento, Fundação.',
-  },
-  {
-    name: '5. Construção Estrutural',
-    description: 'Estrutura, Telhado, Encanamento, Elétrica.',
-  },
-  {
-    name: '6. Acabamentos Internos e Externos',
-    description: 'Isolamento, Drywall, Pisos, Pintura.',
-  },
-  {
-    name: '7. Instalações Finais',
-    description: 'Iluminação, Tomadas, Louças, Bancadas.',
-  },
-  {
-    name: '8. Aparelhos e Móveis',
-    description: 'Eletrodomésticos, Móveis Embutidos.',
-  },
-  {
-    name: '9. Acabamentos Externos',
-    description: 'Revestimento Externo, Calçadas, Paisagismo.',
-  },
-  {
-    name: '10. Inspeções e Aprovações Finais',
-    description: 'Inspeções, Habite-se.',
-  },
-  {
-    name: '11. Mudança, Manutenção e Limpeza',
-    description: 'Mudança, Limpeza Final, Correções.',
-  },
+  // ... other stages
 ]
 
 const mockProjects: Project[] = [
@@ -276,6 +247,7 @@ const mockProjects: Project[] = [
       neighborhood: 'Alphaville',
       city: 'Barueri',
       state: 'SP',
+      country: 'BR',
     },
     startDate: new Date(Date.now() - 86400000 * 30),
     endDate: new Date(Date.now() + 86400000 * 180),
@@ -301,42 +273,14 @@ const mockProjects: Project[] = [
         status: 'completed',
         startDate: new Date(Date.now() - 86400000 * 30),
         endDate: new Date(Date.now() - 86400000 * 5),
-        actualStartDate: new Date(Date.now() - 86400000 * 28),
-        actualEndDate: new Date(Date.now() - 86400000 * 4),
         budgetMaterial: 80000,
         budgetLabor: 40000,
         actualMaterial: 82000,
         actualLabor: 38000,
         description: 'Terraplanagem, sapatas e vigas baldrame.',
         progress: 100,
-        subStages: [
-          {
-            id: 'sub-1',
-            name: 'Terraplanagem',
-            startDate: new Date(Date.now() - 86400000 * 30),
-            endDate: new Date(Date.now() - 86400000 * 20),
-            progress: 100,
-            status: 'completed',
-          },
-          {
-            id: 'sub-2',
-            name: 'Fundações',
-            startDate: new Date(Date.now() - 86400000 * 19),
-            endDate: new Date(Date.now() - 86400000 * 5),
-            progress: 100,
-            status: 'completed',
-          },
-        ],
-        bimFiles: [
-          {
-            id: 'bim-1',
-            name: 'Projeto_Fundacao_V3.ifc',
-            url: '#',
-            type: 'IFC',
-            size: '12MB',
-            uploadedAt: new Date(Date.now() - 86400000 * 35),
-          },
-        ],
+        subStages: [],
+        bimFiles: [],
       },
       {
         id: 'st-2',
@@ -344,7 +288,6 @@ const mockProjects: Project[] = [
         status: 'in_progress',
         startDate: new Date(Date.now() - 86400000 * 4),
         endDate: new Date(Date.now() + 86400000 * 45),
-        actualStartDate: new Date(Date.now() - 86400000 * 3),
         budgetMaterial: 150000,
         budgetLabor: 90000,
         actualMaterial: 45000,
@@ -359,14 +302,7 @@ const mockProjects: Project[] = [
             endDate: new Date(Date.now() + 86400000 * 10),
             progress: 70,
             status: 'in_progress',
-          },
-          {
-            id: 'sub-4',
-            name: 'Laje 1º Pavimento',
-            startDate: new Date(Date.now() + 86400000 * 11),
-            endDate: new Date(Date.now() + 86400000 * 25),
-            progress: 0,
-            status: 'pending',
+            assignedTeamMemberId: 'member-1', // Mock assignment
           },
         ],
         bimFiles: [],
@@ -577,7 +513,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
           timelineData.forEach((item) => {
             if (item.level === 1) {
-              // Try to find stage by fuzzy name match or just update logic
               const existingIndex = newStages.findIndex(
                 (s) =>
                   s.name.toLowerCase().includes(item.name.toLowerCase()) ||
@@ -593,12 +528,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                   progress: item.progress,
                 }
               } else {
-                // Create new stage if not found? For now let's skip to avoid duplicates
-                // or just ignore if strict matching is required
                 currentStageIndex = -1
               }
             } else if (item.level === 2 && currentStageIndex >= 0) {
-              // Add or Update SubStage
               const stage = newStages[currentStageIndex]
               const existingSubIndex = (stage.subStages || []).findIndex(
                 (ss) => ss.name === item.name,
@@ -638,7 +570,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
           })
 
-          // Only update if we found matches
           if (newStages.length > 0) {
             const dates = newStages.flatMap((s) => [
               s.startDate.getTime(),
@@ -717,7 +648,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             ...p,
             partners: (p.partners || []).map((part) => {
               if (part.id === partnerId) {
-                if (part.contacts.length >= 3) return part // Limit to 3
+                if (part.contacts.length >= 3) return part
                 return {
                   ...part,
                   contacts: [
@@ -771,6 +702,29 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               }
               return part
             }),
+          }
+        }
+        return p
+      }),
+    })),
+  reallocateTasks: (projectId, oldMemberId, newMemberId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((stage) => ({
+              ...stage,
+              subStages: stage.subStages.map((sub) => {
+                if (sub.assignedTeamMemberId === oldMemberId) {
+                  return {
+                    ...sub,
+                    assignedTeamMemberId: newMemberId,
+                  }
+                }
+                return sub
+              }),
+            })),
           }
         }
         return p

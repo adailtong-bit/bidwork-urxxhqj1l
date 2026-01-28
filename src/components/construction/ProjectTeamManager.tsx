@@ -25,14 +25,21 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useProjectStore, ProjectPartner } from '@/stores/useProjectStore'
+import { useProjectStore } from '@/stores/useProjectStore'
 import { useContractorStore } from '@/stores/useContractorStore'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import { Separator } from '@/components/ui/separator'
-import { Trash2, UserPlus, HardHat, Briefcase, Filter } from 'lucide-react'
+import {
+  Trash2,
+  UserPlus,
+  HardHat,
+  Briefcase,
+  Filter,
+  RefreshCw,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface ProjectTeamManagerProps {
   open: boolean
@@ -45,10 +52,15 @@ export function ProjectTeamManager({
   onClose,
   projectId,
 }: ProjectTeamManagerProps) {
-  const { getProject, addPartnerTeamMember, removePartnerTeamMember } =
-    useProjectStore()
+  const {
+    getProject,
+    addPartnerTeamMember,
+    removePartnerTeamMember,
+    reallocateTasks,
+  } = useProjectStore()
   const { contractors } = useContractorStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const project = getProject(projectId)
 
@@ -59,6 +71,15 @@ export function ProjectTeamManager({
   const [role, setRole] = useState<string>('')
   const [filterLinkedPj, setFilterLinkedPj] = useState(true)
 
+  // Removal/Reallocation State
+  const [isReallocateDialogOpen, setIsReallocateDialogOpen] = useState(false)
+  const [memberToRemove, setMemberToRemove] = useState<{
+    id: string
+    name: string
+    partnerId: string
+  } | null>(null)
+  const [substituteId, setSubstituteId] = useState<string>('')
+
   if (!project) return null
 
   const handleOpenAddDialog = (partnerId: string) => {
@@ -66,7 +87,6 @@ export function ProjectTeamManager({
     setRole('')
     setSelectedContractorId('')
     setIsAddDialogOpen(true)
-    // Default filter to true to help user find relevant contractors first
     setFilterLinkedPj(true)
   }
 
@@ -74,57 +94,110 @@ export function ProjectTeamManager({
     if (!selectedPartnerId || !selectedContractorId || !role) {
       toast({
         variant: 'destructive',
-        title: 'Dados Incompletos',
-        description: 'Selecione um contratado e defina sua função.',
+        title: t('error'),
+        description: t('val.required'),
       })
       return
     }
 
-    const contractor = contractors.find((c) => c.id === selectedContractorId)
-    if (!contractor) return
+    // Check for Duplicates
+    const partner = project.partners.find((p) => p.id === selectedPartnerId)
+    if (partner) {
+      const contractor = contractors.find((c) => c.id === selectedContractorId)
+      if (!contractor) return
 
-    addPartnerTeamMember(projectId, selectedPartnerId, {
-      name: contractor.name,
-      email: contractor.email,
-      phone: contractor.phone,
-      role: role as any,
-      registrationId: contractor.id,
-    })
+      const exists = partner.team.some(
+        (m) => m.registrationId === contractor.id,
+      )
+      if (exists) {
+        toast({
+          variant: 'destructive',
+          title: t('error'),
+          description: t('team.error.duplicate'),
+        })
+        return
+      }
 
-    toast({
-      title: 'Membro Adicionado',
-      description: `${contractor.name} foi adicionado à equipe.`,
-    })
-    setIsAddDialogOpen(false)
+      addPartnerTeamMember(projectId, selectedPartnerId, {
+        name: contractor.name,
+        email: contractor.email,
+        phone: contractor.phone,
+        role: role as any,
+        registrationId: contractor.id,
+      })
+
+      toast({
+        title: t('success'),
+        description: t('team.added'),
+      })
+      setIsAddDialogOpen(false)
+    }
   }
 
-  const handleRemoveMember = (
+  const checkPendingTasks = (memberId: string) => {
+    // Check if member has assigned tasks in any stage of this project
+    return project.stages.some((stage) =>
+      stage.subStages.some(
+        (sub) =>
+          sub.assignedTeamMemberId === memberId && sub.status !== 'completed',
+      ),
+    )
+  }
+
+  const handleRemoveClick = (
     partnerId: string,
     memberId: string,
     memberName: string,
   ) => {
-    removePartnerTeamMember(projectId, partnerId, memberId)
-    toast({
-      title: 'Membro Removido',
-      description: `${memberName} foi removido da equipe.`,
-    })
+    const hasPending = checkPendingTasks(memberId)
+    if (hasPending) {
+      setMemberToRemove({ id: memberId, name: memberName, partnerId })
+      setIsReallocateDialogOpen(true)
+    } else {
+      removePartnerTeamMember(projectId, partnerId, memberId)
+      toast({
+        title: t('success'),
+        description: t('team.removed'),
+      })
+    }
+  }
+
+  const handleConfirmReallocation = () => {
+    if (memberToRemove && substituteId) {
+      // Reallocate
+      reallocateTasks(projectId, memberToRemove.id, substituteId)
+      // Then Remove
+      removePartnerTeamMember(
+        projectId,
+        memberToRemove.partnerId,
+        memberToRemove.id,
+      )
+
+      toast({
+        title: t('success'),
+        description: t('team.reallocated'),
+      })
+      setIsReallocateDialogOpen(false)
+      setMemberToRemove(null)
+      setSubstituteId('')
+    }
   }
 
   // Filter contractors based on selection logic
   const filteredContractors = contractors.filter((c) => {
     if (filterLinkedPj && selectedPartnerId) {
-      // Find if this contractor is linked to the partner
-      // We assume linkedPjId in contractor matches partner ID
-      // However, partner ID in project is unique per project (generated).
-      // The mock data shows linkedPjId='partner-1' and Partner.id='partner-1' in mockProjects.
-      // In a real scenario, we would match 'Company ID', but for this exercise we match IDs.
-      // Let's assume the mock IDs match for the linked logic to work as per User Story acceptance criteria.
       return c.linkedPjId === selectedPartnerId
     }
     return true
   })
 
-  // Group members by partner for display
+  // Get available substitutes (team members of the same partner, excluding the one being removed)
+  const availableSubstitutes = memberToRemove
+    ? project.partners
+        .find((p) => p.id === memberToRemove.partnerId)
+        ?.team.filter((m) => m.id !== memberToRemove.id) || []
+    : []
+
   const partnersList = project.partners || []
 
   return (
@@ -133,19 +206,16 @@ export function ProjectTeamManager({
         <SheetContent className="w-[400px] sm:w-[540px] overflow-y-auto">
           <SheetHeader className="mb-6">
             <SheetTitle className="flex items-center gap-2">
-              <HardHat className="h-5 w-5" /> Gestão de Equipe Técnica
+              <HardHat className="h-5 w-5" /> {t('team.manager.title')}
             </SheetTitle>
-            <SheetDescription>
-              Gerencie os profissionais alocados para este projeto, organizados
-              por empresa parceira.
-            </SheetDescription>
+            <SheetDescription>{t('team.manager.title')}</SheetDescription>
           </SheetHeader>
 
           {partnersList.length === 0 ? (
             <div className="text-center py-10 border-2 border-dashed rounded-lg bg-muted/20">
               <Briefcase className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
-                Nenhuma empresa parceira vinculada ao projeto.
+                Nenhuma empresa parceira.
               </p>
             </div>
           ) : (
@@ -162,7 +232,7 @@ export function ProjectTeamManager({
                       onClick={() => handleOpenAddDialog(partner.id)}
                       className="h-8 text-xs"
                     >
-                      <UserPlus className="mr-2 h-3 w-3" /> Adicionar
+                      <UserPlus className="mr-2 h-3 w-3" /> {t('team.add')}
                     </Button>
                   </div>
 
@@ -201,7 +271,7 @@ export function ProjectTeamManager({
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive"
                             onClick={() =>
-                              handleRemoveMember(
+                              handleRemoveClick(
                                 partner.id,
                                 member.id,
                                 member.name,
@@ -230,10 +300,7 @@ export function ProjectTeamManager({
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adicionar Profissional</DialogTitle>
-            <DialogDescription>
-              Selecione um contratado da base de dados para integrar a equipe.
-            </DialogDescription>
+            <DialogTitle>{t('team.add')}</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 py-4">
@@ -257,7 +324,6 @@ export function ProjectTeamManager({
               <Select
                 onValueChange={(val) => {
                   setSelectedContractorId(val)
-                  // Auto-select role if available in contractor
                   const c = contractors.find((ct) => ct.id === val)
                   if (c && c.role) setRole(c.role)
                 }}
@@ -274,7 +340,7 @@ export function ProjectTeamManager({
                     ))
                   ) : (
                     <div className="p-2 text-xs text-center text-muted-foreground">
-                      Nenhum contratado encontrado com os filtros atuais.
+                      Nenhum contratado encontrado.
                     </div>
                   )}
                 </SelectContent>
@@ -282,7 +348,7 @@ export function ProjectTeamManager({
             </div>
 
             <div className="grid gap-2">
-              <Label>Função no Projeto</Label>
+              <Label>{t('team.role')}</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione a função..." />
@@ -300,9 +366,55 @@ export function ProjectTeamManager({
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              Cancelar
+              {t('cancel')}
             </Button>
-            <Button onClick={handleAddMember}>Adicionar à Equipe</Button>
+            <Button onClick={handleAddMember}>{t('confirm')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Reallocation Dialog */}
+      <Dialog
+        open={isReallocateDialogOpen}
+        onOpenChange={setIsReallocateDialogOpen}
+      >
+        <DialogContent className="border-l-4 border-l-yellow-500">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-yellow-700">
+              <RefreshCw className="h-5 w-5" /> {t('team.reallocate')}
+            </DialogTitle>
+            <DialogDescription>
+              {t('team.reallocate.desc')} ({memberToRemove?.name})
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Label>{t('team.substitute')}</Label>
+            <Select onValueChange={setSubstituteId} value={substituteId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableSubstitutes.map((sub) => (
+                  <SelectItem key={sub.id} value={sub.id}>
+                    {sub.name} - {sub.role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setIsReallocateDialogOpen(false)}
+            >
+              {t('cancel')}
+            </Button>
+            <Button
+              onClick={handleConfirmReallocation}
+              disabled={!substituteId}
+            >
+              {t('confirm')} & {t('team.remove')}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

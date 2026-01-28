@@ -7,6 +7,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
+import {
+  getCountryValidation,
+  commonValidation,
+  CountryCode,
+} from '@/lib/validation'
 import {
   Loader2,
   User,
@@ -15,6 +21,7 @@ import {
   UserCircle,
   MapPin,
   CreditCard,
+  Globe,
 } from 'lucide-react'
 import {
   Form,
@@ -35,69 +42,76 @@ import {
 } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-const registerSchema = z
-  .object({
-    name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    email: z.string().email('Email inválido'),
-    password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-    confirmPassword: z.string(),
-    role: z.enum(['contractor', 'executor']),
-    entityType: z.enum(['pf', 'pj']),
-    businessArea: z.string().optional(),
-    address: z.string().min(5, 'Endereço completo é obrigatório'),
-    // Executor specific fields
-    category: z.string().optional(),
-    bank: z.string().optional(),
-    agency: z.string().optional(),
-    account: z.string().optional(),
-    document: z.string().optional(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Senhas não conferem',
-    path: ['confirmPassword'],
-  })
-  .refine(
-    (data) => {
-      if (data.entityType === 'pj' && !data.businessArea) return false
-      return true
-    },
-    {
-      message: 'Área de atuação é obrigatória para PJ',
-      path: ['businessArea'],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.role === 'executor' && !data.category) return false
-      return true
-    },
-    {
-      message: 'Categoria profissional é obrigatória para Executores',
-      path: ['category'],
-    },
-  )
-  .refine(
-    (data) => {
-      if (data.role === 'executor') {
-        return !!data.bank && !!data.agency && !!data.account && !!data.document
-      }
-      return true
-    },
-    {
-      message: 'Dados bancários são obrigatórios para Executores',
-      path: ['bank'],
-    },
-  )
+// Dynamic schema generator
+const createRegisterSchema = (country: CountryCode) => {
+  const { phone, zip } = getCountryValidation(country)
 
-type RegisterForm = z.infer<typeof registerSchema>
+  return z
+    .object({
+      name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+      email: commonValidation.email,
+      password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+      confirmPassword: z.string(),
+      role: z.enum(['contractor', 'executor']),
+      entityType: z.enum(['pf', 'pj']),
+      country: z.enum(['BR', 'US']),
+      businessArea: z.string().optional(),
+      address: z.string().min(5, 'Endereço completo é obrigatório'),
+      zipCode: zip,
+      phone: phone,
+      // Executor specific fields
+      category: z.string().optional(),
+      bank: z.string().optional(),
+      agency: z.string().optional(),
+      account: z.string().optional(),
+      document: z.string().optional(),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: 'Senhas não conferem',
+      path: ['confirmPassword'],
+    })
+    .refine(
+      (data) => {
+        if (data.entityType === 'pj' && !data.businessArea) return false
+        return true
+      },
+      {
+        message: 'Área de atuação é obrigatória para PJ',
+        path: ['businessArea'],
+      },
+    )
+    .refine(
+      (data) => {
+        if (data.role === 'executor' && !data.category) return false
+        return true
+      },
+      {
+        message: 'Categoria profissional é obrigatória para Executores',
+        path: ['category'],
+      },
+    )
+}
+
+type RegisterForm = z.infer<ReturnType<typeof createRegisterSchema>>
 
 export default function Register() {
   const { register: registerUser, isLoading } = useAuthStore()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
+
+  // Default country
+  const [country, setCountry] = useState<CountryCode>('BR')
 
   const form = useForm<RegisterForm>({
-    resolver: zodResolver(registerSchema),
+    resolver: (values, context, options) => {
+      // Resolve schema based on current country state
+      return zodResolver(createRegisterSchema(country))(
+        values,
+        context,
+        options,
+      )
+    },
     defaultValues: {
       name: '',
       email: '',
@@ -105,7 +119,10 @@ export default function Register() {
       confirmPassword: '',
       role: 'contractor',
       entityType: 'pf',
+      country: 'BR',
       address: '',
+      zipCode: '',
+      phone: '',
       bank: '',
       agency: '',
       account: '',
@@ -116,17 +133,17 @@ export default function Register() {
   const role = form.watch('role')
   const entityType = form.watch('entityType')
 
+  // Update country state when form field changes to trigger re-validation logic
+  const handleCountryChange = (val: CountryCode) => {
+    setCountry(val)
+    form.setValue('country', val)
+    form.trigger(['phone', 'zipCode']) // Re-validate dependent fields
+  }
+
   async function onSubmit(data: RegisterForm) {
     try {
       await registerUser({
-        name: data.name,
-        email: data.email,
-        password: data.password,
-        role: data.role,
-        entityType: data.entityType,
-        businessArea: data.businessArea,
-        category: data.category,
-        address: data.address,
+        ...data,
         bankingDetails:
           data.role === 'executor'
             ? {
@@ -138,14 +155,14 @@ export default function Register() {
             : undefined,
       })
       toast({
-        title: 'Conta criada!',
+        title: t('success'),
         description: `Bem-vindo ao BIDWORK como ${data.role === 'contractor' ? 'Contratante' : 'Executor'}.`,
       })
       navigate('/dashboard')
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Erro no cadastro',
+        title: t('error'),
         description: 'Tente novamente mais tarde.',
       })
     }
@@ -155,11 +172,9 @@ export default function Register() {
     <div className="space-y-6 max-w-lg mx-auto w-full h-[calc(100vh-100px)] flex flex-col">
       <div className="space-y-2 text-center shrink-0">
         <h1 className="text-3xl font-bold tracking-tight">
-          Criar conta BIDWORK
+          {t('auth.register.title')}
         </h1>
-        <p className="text-muted-foreground">
-          Junte-se à nossa plataforma de serviços
-        </p>
+        <p className="text-muted-foreground">{t('auth.register.subtitle')}</p>
       </div>
 
       <ScrollArea className="flex-1 pr-4">
@@ -168,6 +183,33 @@ export default function Register() {
             onSubmit={form.handleSubmit(onSubmit)}
             className="space-y-4 pb-4"
           >
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>País / Country</FormLabel>
+                  <Select
+                    onValueChange={(val) =>
+                      handleCountryChange(val as CountryCode)
+                    }
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Country" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="BR">Brasil</SelectItem>
+                      <SelectItem value="US">United States</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
             <FormField
               control={form.control}
               name="role"
@@ -325,9 +367,6 @@ export default function Register() {
                         <SelectItem value="Limpeza">Limpeza</SelectItem>
                       </SelectContent>
                     </Select>
-                    <FormDescription>
-                      Esta será sua categoria principal de atuação.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -359,6 +398,61 @@ export default function Register() {
               />
               <FormField
                 control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email Corporativo ou Pessoal</FormLabel>
+                    <FormControl>
+                      <Input placeholder="seu@email.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="phone"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Telefone</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={
+                            country === 'BR'
+                              ? '(11) 99999-0000'
+                              : '(555) 555-0123'
+                          }
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {country === 'BR' ? 'CEP' : 'Zip Code'}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={country === 'BR' ? '00000-000' : '12345'}
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <FormField
+                control={form.control}
                 name="address"
                 render={({ field }) => (
                   <FormItem>
@@ -372,19 +466,6 @@ export default function Register() {
                           {...field}
                         />
                       </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email Corporativo ou Pessoal</FormLabel>
-                    <FormControl>
-                      <Input placeholder="seu@email.com" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -499,7 +580,7 @@ export default function Register() {
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Criar Conta e Acessar
+              {t('auth.register.title')}
             </Button>
           </form>
         </Form>
@@ -511,7 +592,7 @@ export default function Register() {
           to="/login"
           className="font-semibold text-primary hover:underline"
         >
-          Entrar
+          {t('auth.login')}
         </Link>
       </div>
     </div>

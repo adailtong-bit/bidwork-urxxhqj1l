@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 import {
   Building2,
   MapPin,
@@ -33,6 +34,7 @@ import { Badge } from '@/components/ui/badge'
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const [banking, setBanking] = useState(
     user?.bankingDetails || { bank: '', agency: '', account: '', document: '' },
@@ -46,7 +48,7 @@ export default function Settings() {
       serviceRadius: radius[0],
     })
     toast({
-      title: 'Configurações Salvas',
+      title: t('success'),
       description: 'Seu perfil foi atualizado com sucesso.',
     })
   }
@@ -65,7 +67,7 @@ export default function Settings() {
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: 'Erro no envio',
+        title: t('error'),
         description: 'Tente novamente.',
       })
     } finally {
@@ -79,9 +81,7 @@ export default function Settings() {
     <div className="space-y-6 max-w-4xl">
       <AdSection segment="profile" />
 
-      <h1 className="text-3xl font-bold tracking-tight">
-        Configurações da Conta
-      </h1>
+      <h1 className="text-3xl font-bold tracking-tight">{t('nav.settings')}</h1>
 
       <div className="grid gap-6">
         {/* Profile Info */}
@@ -99,7 +99,7 @@ export default function Settings() {
               </div>
               {user.isVerified && (
                 <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                  <CheckCircle2 className="h-4 w-4" /> Verificado
+                  <CheckCircle2 className="h-4 w-4" /> {t('header.verified')}
                 </div>
               )}
             </div>
@@ -399,7 +399,7 @@ export default function Settings() {
 
         <div className="flex justify-end">
           <Button size="lg" onClick={handleSave}>
-            Salvar Alterações
+            {t('save')}
           </Button>
         </div>
       </div>
