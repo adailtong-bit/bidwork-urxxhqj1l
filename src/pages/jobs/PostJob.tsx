@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -40,6 +40,8 @@ import {
   Upload,
   X,
   HardHat,
+  Image as ImageIcon,
+  Loader2,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -56,7 +58,16 @@ const jobSchema = z.object({
   description: z.string().min(20, 'Descreva melhor o serviço'),
   type: z.enum(['fixed', 'auction']),
   category: z.string().min(1, 'Selecione uma categoria'),
-  location: z.string().min(3, 'Localização é obrigatória'),
+  subCategory: z.string().min(1, 'Selecione uma sub-categoria'),
+  // Address Fields
+  zipCode: z.string().min(8, 'CEP inválido'),
+  street: z.string().min(3, 'Rua é obrigatória'),
+  number: z.string().min(1, 'Número é obrigatório'),
+  complement: z.string().optional(),
+  neighborhood: z.string().min(2, 'Bairro é obrigatório'),
+  city: z.string().min(2, 'Cidade é obrigatória'),
+  state: z.string().length(2, 'UF inválido'),
+  // Budget & Dates
   budget: z
     .string()
     .transform((val) => Number(val))
@@ -84,6 +95,8 @@ export default function PostJob() {
 
   const [photos, setPhotos] = useState<string[]>([])
   const [photoInput, setPhotoInput] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
@@ -95,7 +108,14 @@ export default function PostJob() {
       description: '',
       type: 'fixed',
       category: '',
-      location: user?.location || '',
+      subCategory: '',
+      zipCode: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: user?.location?.split(' - ')[0] || '',
+      state: user?.location?.split(' - ')[1] || '',
       budget: 0,
       publicationDate: new Date(),
       premiumType: 'none',
@@ -104,10 +124,15 @@ export default function PostJob() {
     },
   })
 
-  // Watch projectId to filter stages
+  // Watch fields
   const selectedProjectId = form.watch('projectId')
+  const selectedCategory = form.watch('category')
+
   const availableStages =
     projects.find((p) => p.id === selectedProjectId)?.stages || []
+
+  const currentCategory = categories.find((c) => c.name === selectedCategory)
+  const availableSubCategories = currentCategory?.subCategories || []
 
   // Strict check for previous jobs being finished/finalized
   if (user && hasActiveJob(user.id)) {
@@ -134,16 +159,30 @@ export default function PostJob() {
     )
   }
 
-  const handleAddPhoto = () => {
-    const url =
-      photoInput ||
-      `https://img.usecurling.com/p/300/200?q=service&r=${Math.random()}`
-    setPhotos([...photos, url])
+  const handleAddPhotoLink = () => {
+    if (!photoInput) return
+    setPhotos([...photos, photoInput])
     setPhotoInput('')
   }
 
   const handleRemovePhoto = (index: number) => {
     setPhotos(photos.filter((_, i) => i !== index))
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (!files || files.length === 0) return
+
+    setIsUploading(true)
+    // Simulate upload delay
+    setTimeout(() => {
+      const newPhotos = Array.from(files).map((file) =>
+        URL.createObjectURL(file),
+      )
+      setPhotos((prev) => [...prev, ...newPhotos])
+      setIsUploading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }, 1000)
   }
 
   const onSubmit = (data: JobForm) => {
@@ -156,13 +195,25 @@ export default function PostJob() {
       return
     }
 
+    const fullLocation = `${data.city} - ${data.state}`
+
     addJob({
       title: data.title,
       description: data.description,
       photos,
       type: data.type,
       category: data.category,
-      location: data.location,
+      subCategory: data.subCategory,
+      location: fullLocation,
+      address: {
+        zipCode: data.zipCode,
+        street: data.street,
+        number: data.number,
+        complement: data.complement,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+      },
       budget: data.budget,
       ownerId: user.id,
       ownerName: user.name,
@@ -172,10 +223,9 @@ export default function PostJob() {
       premiumType: data.premiumType,
       projectId: data.projectId,
       stageId: data.stageId,
+      regionCode: data.state,
     })
 
-    // If part of a project, update financials immediately for budget tracking (simplified)
-    // In a real app, this would happen when bid is accepted
     if (data.projectId && data.stageId && data.type === 'fixed') {
       updateStageActuals(data.projectId, data.stageId, 'labor', data.budget)
     }
@@ -192,11 +242,10 @@ export default function PostJob() {
     }
   }
 
-  // Is Construction Company?
-  const isConstrutora = user?.entityType === 'pj' // Simplified check
+  const isConstrutora = user?.entityType === 'pj'
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-3xl mx-auto space-y-6 pb-10">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">Publicar Novo Job</h1>
         <p className="text-muted-foreground">
@@ -205,7 +254,8 @@ export default function PostJob() {
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Construction/Project Context */}
           {isConstrutora && (
             <Card className="border-l-4 border-l-orange-500">
               <CardHeader>
@@ -271,6 +321,7 @@ export default function PostJob() {
             </Card>
           )}
 
+          {/* Basic Information */}
           <Card>
             <CardHeader>
               <CardTitle>Detalhes do Serviço</CardTitle>
@@ -307,53 +358,19 @@ export default function PostJob() {
                 )}
               />
 
-              <div className="space-y-2">
-                <FormLabel>Fotos do Local/Serviço (Opcional)</FormLabel>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="Cole uma URL de imagem ou clique para adicionar mock"
-                    value={photoInput}
-                    onChange={(e) => setPhotoInput(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddPhoto}
-                  >
-                    <Upload className="h-4 w-4 mr-2" /> Adicionar
-                  </Button>
-                </div>
-                {photos.length > 0 && (
-                  <div className="flex gap-2 mt-2 overflow-x-auto pb-2">
-                    {photos.map((photo, idx) => (
-                      <div key={idx} className="relative group shrink-0">
-                        <img
-                          src={photo}
-                          alt="Job preview"
-                          className="w-24 h-24 object-cover rounded-md border"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => handleRemovePhoto(idx)}
-                          className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Categorization */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <FormField
                   control={form.control}
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Categoria (Dinâmico)</FormLabel>
+                      <FormLabel>Categoria Principal</FormLabel>
                       <Select
-                        onValueChange={field.onChange}
+                        onValueChange={(val) => {
+                          field.onChange(val)
+                          form.setValue('subCategory', '') // Reset subcategory
+                        }}
                         defaultValue={field.value}
                       >
                         <FormControl>
@@ -373,33 +390,45 @@ export default function PostJob() {
                     </FormItem>
                   )}
                 />
+
                 <FormField
                   control={form.control}
-                  name="location"
+                  name="subCategory"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Localização</FormLabel>
-                      <FormControl>
-                        <div className="relative">
-                          <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            className="pl-9"
-                            placeholder="Cidade/Estado"
-                            {...field}
-                          />
-                        </div>
-                      </FormControl>
+                      <FormLabel>Sub-Categoria</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        value={field.value}
+                        disabled={
+                          !selectedCategory || !availableSubCategories.length
+                        }
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione o tipo específico" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {availableSubCategories.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.name}>
+                              {sub.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
 
+              {/* Deadline */}
               <FormField
                 control={form.control}
                 name="maxExecutionDeadline"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className="pt-2">
                     <FormLabel>Prazo Máximo de Execução</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
@@ -440,6 +469,198 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
+          {/* Images Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Fotos e Documentos</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <FormLabel>Upload de Imagens</FormLabel>
+                <div className="flex gap-4 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full md:w-auto"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                    )}
+                    Selecionar Arquivos
+                  </Button>
+                  <Input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileUpload}
+                  />
+                  <span className="text-xs text-muted-foreground hidden md:inline">
+                    JPG, PNG ou GIF. Max 5MB.
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <FormLabel>Ou adicione por Link</FormLabel>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://..."
+                    value={photoInput}
+                    onChange={(e) => setPhotoInput(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddPhotoLink}
+                  >
+                    <Upload className="h-4 w-4 mr-2" /> Adicionar Link
+                  </Button>
+                </div>
+              </div>
+
+              {photos.length > 0 && (
+                <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
+                  {photos.map((photo, idx) => (
+                    <div key={idx} className="relative group shrink-0">
+                      <img
+                        src={photo}
+                        alt="Job preview"
+                        className="w-32 h-32 object-cover rounded-md border shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Address Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Endereço do Job</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={form.control}
+                  name="zipCode"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>CEP</FormLabel>
+                      <FormControl>
+                        <Input placeholder="00000-000" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Ex: São Paulo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Estado (UF)</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="SP"
+                          maxLength={2}
+                          className="uppercase"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="md:col-span-3">
+                      <FormLabel>Logradouro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rua, Avenida, etc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bairro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Bairro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Complemento (Opcional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Apto, Bloco, etc." {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Budget and Type */}
           <Card>
             <CardHeader>
               <CardTitle>Modelo de Contratação e Valor</CardTitle>
@@ -573,6 +794,7 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
+          {/* Premium Options */}
           <Card>
             <CardHeader>
               <CardTitle>Visibilidade e Destaque</CardTitle>
@@ -645,7 +867,7 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-4">
+          <div className="flex justify-end gap-4 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t z-10">
             <Button
               variant="outline"
               type="button"
@@ -653,7 +875,7 @@ export default function PostJob() {
             >
               Cancelar
             </Button>
-            <Button type="submit" size="lg">
+            <Button type="submit" size="lg" disabled={!form.formState.isValid}>
               Publicar Job
             </Button>
           </div>

@@ -11,6 +11,16 @@ export interface Bid {
   executorReputation: number
 }
 
+export interface Address {
+  zipCode: string
+  street: string
+  number: string
+  complement?: string
+  neighborhood: string
+  city: string
+  state: string
+}
+
 export interface Job {
   id: string
   ownerId: string
@@ -29,7 +39,9 @@ export interface Job {
     | 'dispute'
     | 'cancelled'
   category: string
-  location: string
+  subCategory?: string
+  location: string // Simplified location for display (e.g. "City - State")
+  address?: Address // Detailed address
   regionCode: string
   budget: number
   bids: Bid[]
@@ -79,7 +91,16 @@ const createMockJob = (
   type,
   status,
   category,
+  subCategory: 'Geral',
   location: `${region} Capital, ${region}`,
+  address: {
+    zipCode: '01001-000',
+    street: 'Av. Mock',
+    number: '123',
+    neighborhood: 'Centro',
+    city: `${region} Capital`,
+    state: region,
+  },
   regionCode: region,
   budget,
   bids: [],
@@ -100,7 +121,7 @@ const mockJobs: Job[] = [
     'auction',
     'open',
     'SP',
-    'TI e Programação',
+    'Tecnologia',
     5000,
     [
       'https://img.usecurling.com/p/400/300?q=code',
@@ -161,7 +182,7 @@ export const useJobStore = create<JobState>((set, get) => ({
           createdAt: new Date(),
           status: 'open',
           bids: [],
-          regionCode: jobData.location.split(' ').pop() || 'SP',
+          regionCode: jobData.address?.state || 'SP',
           smartMatchScore: 100,
         },
         ...state.jobs,
