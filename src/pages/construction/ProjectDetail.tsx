@@ -3,7 +3,6 @@ import { useParams, Link } from 'react-router-dom'
 import { useProjectStore, Stage } from '@/stores/useProjectStore'
 import { useJobStore } from '@/stores/useJobStore'
 import { useMaterialStore } from '@/stores/useMaterialStore'
-import { useTrainingStore } from '@/stores/useTrainingStore'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -413,7 +412,8 @@ export default function ProjectDetail() {
                     <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-xs flex gap-2">
                       <Upload className="h-4 w-4 shrink-0" />
                       Os valores importados substituirão as estimativas atuais
-                      de todas as etapas correspondentes (Mapping: Etapa -> Material/Labor).
+                      de todas as etapas correspondentes (Mapping: Etapa &rarr;
+                      Material/Labor).
                     </div>
                   </div>
                   <DialogFooter>
