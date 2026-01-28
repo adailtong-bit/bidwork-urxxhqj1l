@@ -371,19 +371,17 @@ export function ProjectScheduleTable({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            {isPartnerView && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  setAssignData({
-                                    stageId: stage.id,
-                                    subStageId: sub.id,
-                                  })
-                                }
-                              >
-                                <UserPlus className="mr-2 h-4 w-4" /> Alocar
-                                Equipe
-                              </DropdownMenuItem>
-                            )}
+                            <DropdownMenuItem
+                              onClick={() =>
+                                setAssignData({
+                                  stageId: stage.id,
+                                  subStageId: sub.id,
+                                })
+                              }
+                            >
+                              <UserPlus className="mr-2 h-4 w-4" /> Alocar
+                              Equipe
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
                                 handleToggleStatus(stage.id, sub.id)
@@ -504,13 +502,14 @@ export function ProjectScheduleTable({
                 <SelectContent>
                   {teamMembersToSelect.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.name} ({member.role})
+                      {member.name} ({member.partnerName} - {member.role})
                     </SelectItem>
                   ))}
                   {teamMembersToSelect.length === 0 && (
-                    <SelectItem value="none" disabled>
-                      Nenhum membro disponível
-                    </SelectItem>
+                    <div className="p-2 text-xs text-center text-muted-foreground">
+                      Nenhum membro disponível. Adicione membros na Equipe
+                      Técnica.
+                    </div>
                   )}
                 </SelectContent>
               </Select>

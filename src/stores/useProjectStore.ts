@@ -193,6 +193,11 @@ interface ProjectState {
     partnerId: string,
     member: Omit<PartnerTeamMember, 'id'>,
   ) => void
+  removePartnerTeamMember: (
+    projectId: string,
+    partnerId: string,
+    memberId: string,
+  ) => void
   getProject: (id: string) => Project | undefined
   generateInvoice: (
     projectId: string,
@@ -742,6 +747,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                     ...(part.team || []),
                     { ...member, id: Math.random().toString(36).substr(2, 9) },
                   ],
+                }
+              }
+              return part
+            }),
+          }
+        }
+        return p
+      }),
+    })),
+  removePartnerTeamMember: (projectId, partnerId, memberId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            partners: (p.partners || []).map((part) => {
+              if (part.id === partnerId) {
+                return {
+                  ...part,
+                  team: (part.team || []).filter((m) => m.id !== memberId),
                 }
               }
               return part

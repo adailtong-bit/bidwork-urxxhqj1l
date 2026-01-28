@@ -22,6 +22,7 @@ import {
   Edit2,
   Phone,
   Users,
+  HardHat,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
@@ -33,6 +34,7 @@ import {
 } from '@/components/ui/dialog'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { PartnerEditModal } from '@/components/partner/PartnerEditModal'
+import { ProjectTeamManager } from '@/components/construction/ProjectTeamManager'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -47,6 +49,7 @@ export default function ProjectDetail() {
     null,
   )
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
+  const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false)
 
   if (!project)
     return <div className="p-8 text-center">Projeto não encontrado</div>
@@ -62,13 +65,13 @@ export default function ProjectDetail() {
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10">
       {/* Centered Header */}
-      <div className="flex flex-col items-center text-center gap-4 py-4">
+      <div className="flex flex-col items-center text-center gap-4 py-4 relative">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="icon"
             asChild
-            className="absolute left-4 md:static"
+            className="absolute left-0 top-4 md:top-auto md:static"
           >
             <Link to="/construction/dashboard">
               <ArrowLeft className="h-4 w-4" />
@@ -98,6 +101,15 @@ export default function ProjectDetail() {
             {format(project.endDate, 'dd/MM/yyyy')}
           </span>
         </div>
+
+        {/* Team Manager Button */}
+        <Button
+          className="absolute right-0 top-4 md:top-auto"
+          variant="outline"
+          onClick={() => setIsTeamManagerOpen(true)}
+        >
+          <HardHat className="mr-2 h-4 w-4" /> Equipe Técnica
+        </Button>
       </div>
 
       <Tabs defaultValue="stages" className="w-full flex flex-col items-center">
@@ -168,7 +180,6 @@ export default function ProjectDetail() {
                     Gestão de contratos e equipes alocadas.
                   </CardDescription>
                 </div>
-                {/* Note: Adding partners is done via "Registrar Parceiro" in Dashboard or specific flow */}
               </div>
             </CardHeader>
             <CardContent>
@@ -335,6 +346,13 @@ export default function ProjectDetail() {
           partner={editingPartner}
         />
       )}
+
+      {/* Team Manager Sheet */}
+      <ProjectTeamManager
+        open={isTeamManagerOpen}
+        onClose={() => setIsTeamManagerOpen(false)}
+        projectId={project.id}
+      />
     </div>
   )
 }
