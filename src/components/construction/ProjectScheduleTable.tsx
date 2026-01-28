@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, Fragment } from 'react'
 import { Stage, SubStage, useProjectStore } from '@/stores/useProjectStore'
 import {
   Table,
@@ -37,11 +37,12 @@ interface ProjectScheduleTableProps {
 
 export function ProjectScheduleTable({
   projectId,
-  stages,
+  stages = [],
 }: ProjectScheduleTableProps) {
   const { updateStage, updateSubStage, addSubStage } = useProjectStore()
+  // Ensure stages is an array before using map for initial state
   const [expandedStages, setExpandedStages] = useState<Set<string>>(
-    new Set(stages.map((s) => s.id)),
+    new Set((stages || []).map((s) => s.id)),
   )
   const [editingId, setEditingId] = useState<string | null>(null)
   const [newItem, setNewItem] = useState<{
@@ -116,6 +117,9 @@ export function ProjectScheduleTable({
     }
   }
 
+  // Defensive check for stages prop
+  const safeStages = Array.isArray(stages) ? stages : []
+
   return (
     <div className="rounded-md border">
       <Table>
@@ -130,10 +134,10 @@ export function ProjectScheduleTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {stages.map((stage) => (
-            <>
+          {safeStages.map((stage) => (
+            <Fragment key={stage.id}>
               {/* Stage Row */}
-              <TableRow key={stage.id} className="hover:bg-muted/30">
+              <TableRow className="hover:bg-muted/30">
                 <TableCell className="font-medium">
                   <div className="flex items-center gap-2">
                     <Button
@@ -157,7 +161,11 @@ export function ProjectScheduleTable({
                   <Input
                     type="date"
                     className="h-8 w-32"
-                    value={format(stage.startDate, 'yyyy-MM-dd')}
+                    value={
+                      stage.startDate
+                        ? format(stage.startDate, 'yyyy-MM-dd')
+                        : ''
+                    }
                     onChange={(e) => {
                       const date = e.target.valueAsDate
                       if (date)
@@ -169,7 +177,9 @@ export function ProjectScheduleTable({
                   <Input
                     type="date"
                     className="h-8 w-32"
-                    value={format(stage.endDate, 'yyyy-MM-dd')}
+                    value={
+                      stage.endDate ? format(stage.endDate, 'yyyy-MM-dd') : ''
+                    }
                     onChange={(e) => {
                       const date = e.target.valueAsDate
                       if (date)
@@ -260,7 +270,7 @@ export function ProjectScheduleTable({
               {/* SubStages */}
               {expandedStages.has(stage.id) && (
                 <>
-                  {stage.subStages.map((sub) => (
+                  {stage.subStages?.map((sub) => (
                     <TableRow
                       key={sub.id}
                       className="bg-muted/10 hover:bg-muted/20"
@@ -276,7 +286,11 @@ export function ProjectScheduleTable({
                         <Input
                           type="date"
                           className="h-7 w-32 text-xs"
-                          value={format(sub.startDate, 'yyyy-MM-dd')}
+                          value={
+                            sub.startDate
+                              ? format(sub.startDate, 'yyyy-MM-dd')
+                              : ''
+                          }
                           onChange={(e) => {
                             const date = e.target.valueAsDate
                             if (date)
@@ -290,7 +304,9 @@ export function ProjectScheduleTable({
                         <Input
                           type="date"
                           className="h-7 w-32 text-xs"
-                          value={format(sub.endDate, 'yyyy-MM-dd')}
+                          value={
+                            sub.endDate ? format(sub.endDate, 'yyyy-MM-dd') : ''
+                          }
                           onChange={(e) => {
                             const date = e.target.valueAsDate
                             if (date)
@@ -412,7 +428,7 @@ export function ProjectScheduleTable({
                   )}
                 </>
               )}
-            </>
+            </Fragment>
           ))}
         </TableBody>
       </Table>
