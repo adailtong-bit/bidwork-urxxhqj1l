@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -79,6 +79,28 @@ export default function Settings() {
   const { toast } = useToast()
   const { t } = useLanguageStore()
 
+  // Ensure hooks are always called in the same order
+  // Safe defaults for when user is null (to satisfy hook rules)
+  const entityType = user?.entityType || 'pf'
+  const country = user?.address?.country || 'BR'
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(createProfileSchema(entityType, country)),
+    defaultValues: {
+      name: user?.name || '',
+      companyName: user?.companyName || '',
+      phone: user?.phone || '',
+      taxId: user?.taxId || '',
+      street: user?.address?.street || '',
+      number: user?.address?.number || '',
+      complement: user?.address?.complement || '',
+      neighborhood: user?.address?.neighborhood || '',
+      city: user?.address?.city || '',
+      state: user?.address?.state || '',
+      zipCode: user?.address?.zipCode || '',
+    },
+  })
+
   const [isEditing, setIsEditing] = useState(false)
   const [banking, setBanking] = useState(
     user?.bankingDetails || { bank: '', agency: '', account: '', document: '' },
@@ -86,25 +108,36 @@ export default function Settings() {
   const [radius, setRadius] = useState([user?.serviceRadius || 10])
   const [isUploadingKYC, setIsUploadingKYC] = useState(false)
 
-  if (!user) return null
+  // Sync form and local state when user data becomes available or updates
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        name: user.name,
+        companyName: user.companyName || '',
+        phone: user.phone || '',
+        taxId: user.taxId || '',
+        street: user.address?.street || '',
+        number: user.address?.number || '',
+        complement: user.address?.complement || '',
+        neighborhood: user.address?.neighborhood || '',
+        city: user.address?.city || '',
+        state: user.address?.state || '',
+        zipCode: user.address?.zipCode || '',
+      })
 
-  const country = user.address?.country || 'BR'
-  const form = useForm<ProfileFormValues>({
-    resolver: zodResolver(createProfileSchema(user.entityType, country)),
-    defaultValues: {
-      name: user.name,
-      companyName: user.companyName || '',
-      phone: user.phone || '',
-      taxId: user.taxId || '',
-      street: user.address?.street || '',
-      number: user.address?.number || '',
-      complement: user.address?.complement || '',
-      neighborhood: user.address?.neighborhood || '',
-      city: user.address?.city || '',
-      state: user.address?.state || '',
-      zipCode: user.address?.zipCode || '',
-    },
-  })
+      setBanking(
+        user.bankingDetails || {
+          bank: '',
+          agency: '',
+          account: '',
+          document: '',
+        },
+      )
+      setRadius([user.serviceRadius || 10])
+    }
+  }, [user, form])
+
+  if (!user) return null
 
   const onSubmit = (data: ProfileFormValues) => {
     updateSettings({
