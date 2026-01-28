@@ -42,6 +42,7 @@ import {
   Trash2,
   DollarSign,
   UserPlus,
+  CheckCircle2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -89,7 +90,7 @@ export function ProjectScheduleTable({
     stageId: string
     subStageId: string
   } | null>(null)
-  const [deleteStep, setDeleteStep] = useState(0) // 0: none, 1: confirm, 2: verify
+  const [deleteStep, setDeleteStep] = useState(0)
 
   // Assignment State
   const [assignData, setAssignData] = useState<{
@@ -115,27 +116,30 @@ export function ProjectScheduleTable({
     value: number,
   ) => {
     const clamped = Math.max(0, Math.min(100, value))
+    const status =
+      clamped === 100 ? 'completed' : clamped > 0 ? 'in_progress' : 'pending'
+
     if (subStageId) {
       updateSubStage(projectId, stageId, subStageId, {
         progress: clamped,
-        status:
-          clamped === 100
-            ? 'completed'
-            : clamped > 0
-              ? 'in_progress'
-              : 'pending',
+        status,
       })
     } else {
-      updateStage(projectId, stageId, {
-        progress: clamped,
-        status:
-          clamped === 100
-            ? 'completed'
-            : clamped > 0
-              ? 'in_progress'
-              : 'pending',
-      })
+      updateStage(projectId, stageId, { progress: clamped, status })
     }
+  }
+
+  const handleToggleStatus = (stageId: string, subStageId: string) => {
+    const stage = stages.find((s) => s.id === stageId)
+    const sub = stage?.subStages.find((ss) => ss.id === subStageId)
+    if (!sub) return
+
+    const newStatus = sub.status === 'completed' ? 'in_progress' : 'completed'
+    const newProgress = newStatus === 'completed' ? 100 : 50
+    updateSubStage(projectId, stageId, subStageId, {
+      status: newStatus,
+      progress: newProgress,
+    })
   }
 
   const handleToggleDelay = (
@@ -195,8 +199,12 @@ export function ProjectScheduleTable({
 
   const safeStages = Array.isArray(stages) ? stages : []
 
-  // Flatten all team members for selection
-  const allTeamMembers = partners.flatMap((p) =>
+  // Filter team members based on view context
+  // If Partner View, show ONLY partner's team (assuming first partner for demo or passed via props)
+  // For demo, we use the first partner in list if isPartnerView is true, else all
+  const availablePartners =
+    isPartnerView && partners.length > 0 ? [partners[0]] : partners
+  const teamMembersToSelect = availablePartners.flatMap((p) =>
     p.team.map((m) => ({ ...m, partnerName: p.companyName })),
   )
 
@@ -285,53 +293,33 @@ export function ProjectScheduleTable({
                     >
                       <TableCell className="pl-12">
                         <div className="flex flex-col border-l-2 border-muted pl-3">
-                          <span className="truncate text-sm" title={sub.name}>
+                          <span
+                            className="truncate text-sm font-medium"
+                            title={sub.name}
+                          >
                             {sub.name}
                           </span>
                           {sub.assignedTeamMemberId && (
-                            <span className="text-[10px] text-primary flex items-center gap-1">
+                            <span className="text-[10px] text-primary flex items-center gap-1 mt-0.5">
                               <UserPlus className="h-3 w-3" />
-                              {allTeamMembers.find(
-                                (m) => m.id === sub.assignedTeamMemberId,
-                              )?.name || 'Assigned'}
-                              {sub.taskPrice && ` - R$ ${sub.taskPrice}`}
+                              {partners
+                                .flatMap((p) => p.team)
+                                .find((m) => m.id === sub.assignedTeamMemberId)
+                                ?.name || 'Membro da Equipe'}
+                              {sub.taskPrice && ` • R$ ${sub.taskPrice}`}
                             </span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="date"
-                          className="h-7 w-32 text-xs"
-                          value={
-                            sub.startDate
-                              ? format(sub.startDate, 'yyyy-MM-dd')
-                              : ''
-                          }
-                          onChange={(e) => {
-                            const date = e.target.valueAsDate
-                            if (date)
-                              updateSubStage(projectId, stage.id, sub.id, {
-                                startDate: date,
-                              })
-                          }}
-                        />
+                        <span className="text-xs text-muted-foreground">
+                          {format(sub.startDate, 'dd/MM/yy')}
+                        </span>
                       </TableCell>
                       <TableCell>
-                        <Input
-                          type="date"
-                          className="h-7 w-32 text-xs"
-                          value={
-                            sub.endDate ? format(sub.endDate, 'yyyy-MM-dd') : ''
-                          }
-                          onChange={(e) => {
-                            const date = e.target.valueAsDate
-                            if (date)
-                              updateSubStage(projectId, stage.id, sub.id, {
-                                endDate: date,
-                              })
-                          }}
-                        />
+                        <span className="text-xs text-muted-foreground">
+                          {format(sub.endDate, 'dd/MM/yy')}
+                        </span>
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -359,13 +347,14 @@ export function ProjectScheduleTable({
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-[10px] h-5',
+                            'text-[10px] h-5 cursor-pointer hover:opacity-80',
                             sub.status === 'delayed'
                               ? 'text-red-600 border-red-200 bg-red-50'
                               : sub.status === 'completed'
                                 ? 'text-green-600 border-green-200 bg-green-50'
                                 : '',
                           )}
+                          onClick={() => handleToggleStatus(stage.id, sub.id)}
                         >
                           {sub.status}
                         </Badge>
@@ -395,6 +384,16 @@ export function ProjectScheduleTable({
                                 Equipe
                               </DropdownMenuItem>
                             )}
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleToggleStatus(stage.id, sub.id)
+                              }
+                            >
+                              <CheckCircle2 className="mr-2 h-4 w-4" />
+                              {sub.status === 'completed'
+                                ? 'Reabrir'
+                                : 'Concluir'}
+                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
                                 handleToggleDelay(stage.id, sub.id, sub.status)
@@ -497,19 +496,29 @@ export function ProjectScheduleTable({
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Membro da Equipe</Label>
+              <Label>Membro da Equipe (Filtrado)</Label>
               <Select onValueChange={setSelectedMember}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione..." />
+                  <SelectValue placeholder="Selecione um profissional..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {allTeamMembers.map((member) => (
+                  {teamMembersToSelect.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
                       {member.name} ({member.role})
                     </SelectItem>
                   ))}
+                  {teamMembersToSelect.length === 0 && (
+                    <SelectItem value="none" disabled>
+                      Nenhum membro disponível
+                    </SelectItem>
+                  )}
                 </SelectContent>
               </Select>
+              {isPartnerView && (
+                <p className="text-xs text-muted-foreground">
+                  Apenas membros da sua equipe são exibidos.
+                </p>
+              )}
             </div>
             <div className="grid gap-2">
               <Label>Preço da Tarefa (R$)</Label>
@@ -520,6 +529,7 @@ export function ProjectScheduleTable({
                   type="number"
                   value={taskPrice}
                   onChange={(e) => setTaskPrice(e.target.value)}
+                  placeholder="0.00"
                 />
               </div>
             </div>

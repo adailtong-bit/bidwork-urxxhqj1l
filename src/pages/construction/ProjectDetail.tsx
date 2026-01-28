@@ -1,12 +1,6 @@
 import { useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import {
-  useProjectStore,
-  Stage,
-  ProjectPartner,
-} from '@/stores/useProjectStore'
-import { useJobStore } from '@/stores/useJobStore'
-import { useMaterialStore } from '@/stores/useMaterialStore'
+import { useProjectStore, ProjectPartner } from '@/stores/useProjectStore'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -16,11 +10,9 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Progress } from '@/components/ui/progress'
 import { Badge } from '@/components/ui/badge'
 import {
   ArrowLeft,
-  Plus,
   MapPin,
   Calendar as CalendarIcon,
   LayoutList,
@@ -29,7 +21,6 @@ import {
   Upload,
   Edit2,
   Phone,
-  Mail,
   Users,
 } from 'lucide-react'
 import { format } from 'date-fns'
@@ -37,330 +28,232 @@ import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { cn } from '@/lib/utils'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { PartnerEditModal } from '@/components/partner/PartnerEditModal'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
-  const { getProject, importExternalBudget, importTimeline, addPartner } =
-    useProjectStore()
+  const { getProject } = useProjectStore()
   const { toast } = useToast()
 
   const csvInputRef = useRef<HTMLInputElement>(null)
-
   const project = getProject(id!)
 
   const [isImportOpen, setIsImportOpen] = useState(false)
-  const [importType, setImportType] = useState<'budget' | 'timeline'>('budget')
-  const [isPartnerOpen, setIsPartnerOpen] = useState(false)
-
-  // Partner Edit State
   const [editingPartner, setEditingPartner] = useState<ProjectPartner | null>(
     null,
   )
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
 
-  // View Toggle State
-  const [viewMode, setViewMode] = useState<'cards' | 'table'>('table') // Default to table for advanced view
-
-  // Partner Form State
-  const [newPartner, setNewPartner] = useState({
-    companyName: '',
-    stageId: '',
-    agreedPrice: '',
-  })
-
-  if (!project) return <div>Projeto não encontrado</div>
-
-  const handleAddPartner = () => {
-    if (
-      !newPartner.companyName ||
-      !newPartner.stageId ||
-      !newPartner.agreedPrice
-    ) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Preencha todos os dados da empresa parceira.',
-      })
-      return
-    }
-
-    addPartner(project.id, {
-      companyName: newPartner.companyName,
-      stageId: newPartner.stageId,
-      agreedPrice: Number(newPartner.agreedPrice),
-      // Mock file URLs
-      contractUrl: '#',
-      licensesUrl: '#',
-      insuranceUrl: '#',
-    })
-    setIsPartnerOpen(false)
-    setNewPartner({ companyName: '', stageId: '', agreedPrice: '' })
-    toast({ title: 'Parceiro Registrado com Sucesso!' })
-  }
+  if (!project)
+    return <div className="p-8 text-center">Projeto não encontrado</div>
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Simplification of previous logic for brevity, focus on updated features
-    toast({ title: 'Simulação de Upload' })
+    toast({
+      title: 'Simulação de Upload',
+      description: 'Arquivo processado com sucesso.',
+    })
     setIsImportOpen(false)
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" asChild>
-          <Link to="/construction/dashboard">
-            <ArrowLeft className="h-4 w-4" />
-          </Link>
-        </Button>
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight flex items-center gap-2">
-            {project.name}
-            <Badge
-              variant={
-                project.status === 'in_progress' ? 'default' : 'secondary'
-              }
-            >
-              {project.status === 'in_progress'
-                ? 'Em Andamento'
-                : project.status}
-            </Badge>
-          </h1>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-muted-foreground mt-1">
-            <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" />
-              {project.address
-                ? `${project.address.city} - ${project.address.state}`
-                : project.location}
-            </span>
-            <span className="flex items-center gap-1">
-              <CalendarIcon className="h-3 w-3" />{' '}
-              {format(project.startDate, 'dd/MM/yyyy')} -{' '}
-              {format(project.endDate, 'dd/MM/yyyy')}
-            </span>
-          </div>
+    <div className="space-y-8 max-w-6xl mx-auto pb-10">
+      {/* Centered Header */}
+      <div className="flex flex-col items-center text-center gap-4 py-4">
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            asChild
+            className="absolute left-4 md:static"
+          >
+            <Link to="/construction/dashboard">
+              <ArrowLeft className="h-4 w-4" />
+            </Link>
+          </Button>
+          <Badge
+            variant={project.status === 'in_progress' ? 'default' : 'secondary'}
+          >
+            {project.status === 'in_progress' ? 'Em Andamento' : project.status}
+          </Badge>
+        </div>
+
+        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+          {project.name}
+        </h1>
+
+        <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
+          <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
+            <MapPin className="h-3 w-3" />
+            {project.address
+              ? `${project.address.city} - ${project.address.state}`
+              : project.location}
+          </span>
+          <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
+            <CalendarIcon className="h-3 w-3" />{' '}
+            {format(project.startDate, 'dd/MM/yyyy')} -{' '}
+            {format(project.endDate, 'dd/MM/yyyy')}
+          </span>
         </div>
       </div>
 
-      <Tabs defaultValue="stages" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="stages">Cronograma & Workflow</TabsTrigger>
-          <TabsTrigger value="partners">Parceiros & Equipes</TabsTrigger>
+      <Tabs defaultValue="stages" className="w-full flex flex-col items-center">
+        <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
+          <TabsTrigger value="stages">Cronograma</TabsTrigger>
+          <TabsTrigger value="partners">Parceiros</TabsTrigger>
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="stages" className="mt-6 space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-            <div className="flex items-center gap-2 bg-muted p-1 rounded-lg">
-              <Button
-                variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setViewMode('cards')}
-              >
-                <LayoutGrid className="mr-2 h-3 w-3" /> Cards
-              </Button>
-              <Button
-                variant={viewMode === 'table' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-7 text-xs"
-                onClick={() => setViewMode('table')}
-              >
-                <LayoutList className="mr-2 h-3 w-3" /> Tabela (WBS)
-              </Button>
+        <TabsContent
+          value="stages"
+          className="w-full space-y-6 animate-fade-in"
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4 bg-card p-4 rounded-lg border shadow-sm">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium mr-2">Visualização:</span>
+              <div className="flex bg-muted p-1 rounded-md">
+                <Button
+                  variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setViewMode('cards')}
+                >
+                  <LayoutGrid className="mr-2 h-3 w-3" /> Cards
+                </Button>
+                <Button
+                  variant={viewMode === 'table' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={() => setViewMode('table')}
+                >
+                  <LayoutList className="mr-2 h-3 w-3" /> Tabela
+                </Button>
+              </div>
             </div>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                setIsImportOpen(true)
-                setImportType('timeline')
-              }}
+              onClick={() => setIsImportOpen(true)}
             >
-              <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Cronograma
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar CSV
             </Button>
           </div>
 
-          {viewMode === 'table' ? (
-            <ProjectScheduleTable
-              projectId={project.id}
-              stages={project.stages}
-              partners={project.partners}
-            />
-          ) : (
-            <div className="text-center py-10 text-muted-foreground">
-              Visualização em Cards simplificada. Use a Tabela para gestão
-              avançada.
-            </div>
-          )}
+          <div className="bg-card rounded-xl border shadow-sm overflow-hidden">
+            {viewMode === 'table' ? (
+              <ProjectScheduleTable
+                projectId={project.id}
+                stages={project.stages}
+                partners={project.partners}
+              />
+            ) : (
+              <div className="p-10 text-center text-muted-foreground">
+                Visualização em Cards simplificada. Use a Tabela para gestão
+                detalhada.
+              </div>
+            )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="partners">
-          <Card>
-            <CardHeader className="flex flex-row justify-between items-center">
-              <div>
-                <CardTitle>Gestão de Parceiros</CardTitle>
-                <CardDescription>
-                  Gerencie empresas contratadas e suas equipes.
-                </CardDescription>
+        <TabsContent value="partners" className="w-full animate-fade-in">
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Empresas Parceiras</CardTitle>
+                  <CardDescription>
+                    Gestão de contratos e equipes alocadas.
+                  </CardDescription>
+                </div>
+                {/* Note: Adding partners is done via "Registrar Parceiro" in Dashboard or specific flow */}
               </div>
-              <Dialog open={isPartnerOpen} onOpenChange={setIsPartnerOpen}>
-                <DialogTrigger asChild>
-                  <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Registrar Parceiro
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Novo Contrato de Parceria</DialogTitle>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label>Nome da Empresa/Parceiro</Label>
-                      <Input
-                        value={newPartner.companyName}
-                        onChange={(e) =>
-                          setNewPartner({
-                            ...newPartner,
-                            companyName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Etapa Responsável</Label>
-                      <Select
-                        onValueChange={(val) =>
-                          setNewPartner({ ...newPartner, stageId: val })
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Selecione..." />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {project.stages.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {s.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Preço Combinado (R$)</Label>
-                      <Input
-                        type="number"
-                        value={newPartner.agreedPrice}
-                        onChange={(e) =>
-                          setNewPartner({
-                            ...newPartner,
-                            agreedPrice: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleAddPartner}>Salvar Registro</Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
             </CardHeader>
             <CardContent>
               {project.partners && project.partners.length > 0 ? (
-                <div className="grid gap-4">
+                <div className="grid gap-6">
                   {project.partners.map((partner) => (
                     <div
                       key={partner.id}
-                      className="border rounded-lg bg-card p-4"
+                      className="border rounded-xl bg-card p-6 shadow-sm hover:shadow-md transition-shadow"
                     >
-                      <div className="flex justify-between items-start mb-4">
+                      <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
                         <div>
-                          <h3 className="font-bold text-lg">
+                          <h3 className="font-bold text-xl text-primary">
                             {partner.companyName}
                           </h3>
-                          <p className="text-sm text-muted-foreground">
-                            Etapa:{' '}
-                            {
-                              project.stages.find(
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge variant="outline">
+                              Etapa:{' '}
+                              {project.stages.find(
                                 (s) => s.id === partner.stageId,
-                              )?.name
-                            }
-                          </p>
+                              )?.name || 'Geral'}
+                            </Badge>
+                            <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">
+                              Score: {partner.performanceScore}
+                            </Badge>
+                          </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Badge
-                            variant="outline"
-                            className="bg-yellow-50 text-yellow-700"
-                          >
-                            Score: {partner.performanceScore}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setEditingPartner(partner)}
-                          >
-                            <Edit2 className="h-4 w-4 mr-2" /> Editar
-                          </Button>
-                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setEditingPartner(partner)}
+                        >
+                          <Edit2 className="h-4 w-4 mr-2" /> Gerenciar
+                        </Button>
                       </div>
 
-                      <div className="grid md:grid-cols-2 gap-4 border-t pt-4">
+                      <div className="grid md:grid-cols-2 gap-8 border-t pt-6">
                         <div>
-                          <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
                             <Phone className="h-3 w-3" /> Contatos
                           </h4>
                           {partner.contacts.length > 0 ? (
-                            <ul className="text-sm space-y-1">
+                            <ul className="space-y-2">
                               {partner.contacts.map((c) => (
                                 <li
                                   key={c.id}
-                                  className="text-muted-foreground"
+                                  className="text-sm flex justify-between items-center bg-muted/30 p-2 rounded"
                                 >
-                                  {c.name} ({c.role}) - {c.phone}
+                                  <span className="font-medium">{c.name}</span>
+                                  <span className="text-muted-foreground text-xs">
+                                    {c.phone}
+                                  </span>
                                 </li>
                               ))}
                             </ul>
                           ) : (
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs text-muted-foreground italic">
                               Nenhum contato cadastrado.
                             </p>
                           )}
                         </div>
                         <div>
-                          <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
+                          <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
                             <Users className="h-3 w-3" /> Equipe Técnica
                           </h4>
                           {partner.team.length > 0 ? (
-                            <ul className="text-sm space-y-1">
+                            <ul className="space-y-2">
                               {partner.team.map((m) => (
                                 <li
                                   key={m.id}
-                                  className="text-muted-foreground"
+                                  className="text-sm flex justify-between items-center bg-muted/30 p-2 rounded"
                                 >
-                                  {m.name} - {m.role}
+                                  <span className="font-medium">{m.name}</span>
+                                  <Badge
+                                    variant="secondary"
+                                    className="text-[10px]"
+                                  >
+                                    {m.role}
+                                  </Badge>
                                 </li>
                               ))}
                             </ul>
                           ) : (
-                            <p className="text-xs text-muted-foreground">
-                              Nenhuma equipe cadastrada.
+                            <p className="text-xs text-muted-foreground italic">
+                              Nenhuma equipe alocada.
                             </p>
                           )}
                         </div>
@@ -369,18 +262,42 @@ export default function ProjectDetail() {
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhum parceiro registrado.
+                <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
+                  Nenhum parceiro registrado neste projeto.
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        <TabsContent value="financial">
-          <div className="text-center py-10">
-            Módulo Financeiro disponível via Dashboard Geral.
-          </div>
+        <TabsContent value="financial" className="w-full animate-fade-in">
+          <Card className="max-w-4xl mx-auto">
+            <CardHeader>
+              <CardTitle>Visão Financeira do Projeto</CardTitle>
+              <CardDescription>
+                Acompanhamento de custos e pagamentos.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="text-center py-12">
+              <div className="inline-flex items-center justify-center p-4 bg-blue-50 rounded-full mb-4">
+                <FileSpreadsheet className="h-8 w-8 text-blue-500" />
+              </div>
+              <h3 className="text-lg font-medium mb-2">
+                Módulo Financeiro Integrado
+              </h3>
+              <p className="text-muted-foreground max-w-md mx-auto">
+                Para detalhes completos de faturamento e fluxo de caixa, acesse
+                o
+                <Link
+                  to="/finance"
+                  className="text-primary hover:underline ml-1 font-medium"
+                >
+                  Dashboard Financeiro
+                </Link>
+                .
+              </p>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
 
@@ -391,11 +308,14 @@ export default function ProjectDetail() {
             <DialogTitle>Importar Dados</DialogTitle>
           </DialogHeader>
           <div
-            className="py-8 text-center cursor-pointer border-2 border-dashed rounded-lg"
+            className="py-12 text-center cursor-pointer border-2 border-dashed rounded-lg hover:bg-muted/50 transition-colors"
             onClick={() => csvInputRef.current?.click()}
           >
-            <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-            <p>Clique para selecionar arquivo .CSV</p>
+            <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
+            <p className="font-medium">Clique para selecionar arquivo .CSV</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Suporta Project ou Excel
+            </p>
             <input
               type="file"
               ref={csvInputRef}

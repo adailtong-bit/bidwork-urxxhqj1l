@@ -44,6 +44,8 @@ import Leaderboard from '@/pages/gamification/Leaderboard'
 import TrainingCenter from '@/pages/training/TrainingCenter'
 import NewProject from '@/pages/construction/NewProject'
 import PartnerDashboard from '@/pages/partner/PartnerDashboard'
+import Resources from '@/pages/construction/Resources'
+import TeamInvoicing from '@/pages/construction/TeamInvoicing'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
@@ -168,6 +170,12 @@ const App = () => {
               <Route
                 path="/construction/inventory"
                 element={<InventoryManager />}
+              />
+              {/* New Routes */}
+              <Route path="/construction/resources" element={<Resources />} />
+              <Route
+                path="/construction/invoicing"
+                element={<TeamInvoicing />}
               />
 
               {/* Training & Gamification Routes */}

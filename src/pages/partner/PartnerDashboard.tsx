@@ -1,5 +1,7 @@
+import { useState } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useProjectStore } from '@/stores/useProjectStore'
+import { useContractorStore } from '@/stores/useContractorStore'
 import {
   Card,
   CardContent,
@@ -10,44 +12,77 @@ import {
 import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { Progress } from '@/components/ui/progress'
 import {
-  Building2,
-  Users,
-  FileText,
-  CheckCircle,
-  Clock,
-  Star,
-  TrendingUp,
-} from 'lucide-react'
-import { Link } from 'react-router-dom'
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import { Building2, Users, FileText, Star, Plus, UserCheck } from 'lucide-react'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { TeamMemberModal } from '@/components/partner/TeamMemberModal'
-import { useState } from 'react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function PartnerDashboard() {
   const { user } = useAuthStore()
-  const { projects, generateInvoice, rateTeamMember } = useProjectStore()
+  const { projects, generateInvoice, addPartnerTeamMember } = useProjectStore()
+  const { contractors } = useContractorStore()
   const { toast } = useToast()
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false)
-  const [selectedPartnerId, setSelectedPartnerId] = useState<string | null>(
-    null,
-  )
-  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(
-    null,
-  )
+  const [isPoolModalOpen, setIsPoolModalOpen] = useState(false)
+  const [selectedContractorId, setSelectedContractorId] = useState('')
 
-  // Find assigned projects
-  // In a real app, we'd filter by user.id mapping to partner.id,
-  // here we'll assume the logged in partner corresponds to 'partner-1' for demo
+  // Assume current logged in partner is 'partner-1' for demo
+  const partnerId = 'partner-1'
+
   const partnerProjects = projects.filter((p) =>
-    p.partners.some((part) => part.id === 'partner-1'),
+    p.partners.some((part) => part.id === partnerId),
   )
   const activePartner = partnerProjects[0]?.partners.find(
-    (p) => p.id === 'partner-1',
+    (p) => p.id === partnerId,
   )
+
+  // Get available contractors from pool (not yet in team? logic depends on requirement)
+  // Story: "Select contractors and add them to their permanent team roster"
+  const availableContractors = contractors.filter(
+    (c) => c.status === 'available',
+  )
+
+  const handleAddFromPool = () => {
+    if (!selectedContractorId || !activePartner) return
+    const contractor = contractors.find((c) => c.id === selectedContractorId)
+
+    if (contractor && partnerProjects.length > 0) {
+      // Add to first project as example, or user should select project context
+      // User Story implies adding to "permanent team roster".
+      // The current data structure links team members to a specific project partner entry.
+      // We'll add to the first project for now to satisfy the "Project Activity Assignment" prerequisite.
+
+      const projectId = partnerProjects[0].id
+
+      addPartnerTeamMember(projectId, activePartner.id, {
+        name: contractor.name,
+        role: contractor.role as any,
+        email: contractor.email,
+        phone: contractor.phone,
+        registrationId: contractor.id, // Linking ID
+      })
+
+      toast({ title: 'Profissional adicionado à equipe' })
+      setIsPoolModalOpen(false)
+      setSelectedContractorId('')
+    }
+  }
 
   const handleGenerateInvoice = (
     projId: string,
@@ -57,7 +92,7 @@ export default function PartnerDashboard() {
     generateInvoice(projId, stageId, subId, 'partner_to_contractor')
     toast({
       title: 'Fatura Enviada',
-      description: 'O contratante recebeu sua solicitação de pagamento.',
+      description: 'Solicitação de pagamento enviada ao contratante.',
     })
   }
 
@@ -69,7 +104,8 @@ export default function PartnerDashboard() {
             Painel do Parceiro
           </h1>
           <p className="text-muted-foreground">
-            Bem-vindo, {activePartner?.companyName || user?.name}
+            Gestão de Obras e Equipes |{' '}
+            {activePartner?.companyName || user?.name}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -86,7 +122,9 @@ export default function PartnerDashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Obras Ativas</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Projetos Ativos
+            </CardTitle>
             <Building2 className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -96,7 +134,7 @@ export default function PartnerDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Equipe Registrada
+              Equipe Alocada
             </CardTitle>
             <Users className="h-4 w-4 text-blue-500" />
           </CardHeader>
@@ -108,9 +146,7 @@ export default function PartnerDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Faturamento Pendente
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Recebíveis</CardTitle>
             <FileText className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -124,7 +160,7 @@ export default function PartnerDashboard() {
       <Tabs defaultValue="projects">
         <TabsList>
           <TabsTrigger value="projects">Meus Projetos</TabsTrigger>
-          <TabsTrigger value="team">Gestão de Equipe</TabsTrigger>
+          <TabsTrigger value="team">Minha Equipe</TabsTrigger>
           <TabsTrigger value="invoices">Faturas</TabsTrigger>
         </TabsList>
 
@@ -132,7 +168,7 @@ export default function PartnerDashboard() {
           {partnerProjects.map((proj) => (
             <Card key={proj.id}>
               <CardHeader>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-start">
                   <div>
                     <CardTitle>{proj.name}</CardTitle>
                     <CardDescription>{proj.location}</CardDescription>
@@ -141,7 +177,14 @@ export default function PartnerDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <h3 className="font-semibold mb-4">Suas Atividades:</h3>
+                <div className="mb-4 bg-muted/30 p-3 rounded-lg border text-sm">
+                  <p className="font-semibold text-primary mb-1">
+                    Suas Atividades Atribuídas:
+                  </p>
+                  <p className="text-muted-foreground">
+                    Gerencie o progresso e aloque sua equipe nas tarefas abaixo.
+                  </p>
+                </div>
                 <ProjectScheduleTable
                   projectId={proj.id}
                   stages={proj.stages}
@@ -154,44 +197,53 @@ export default function PartnerDashboard() {
         </TabsContent>
 
         <TabsContent value="team" className="mt-4">
-          <div className="flex justify-end mb-4">
-            <Button
-              onClick={() => {
-                if (activePartner && partnerProjects.length > 0) {
-                  setSelectedPartnerId(activePartner.id)
-                  setSelectedProjectId(partnerProjects[0].id)
-                  setIsTeamModalOpen(true)
-                }
-              }}
-            >
-              <Users className="mr-2 h-4 w-4" /> Adicionar Membro
+          <div className="flex justify-end gap-2 mb-4">
+            <Button variant="outline" onClick={() => setIsPoolModalOpen(true)}>
+              <UserCheck className="mr-2 h-4 w-4" /> Buscar no Banco de Talentos
+            </Button>
+            <Button onClick={() => setIsTeamModalOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" /> Novo Membro
             </Button>
           </div>
 
           <Card>
             <CardHeader>
               <CardTitle>Membros da Equipe</CardTitle>
+              <CardDescription>
+                Profissionais vinculados à sua empresa.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               {activePartner?.team.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  Nenhum membro registrado.
+                <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
+                  Nenhum membro registrado. Adicione manualmente ou busque no
+                  banco de talentos.
                 </div>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                   {activePartner?.team.map((member) => (
                     <div
                       key={member.id}
-                      className="border rounded-lg p-4 flex flex-col gap-2"
+                      className="border rounded-lg p-4 flex flex-col gap-2 shadow-sm"
                     >
                       <div className="flex justify-between items-start">
                         <span className="font-bold">{member.name}</span>
                         <Badge variant="secondary">{member.role}</Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground">
-                        <p>{member.email}</p>
-                        <p>{member.phone}</p>
-                        <p className="text-xs mt-1">
+                      <div className="text-sm text-muted-foreground space-y-1">
+                        <p className="flex items-center gap-2">
+                          <span className="text-xs uppercase font-semibold">
+                            Email:
+                          </span>{' '}
+                          {member.email}
+                        </p>
+                        <p className="flex items-center gap-2">
+                          <span className="text-xs uppercase font-semibold">
+                            Tel:
+                          </span>{' '}
+                          {member.phone}
+                        </p>
+                        <p className="text-xs mt-2 bg-muted p-1 rounded w-fit">
                           ID: {member.registrationId}
                         </p>
                       </div>
@@ -206,7 +258,10 @@ export default function PartnerDashboard() {
         <TabsContent value="invoices" className="mt-4">
           <Card>
             <CardHeader>
-              <CardTitle>Faturas e Pagamentos</CardTitle>
+              <CardTitle>Gestão de Faturas</CardTitle>
+              <CardDescription>
+                Emita cobranças para atividades concluídas.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -216,13 +271,13 @@ export default function PartnerDashboard() {
                   .map((sub) => (
                     <div
                       key={sub.id}
-                      className="flex justify-between items-center border p-4 rounded-lg"
+                      className="flex justify-between items-center border p-4 rounded-lg bg-card"
                     >
                       <div>
                         <p className="font-medium">{sub.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Preço: R${' '}
-                          {sub.taskPrice?.toLocaleString('pt-BR') || '-'}
+                          Valor: R${' '}
+                          {sub.taskPrice?.toLocaleString('pt-BR') || '0,00'}
                         </p>
                       </div>
                       <div>
@@ -239,9 +294,9 @@ export default function PartnerDashboard() {
                                 'any',
                                 sub.id,
                               )
-                            } // simplified logic for demo
+                            }
                           >
-                            Gerar Fatura
+                            <FileText className="mr-2 h-4 w-4" /> Gerar Fatura
                           </Button>
                         )}
                       </div>
@@ -250,8 +305,8 @@ export default function PartnerDashboard() {
                 {partnerProjects
                   .flatMap((p) => p.stages.flatMap((s) => s.subStages))
                   .filter((sub) => sub.status === 'completed').length === 0 && (
-                  <div className="text-center text-muted-foreground">
-                    Nenhuma atividade concluída para faturar.
+                  <div className="text-center text-muted-foreground py-8">
+                    Nenhuma atividade concluída disponível para faturamento.
                   </div>
                 )}
               </div>
@@ -260,14 +315,50 @@ export default function PartnerDashboard() {
         </TabsContent>
       </Tabs>
 
-      {selectedPartnerId && selectedProjectId && (
+      {/* Manual Add Modal */}
+      {activePartner && partnerProjects.length > 0 && (
         <TeamMemberModal
           open={isTeamModalOpen}
           onClose={() => setIsTeamModalOpen(false)}
-          partnerId={selectedPartnerId}
-          projectId={selectedProjectId}
+          partnerId={activePartner.id}
+          projectId={partnerProjects[0].id}
         />
       )}
+
+      {/* Pool Selection Modal */}
+      <Dialog open={isPoolModalOpen} onOpenChange={setIsPoolModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Selecionar do Banco de Talentos</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <Label>Profissionais Disponíveis</Label>
+            <Select onValueChange={setSelectedContractorId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecione um profissional..." />
+              </SelectTrigger>
+              <SelectContent>
+                {availableContractors.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name} - {c.role}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Adicionando este profissional à sua equipe permanente.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleAddFromPool}
+              disabled={!selectedContractorId}
+            >
+              Adicionar à Equipe
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
