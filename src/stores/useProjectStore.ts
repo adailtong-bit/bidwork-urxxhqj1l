@@ -375,7 +375,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   addProject: (project) =>
     set((state) => ({
       projects: [
-        ...state.projects,
+        ...(state.projects || []),
         {
           ...project,
           id: Math.random().toString(36).substr(2, 9),
@@ -397,7 +397,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return {
             ...p,
             stages: [
-              ...p.stages,
+              ...(p.stages || []),
               {
                 ...stage,
                 id: Math.random().toString(36).substr(2, 9),
@@ -419,7 +419,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) =>
+            stages: (p.stages || []).map((s) =>
               s.id === stageId ? { ...s, ...data } : s,
             ),
           }
@@ -433,7 +433,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.filter((s) => s.id !== stageId),
+            stages: (p.stages || []).filter((s) => s.id !== stageId),
           }
         }
         return p
@@ -445,12 +445,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) => {
+            stages: (p.stages || []).map((s) => {
               if (s.id === stageId) {
                 return {
                   ...s,
                   subStages: [
-                    ...s.subStages,
+                    ...(s.subStages || []),
                     {
                       ...subStage,
                       id: Math.random().toString(36).substr(2, 9),
@@ -471,11 +471,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) => {
+            stages: (p.stages || []).map((s) => {
               if (s.id === stageId) {
                 return {
                   ...s,
-                  subStages: s.subStages.map((sub) =>
+                  subStages: (s.subStages || []).map((sub) =>
                     sub.id === subStageId ? { ...sub, ...data } : sub,
                   ),
                 }
@@ -493,11 +493,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) => {
+            stages: (p.stages || []).map((s) => {
               if (s.id === stageId) {
                 return {
                   ...s,
-                  subStages: s.subStages.filter((sub) => sub.id !== subStageId),
+                  subStages: (s.subStages || []).filter(
+                    (sub) => sub.id !== subStageId,
+                  ),
                 }
               }
               return s
@@ -511,7 +513,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id === projectId) {
-          const newStages = p.stages.map((s) => {
+          const newStages = (p.stages || []).map((s) => {
             if (s.id === stageId) {
               return {
                 ...s,
@@ -538,7 +540,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id === projectId) {
-          const newStages = p.stages.map((s) => {
+          const newStages = (p.stages || []).map((s) => {
             const external = budgetData.find(
               (b) =>
                 b.stageName.includes(s.name) || s.name.includes(b.stageName),
@@ -566,7 +568,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       projects: state.projects.map((p) => {
         if (p.id === projectId) {
           let currentStageIndex = -1
-          const newStages = [...p.stages]
+          const newStages = [...(p.stages || [])]
 
           timelineData.forEach((item) => {
             if (item.level === 1) {
@@ -593,12 +595,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             } else if (item.level === 2 && currentStageIndex >= 0) {
               // Add or Update SubStage
               const stage = newStages[currentStageIndex]
-              const existingSubIndex = stage.subStages.findIndex(
+              const existingSubIndex = (stage.subStages || []).findIndex(
                 (ss) => ss.name === item.name,
               )
 
               if (existingSubIndex >= 0) {
-                const updatedSubStages = [...stage.subStages]
+                const updatedSubStages = [...(stage.subStages || [])]
                 updatedSubStages[existingSubIndex] = {
                   ...updatedSubStages[existingSubIndex],
                   startDate: item.startDate,
@@ -625,7 +627,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                 }
                 newStages[currentStageIndex] = {
                   ...stage,
-                  subStages: [...stage.subStages, newSubStage],
+                  subStages: [...(stage.subStages || []), newSubStage],
                 }
               }
             }
@@ -656,8 +658,10 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) =>
-              s.id === stageId ? { ...s, bimFiles: [...s.bimFiles, file] } : s,
+            stages: (p.stages || []).map((s) =>
+              s.id === stageId
+                ? { ...s, bimFiles: [...(s.bimFiles || []), file] }
+                : s,
             ),
           }
         }
@@ -671,7 +675,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return {
             ...p,
             partners: [
-              ...p.partners,
+              ...(p.partners || []),
               {
                 ...partner,
                 id: Math.random().toString(36).substr(2, 9),
@@ -692,7 +696,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            partners: p.partners.map((part) =>
+            partners: (p.partners || []).map((part) =>
               part.id === partnerId ? { ...part, ...data } : part,
             ),
           }
@@ -706,13 +710,13 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            partners: p.partners.map((part) => {
+            partners: (p.partners || []).map((part) => {
               if (part.id === partnerId) {
                 if (part.contacts.length >= 3) return part // Limit to 3
                 return {
                   ...part,
                   contacts: [
-                    ...part.contacts,
+                    ...(part.contacts || []),
                     { ...contact, id: Math.random().toString(36).substr(2, 9) },
                   ],
                 }
@@ -730,12 +734,12 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            partners: p.partners.map((part) => {
+            partners: (p.partners || []).map((part) => {
               if (part.id === partnerId) {
                 return {
                   ...part,
                   team: [
-                    ...part.team,
+                    ...(part.team || []),
                     { ...member, id: Math.random().toString(36).substr(2, 9) },
                   ],
                 }
@@ -754,11 +758,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) => {
+            stages: (p.stages || []).map((s) => {
               if (s.id === stageId) {
                 return {
                   ...s,
-                  subStages: s.subStages.map((sub) => {
+                  subStages: (s.subStages || []).map((sub) => {
                     if (sub.id === subStageId) {
                       return {
                         ...sub,
@@ -785,11 +789,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         if (p.id === projectId) {
           return {
             ...p,
-            stages: p.stages.map((s) => {
+            stages: (p.stages || []).map((s) => {
               if (s.id === stageId) {
                 return {
                   ...s,
-                  subStages: s.subStages.map((sub) => {
+                  subStages: (s.subStages || []).map((sub) => {
                     if (sub.id === subStageId) {
                       return {
                         ...sub,
