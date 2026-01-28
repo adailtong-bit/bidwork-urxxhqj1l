@@ -19,6 +19,23 @@ export interface BimFile {
   size: string
 }
 
+export interface PartnerContact {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: string
+}
+
+export interface PartnerTeamMember {
+  id: string
+  name: string
+  role: 'Engineer' | 'Electrician' | 'Tiler' | 'Roofer' | 'Other'
+  email: string
+  phone: string
+  registrationId: string // internal user ID or registration code
+}
+
 export interface ProjectPartner {
   id: string
   companyName: string
@@ -27,6 +44,10 @@ export interface ProjectPartner {
   contractUrl?: string
   licensesUrl?: string
   insuranceUrl?: string
+  contacts: PartnerContact[] // Max 3
+  team: PartnerTeamMember[]
+  performanceScore: number // Aggregate score
+  // Legacy support for employee structure if needed, or mapping to new team structure
   employees: {
     id: string
     name: string
@@ -41,6 +62,10 @@ export interface SubStage {
   startDate: Date
   endDate: Date
   progress: number
+  assignedTeamMemberId?: string
+  taskPrice?: number
+  invoiceStatus?: 'pending' | 'sent_to_partner' | 'sent_to_contractor' | 'paid'
+  partnerRating?: number // Rating given by partner to team
 }
 
 export interface Stage {
@@ -108,6 +133,7 @@ interface ProjectState {
     stageId: string,
     data: Partial<Stage>,
   ) => void
+  deleteStage: (projectId: string, stageId: string) => void
   addSubStage: (
     projectId: string,
     stageId: string,
@@ -118,6 +144,11 @@ interface ProjectState {
     stageId: string,
     subStageId: string,
     data: Partial<SubStage>,
+  ) => void
+  deleteSubStage: (
+    projectId: string,
+    stageId: string,
+    subStageId: string,
   ) => void
   updateStageActuals: (
     projectId: string,
@@ -140,8 +171,41 @@ interface ProjectState {
     }[],
   ) => void
   addBimFile: (projectId: string, stageId: string, file: BimFile) => void
-  addPartner: (projectId: string, partner: Omit<ProjectPartner, 'id'>) => void
+  addPartner: (
+    projectId: string,
+    partner: Omit<
+      ProjectPartner,
+      'id' | 'contacts' | 'team' | 'performanceScore'
+    >,
+  ) => void
+  updatePartner: (
+    projectId: string,
+    partnerId: string,
+    data: Partial<ProjectPartner>,
+  ) => void
+  addPartnerContact: (
+    projectId: string,
+    partnerId: string,
+    contact: Omit<PartnerContact, 'id'>,
+  ) => void
+  addPartnerTeamMember: (
+    projectId: string,
+    partnerId: string,
+    member: Omit<PartnerTeamMember, 'id'>,
+  ) => void
   getProject: (id: string) => Project | undefined
+  generateInvoice: (
+    projectId: string,
+    stageId: string,
+    subStageId: string,
+    type: 'team_to_partner' | 'partner_to_contractor',
+  ) => void
+  rateTeamMember: (
+    projectId: string,
+    stageId: string,
+    subStageId: string,
+    rating: number,
+  ) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -213,7 +277,18 @@ const mockProjects: Project[] = [
     status: 'in_progress',
     totalBudget: 1500000,
     totalSpent: 350000,
-    partners: [],
+    partners: [
+      {
+        id: 'partner-1',
+        companyName: 'Parceiro Construções Ltda',
+        stageId: 'st-2',
+        agreedPrice: 50000,
+        employees: [],
+        contacts: [],
+        team: [],
+        performanceScore: 4.5,
+      },
+    ],
     stages: [
       {
         id: 'st-1',
@@ -352,6 +427,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return p
       }),
     })),
+  deleteStage: (projectId, stageId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.filter((s) => s.id !== stageId),
+          }
+        }
+        return p
+      }),
+    })),
   addSubStage: (projectId, stageId, subStage) =>
     set((state) => ({
       projects: state.projects.map((p) => {
@@ -391,6 +478,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                   subStages: s.subStages.map((sub) =>
                     sub.id === subStageId ? { ...sub, ...data } : sub,
                   ),
+                }
+              }
+              return s
+            }),
+          }
+        }
+        return p
+      }),
+    })),
+  deleteSubStage: (projectId, stageId, subStageId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) => {
+              if (s.id === stageId) {
+                return {
+                  ...s,
+                  subStages: s.subStages.filter((sub) => sub.id !== subStageId),
                 }
               }
               return s
@@ -565,12 +672,139 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             ...p,
             partners: [
               ...p.partners,
-              { ...partner, id: Math.random().toString(36).substr(2, 9) },
+              {
+                ...partner,
+                id: Math.random().toString(36).substr(2, 9),
+                contacts: [],
+                team: [],
+                employees: [],
+                performanceScore: 0,
+              },
             ],
           }
         }
         return p
       }),
     })),
+  updatePartner: (projectId, partnerId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            partners: p.partners.map((part) =>
+              part.id === partnerId ? { ...part, ...data } : part,
+            ),
+          }
+        }
+        return p
+      }),
+    })),
+  addPartnerContact: (projectId, partnerId, contact) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            partners: p.partners.map((part) => {
+              if (part.id === partnerId) {
+                if (part.contacts.length >= 3) return part // Limit to 3
+                return {
+                  ...part,
+                  contacts: [
+                    ...part.contacts,
+                    { ...contact, id: Math.random().toString(36).substr(2, 9) },
+                  ],
+                }
+              }
+              return part
+            }),
+          }
+        }
+        return p
+      }),
+    })),
+  addPartnerTeamMember: (projectId, partnerId, member) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            partners: p.partners.map((part) => {
+              if (part.id === partnerId) {
+                return {
+                  ...part,
+                  team: [
+                    ...part.team,
+                    { ...member, id: Math.random().toString(36).substr(2, 9) },
+                  ],
+                }
+              }
+              return part
+            }),
+          }
+        }
+        return p
+      }),
+    })),
   getProject: (id) => get().projects.find((p) => p.id === id),
+  generateInvoice: (projectId, stageId, subStageId, type) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) => {
+              if (s.id === stageId) {
+                return {
+                  ...s,
+                  subStages: s.subStages.map((sub) => {
+                    if (sub.id === subStageId) {
+                      return {
+                        ...sub,
+                        invoiceStatus:
+                          type === 'team_to_partner'
+                            ? 'sent_to_partner'
+                            : 'sent_to_contractor',
+                      }
+                    }
+                    return sub
+                  }),
+                }
+              }
+              return s
+            }),
+          }
+        }
+        return p
+      }),
+    })),
+  rateTeamMember: (projectId, stageId, subStageId, rating) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) => {
+              if (s.id === stageId) {
+                return {
+                  ...s,
+                  subStages: s.subStages.map((sub) => {
+                    if (sub.id === subStageId) {
+                      return {
+                        ...sub,
+                        partnerRating: rating,
+                      }
+                    }
+                    return sub
+                  }),
+                }
+              }
+              return s
+            }),
+          }
+        }
+        return p
+      }),
+    })),
 }))

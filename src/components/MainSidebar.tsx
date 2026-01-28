@@ -25,6 +25,7 @@ import {
   Route,
   ClipboardList,
   Medal,
+  Building,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -54,6 +55,7 @@ export function MainSidebar() {
   const location = useLocation()
   const { state } = useSidebar()
   const isContractor = user?.role === 'contractor'
+  const isPartner = user?.role === 'partner'
   const isPJ = user?.entityType === 'pj'
   const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
 
@@ -69,8 +71,8 @@ export function MainSidebar() {
 
   const commonItems = [
     {
-      title: 'Dashboard',
-      url: '/dashboard',
+      title: isPartner ? 'Painel do Parceiro' : 'Dashboard',
+      url: isPartner ? '/partner/dashboard' : '/dashboard',
       icon: LayoutDashboard,
     },
     {
@@ -144,6 +146,19 @@ export function MainSidebar() {
     },
   ]
 
+  const partnerItems = [
+    {
+      title: 'Minha Equipe',
+      url: '/partner/dashboard', // handled via tabs in dashboard for simplicity
+      icon: Users,
+    },
+    {
+      title: 'Faturas',
+      url: '/finance',
+      icon: FileSpreadsheet,
+    },
+  ]
+
   const financeItems = [
     {
       title: 'Minhas Finanças',
@@ -190,13 +205,7 @@ export function MainSidebar() {
 
   if (isPJ) {
     utilityItems.unshift({
-      title: 'Gestão de Equipe',
-      url: '/team',
-      icon: Users,
-    })
-  } else {
-    utilityItems.unshift({
-      title: 'Minha Equipe',
+      title: 'Gestão de Usuários',
       url: '/team',
       icon: Users,
     })
@@ -223,10 +232,10 @@ export function MainSidebar() {
     },
   ]
 
-  const menuItems = [
-    ...commonItems,
-    ...(isContractor ? contractorItems : executorItems),
-  ]
+  let menuItems = [...commonItems]
+  if (isContractor) menuItems = [...menuItems, ...contractorItems]
+  else if (isPartner) menuItems = [...menuItems, ...partnerItems]
+  else menuItems = [...menuItems, ...executorItems]
 
   return (
     <Sidebar collapsible="icon">
@@ -248,7 +257,11 @@ export function MainSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            {isContractor ? 'Área do Contratante' : 'Área do Executor'}
+            {isContractor
+              ? 'Área do Contratante'
+              : isPartner
+                ? 'Área do Parceiro'
+                : 'Área do Executor'}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>

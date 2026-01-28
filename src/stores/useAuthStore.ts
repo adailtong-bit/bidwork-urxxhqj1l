@@ -37,7 +37,7 @@ export interface User {
   name: string
   email: string
   avatar?: string
-  role: 'contractor' | 'executor' | 'admin'
+  role: 'contractor' | 'executor' | 'admin' | 'partner'
   teamRole?: TeamRole // Added to support RBAC for team members
   entityType: 'pf' | 'pj'
   businessArea?: string
@@ -73,7 +73,7 @@ export interface RegisterData {
   name: string
   email: string
   password: string
-  role: 'contractor' | 'executor'
+  role: 'contractor' | 'executor' | 'partner'
   entityType: 'pf' | 'pj'
   businessArea?: string
   category?: string
@@ -114,7 +114,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true })
     await new Promise((resolve) => setTimeout(resolve, 800))
 
-    let role: 'contractor' | 'executor' | 'admin' = 'contractor'
+    let role: 'contractor' | 'executor' | 'admin' | 'partner' = 'contractor'
     let teamRole: TeamRole | undefined = undefined
     let entityType: 'pf' | 'pj' = 'pf'
     let name = 'Usuário Padrão'
@@ -142,6 +142,10 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     if (email.includes('admin')) role = 'admin'
     if (email.includes('pj')) entityType = 'pj'
+    if (email.includes('partner')) {
+      role = 'partner'
+      entityType = 'pj'
+    }
 
     // PJ Owner Logic
     if (email === 'contractor.pj@bidwork.app') {
@@ -211,6 +215,10 @@ export const useAuthStore = create<AuthState>((set) => ({
           performance: 9.0,
         },
       ]
+    } else if (email === 'partner@bidwork.app') {
+      name = 'Parceiro Construções Ltda'
+      role = 'partner'
+      entityType = 'pj'
     } else if (email === 'executor.pf@bidwork.app') {
       name = 'João Freelancer'
       role = 'executor'

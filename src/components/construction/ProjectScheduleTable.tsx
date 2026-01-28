@@ -1,5 +1,10 @@
 import { useState, Fragment } from 'react'
-import { Stage, SubStage, useProjectStore } from '@/stores/useProjectStore'
+import {
+  Stage,
+  SubStage,
+  useProjectStore,
+  ProjectPartner,
+} from '@/stores/useProjectStore'
 import {
   Table,
   TableBody,
@@ -14,6 +19,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -23,32 +38,66 @@ import {
   ChevronDown,
   MoreVertical,
   AlertCircle,
-  Calendar as CalendarIcon,
-  CheckCircle2,
   Plus,
+  Trash2,
+  DollarSign,
+  UserPlus,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Label } from '@/components/ui/label'
 
 interface ProjectScheduleTableProps {
   projectId: string
   stages: Stage[]
+  partners?: ProjectPartner[]
+  isPartnerView?: boolean
 }
 
 export function ProjectScheduleTable({
   projectId,
   stages = [],
+  partners = [],
+  isPartnerView = false,
 }: ProjectScheduleTableProps) {
-  const { updateStage, updateSubStage, addSubStage } = useProjectStore()
-  // Ensure stages is an array before using map for initial state
+  const { updateStage, updateSubStage, addSubStage, deleteSubStage } =
+    useProjectStore()
   const [expandedStages, setExpandedStages] = useState<Set<string>>(
     new Set((stages || []).map((s) => s.id)),
   )
-  const [editingId, setEditingId] = useState<string | null>(null)
   const [newItem, setNewItem] = useState<{
     parentId: string
     name: string
   } | null>(null)
+
+  // Deletion State
+  const [deleteData, setDeleteData] = useState<{
+    stageId: string
+    subStageId: string
+  } | null>(null)
+  const [deleteStep, setDeleteStep] = useState(0) // 0: none, 1: confirm, 2: verify
+
+  // Assignment State
+  const [assignData, setAssignData] = useState<{
+    stageId: string
+    subStageId: string
+  } | null>(null)
+  const [selectedMember, setSelectedMember] = useState('')
+  const [taskPrice, setTaskPrice] = useState('')
 
   const toggleExpand = (id: string) => {
     const newSet = new Set(expandedStages)
@@ -117,8 +166,39 @@ export function ProjectScheduleTable({
     }
   }
 
-  // Defensive check for stages prop
+  const handleDeleteClick = (stageId: string, subStageId: string) => {
+    setDeleteData({ stageId, subStageId })
+    setDeleteStep(1)
+  }
+
+  const handleConfirmDelete = () => {
+    if (deleteStep === 1) {
+      setDeleteStep(2)
+    } else if (deleteStep === 2 && deleteData) {
+      deleteSubStage(projectId, deleteData.stageId, deleteData.subStageId)
+      setDeleteData(null)
+      setDeleteStep(0)
+    }
+  }
+
+  const handleAssign = () => {
+    if (assignData && selectedMember && taskPrice) {
+      updateSubStage(projectId, assignData.stageId, assignData.subStageId, {
+        assignedTeamMemberId: selectedMember,
+        taskPrice: Number(taskPrice),
+      })
+      setAssignData(null)
+      setSelectedMember('')
+      setTaskPrice('')
+    }
+  }
+
   const safeStages = Array.isArray(stages) ? stages : []
+
+  // Flatten all team members for selection
+  const allTeamMembers = partners.flatMap((p) =>
+    p.team.map((m) => ({ ...m, partnerName: p.companyName })),
+  )
 
   return (
     <div className="rounded-md border">
@@ -137,8 +217,8 @@ export function ProjectScheduleTable({
           {safeStages.map((stage) => (
             <Fragment key={stage.id}>
               {/* Stage Row */}
-              <TableRow className="hover:bg-muted/30">
-                <TableCell className="font-medium">
+              <TableRow className="hover:bg-muted/30 font-semibold bg-muted/5">
+                <TableCell>
                   <div className="flex items-center gap-2">
                     <Button
                       variant="ghost"
@@ -157,36 +237,8 @@ export function ProjectScheduleTable({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>
-                  <Input
-                    type="date"
-                    className="h-8 w-32"
-                    value={
-                      stage.startDate
-                        ? format(stage.startDate, 'yyyy-MM-dd')
-                        : ''
-                    }
-                    onChange={(e) => {
-                      const date = e.target.valueAsDate
-                      if (date)
-                        updateStage(projectId, stage.id, { startDate: date })
-                    }}
-                  />
-                </TableCell>
-                <TableCell>
-                  <Input
-                    type="date"
-                    className="h-8 w-32"
-                    value={
-                      stage.endDate ? format(stage.endDate, 'yyyy-MM-dd') : ''
-                    }
-                    onChange={(e) => {
-                      const date = e.target.valueAsDate
-                      if (date)
-                        updateStage(projectId, stage.id, { endDate: date })
-                    }}
-                  />
-                </TableCell>
+                <TableCell>{format(stage.startDate, 'dd/MM/yy')}</TableCell>
+                <TableCell>{format(stage.endDate, 'dd/MM/yy')}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Progress
@@ -196,45 +248,11 @@ export function ProjectScheduleTable({
                         stage.status === 'delayed' ? 'bg-red-100' : '',
                       )}
                     />
-                    <Input
-                      type="number"
-                      min={0}
-                      max={100}
-                      className="h-8 w-16 text-right"
-                      value={stage.progress}
-                      onChange={(e) =>
-                        handleUpdateProgress(
-                          stage.id,
-                          null,
-                          parseInt(e.target.value) || 0,
-                        )
-                      }
-                    />
-                    <span className="text-xs text-muted-foreground">%</span>
+                    <span className="text-xs">{stage.progress}%</span>
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge
-                    variant={
-                      stage.status === 'delayed'
-                        ? 'destructive'
-                        : stage.status === 'completed'
-                          ? 'default'
-                          : 'secondary'
-                    }
-                    className={cn(
-                      stage.status === 'completed' &&
-                        'bg-green-600 hover:bg-green-700',
-                    )}
-                  >
-                    {stage.status === 'delayed'
-                      ? 'Atrasado'
-                      : stage.status === 'completed'
-                        ? 'Concluído'
-                        : stage.status === 'in_progress'
-                          ? 'Em Andamento'
-                          : 'Pendente'}
-                  </Badge>
+                  <Badge variant="outline">{stage.status}</Badge>
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -246,21 +264,11 @@ export function ProjectScheduleTable({
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
                         onClick={() =>
-                          handleToggleDelay(stage.id, null, stage.status)
-                        }
-                      >
-                        <AlertCircle className="mr-2 h-4 w-4" />
-                        {stage.status === 'delayed'
-                          ? 'Remover Atraso'
-                          : 'Marcar Atraso'}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
                           setNewItem({ parentId: stage.id, name: '' })
                         }
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Adicionar Sub-etapa
+                        Adicionar Atividade
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -273,13 +281,22 @@ export function ProjectScheduleTable({
                   {stage.subStages?.map((sub) => (
                     <TableRow
                       key={sub.id}
-                      className="bg-muted/10 hover:bg-muted/20"
+                      className="bg-white hover:bg-muted/10"
                     >
                       <TableCell className="pl-12">
-                        <div className="flex items-center gap-2 border-l-2 border-muted pl-3">
+                        <div className="flex flex-col border-l-2 border-muted pl-3">
                           <span className="truncate text-sm" title={sub.name}>
                             {sub.name}
                           </span>
+                          {sub.assignedTeamMemberId && (
+                            <span className="text-[10px] text-primary flex items-center gap-1">
+                              <UserPlus className="h-3 w-3" />
+                              {allTeamMembers.find(
+                                (m) => m.id === sub.assignedTeamMemberId,
+                              )?.name || 'Assigned'}
+                              {sub.taskPrice && ` - R$ ${sub.taskPrice}`}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -336,9 +353,6 @@ export function ProjectScheduleTable({
                               )
                             }
                           />
-                          <span className="text-xs text-muted-foreground">
-                            %
-                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -353,13 +367,7 @@ export function ProjectScheduleTable({
                                 : '',
                           )}
                         >
-                          {sub.status === 'delayed'
-                            ? 'Atrasado'
-                            : sub.status === 'completed'
-                              ? 'Concluído'
-                              : sub.status === 'in_progress'
-                                ? 'Andamento'
-                                : 'Pendente'}
+                          {sub.status}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -374,6 +382,19 @@ export function ProjectScheduleTable({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {isPartnerView && (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setAssignData({
+                                    stageId: stage.id,
+                                    subStageId: sub.id,
+                                  })
+                                }
+                              >
+                                <UserPlus className="mr-2 h-4 w-4" /> Alocar
+                                Equipe
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                               onClick={() =>
                                 handleToggleDelay(stage.id, sub.id, sub.status)
@@ -383,6 +404,14 @@ export function ProjectScheduleTable({
                               {sub.status === 'delayed'
                                 ? 'Remover Atraso'
                                 : 'Marcar Atraso'}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() =>
+                                handleDeleteClick(stage.id, sub.id)
+                              }
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" /> Remover
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -397,7 +426,7 @@ export function ProjectScheduleTable({
                         <div className="flex items-center gap-2 border-l-2 border-muted pl-3">
                           <Input
                             autoFocus
-                            placeholder="Nome da sub-etapa..."
+                            placeholder="Nome da nova atividade..."
                             className="h-8"
                             value={newItem.name}
                             onChange={(e) =>
@@ -432,6 +461,74 @@ export function ProjectScheduleTable({
           ))}
         </TableBody>
       </Table>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteStep > 0} onOpenChange={() => setDeleteStep(0)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {deleteStep === 1 ? 'Excluir Atividade?' : 'Confirmação Final'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteStep === 1
+                ? 'Esta ação removerá a atividade do cronograma. Clique em continuar para prosseguir.'
+                : 'Tem certeza absoluta? Esta ação não pode ser desfeita e todos os dados vinculados serão perdidos.'}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDeleteStep(0)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-destructive text-destructive-foreground"
+            >
+              {deleteStep === 1 ? 'Continuar' : 'Confirmar Exclusão'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Assign Member Dialog */}
+      <Dialog open={!!assignData} onOpenChange={() => setAssignData(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Alocar Mão de Obra</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Membro da Equipe</Label>
+              <Select onValueChange={setSelectedMember}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {allTeamMembers.map((member) => (
+                    <SelectItem key={member.id} value={member.id}>
+                      {member.name} ({member.role})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Preço da Tarefa (R$)</Label>
+              <div className="relative">
+                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  className="pl-9"
+                  type="number"
+                  value={taskPrice}
+                  onChange={(e) => setTaskPrice(e.target.value)}
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleAssign}>Salvar Alocação</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

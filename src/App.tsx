@@ -43,6 +43,7 @@ import InventoryManager from '@/pages/construction/InventoryManager'
 import Leaderboard from '@/pages/gamification/Leaderboard'
 import TrainingCenter from '@/pages/training/TrainingCenter'
 import NewProject from '@/pages/construction/NewProject'
+import PartnerDashboard from '@/pages/partner/PartnerDashboard'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
@@ -51,6 +52,11 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
 
   if (!isAuthenticated) {
     return <Navigate to="/login" replace />
+  }
+
+  // Redirect partner to specific dashboard if they try to access main dashboard
+  if (user?.role === 'partner' && window.location.pathname === '/dashboard') {
+    return <Navigate to="/partner/dashboard" replace />
   }
 
   return (
@@ -106,6 +112,7 @@ const App = () => {
               }
             >
               <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/partner/dashboard" element={<PartnerDashboard />} />
 
               {/* Admin Routes */}
               <Route
