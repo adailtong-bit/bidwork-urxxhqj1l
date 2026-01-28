@@ -162,9 +162,9 @@ export default function Index() {
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {categories.map((cat, i) => (
                 <Link key={i} to={`/find-jobs?category=${cat.name}`}>
-                  <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer h-full">
+                  <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer h-full group">
                     <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full gap-3">
-                      <cat.icon className="h-8 w-8 text-muted-foreground" />
+                      <cat.icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
                       <span className="font-medium text-sm">{cat.name}</span>
                     </CardContent>
                   </Card>
