@@ -20,7 +20,13 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Mail,
   Plus,
@@ -30,7 +36,7 @@ import {
   Briefcase,
   Activity,
   Settings,
-  ShieldCheck
+  ShieldCheck,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -120,18 +126,28 @@ export default function Team() {
                 </div>
                 <div className="space-y-2">
                   <Label>Nível de Acesso</Label>
-                  <Select 
-                    value={newMember.role} 
-                    onValueChange={(val) => setNewMember({...newMember, role: val})}
+                  <Select
+                    value={newMember.role}
+                    onValueChange={(val) =>
+                      setNewMember({ ...newMember, role: val })
+                    }
                   >
                     <SelectTrigger>
-                        <SelectValue />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="Admin">Admin (Acesso Total)</SelectItem>
-                        <SelectItem value="Gerente de Projetos">Gerente de Projetos</SelectItem>
-                        <SelectItem value="Contador">Contador (Financeiro)</SelectItem>
-                        <SelectItem value="Colaborador">Colaborador (Visualização)</SelectItem>
+                      <SelectItem value="Admin">
+                        Admin (Acesso Total)
+                      </SelectItem>
+                      <SelectItem value="Gerente de Projetos">
+                        Gerente de Projetos
+                      </SelectItem>
+                      <SelectItem value="Contador">
+                        Contador (Financeiro)
+                      </SelectItem>
+                      <SelectItem value="Colaborador">
+                        Colaborador (Visualização)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -159,7 +175,10 @@ export default function Team() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {members.map((member, i) => (
-          <Card key={i} className="flex flex-col relative overflow-hidden group">
+          <Card
+            key={i}
+            className="flex flex-col relative overflow-hidden group"
+          >
             <div
               className={`absolute top-0 left-0 w-full h-1 ${
                 member.status === 'busy'
@@ -180,8 +199,15 @@ export default function Team() {
               <div className="space-y-1 mb-4">
                 <h3 className="font-semibold text-lg">{member.name}</h3>
                 <div className="flex items-center gap-2 justify-center flex-wrap">
-                  <Badge variant="secondary" className="font-normal flex items-center gap-1">
-                    {member.role === 'Admin' ? <ShieldCheck className="h-3 w-3" /> : <Briefcase className="h-3 w-3" />}
+                  <Badge
+                    variant="secondary"
+                    className="font-normal flex items-center gap-1"
+                  >
+                    {member.role === 'Admin' ? (
+                      <ShieldCheck className="h-3 w-3" />
+                    ) : (
+                      <Briefcase className="h-3 w-3" />
+                    )}
                     {member.role}
                   </Badge>
                 </div>
@@ -204,9 +230,13 @@ export default function Team() {
                     </div>
 
                     <div className="flex justify-between gap-2 pt-2">
-                       <Button variant="outline" size="sm" className="w-full h-8 text-xs">
-                         <Settings className="h-3 w-3 mr-1" /> Permissões
-                       </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full h-8 text-xs"
+                      >
+                        <Settings className="h-3 w-3 mr-1" /> Permissões
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"

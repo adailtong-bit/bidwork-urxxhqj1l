@@ -6,6 +6,7 @@ import { TooltipProvider } from '@/components/ui/tooltip'
 import Layout from '@/components/Layout'
 import AuthLayout from '@/layouts/AuthLayout'
 import DashboardLayout from '@/components/DashboardLayout'
+import Index from '@/pages/Index'
 import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
 import ForgotPassword from '@/pages/auth/ForgotPassword'
@@ -48,7 +49,7 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated, user } = useAuthStore()
 
   if (!isAuthenticated) {
-    return <Navigate to="/" replace />
+    return <Navigate to="/login" replace />
   }
 
   return (
@@ -85,9 +86,12 @@ const App = () => {
         <Sonner />
         <Routes>
           <Route element={<Layout />}>
+            {/* Landing Page */}
+            <Route path="/" element={<Index />} />
+
             {/* Public Auth Routes */}
             <Route element={<AuthLayout />}>
-              <Route path="/" element={<Login />} />
+              <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
             </Route>

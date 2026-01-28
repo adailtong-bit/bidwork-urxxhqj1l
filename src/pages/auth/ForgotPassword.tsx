@@ -47,7 +47,7 @@ export default function ForgotPassword() {
   return (
     <div className="space-y-6">
       <Link
-        to="/"
+        to="/login"
         className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />

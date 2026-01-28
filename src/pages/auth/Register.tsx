@@ -507,7 +507,10 @@ export default function Register() {
 
       <div className="text-center text-sm pt-4 shrink-0">
         Já tem uma conta?{' '}
-        <Link to="/" className="font-semibold text-primary hover:underline">
+        <Link
+          to="/login"
+          className="font-semibold text-primary hover:underline"
+        >
           Entrar
         </Link>
       </div>

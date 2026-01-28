@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react'
 
 interface AdSectionProps {
-  segment: 'dashboard' | 'search' | 'profile'
+  segment: 'dashboard' | 'search' | 'profile' | 'home'
 }
 
 export function AdSection({ segment }: AdSectionProps) {

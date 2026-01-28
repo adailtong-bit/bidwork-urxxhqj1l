@@ -5,7 +5,7 @@ export interface Ad {
   title: string
   imageUrl: string
   type: 'regional' | 'segmented'
-  segment: 'dashboard' | 'search' | 'profile' | 'all'
+  segment: 'dashboard' | 'search' | 'profile' | 'home' | 'all'
   region?: string
   category?: string
   link: string
@@ -113,6 +113,32 @@ export const useAdStore = create<AdState>((set, get) => ({
       clicks: 22,
       likes: 4,
       dislikes: 1,
+    },
+    {
+      id: '7',
+      title: 'Oferta de Inauguração',
+      imageUrl: 'https://img.usecurling.com/p/600/200?q=grand%20opening',
+      type: 'regional',
+      segment: 'home',
+      link: '#',
+      active: true,
+      views: 1500,
+      clicks: 200,
+      likes: 50,
+      dislikes: 5,
+    },
+    {
+      id: '8',
+      title: 'Parceiros BidWork',
+      imageUrl: 'https://img.usecurling.com/p/600/200?q=business%20partners',
+      type: 'segmented',
+      segment: 'home',
+      link: '#',
+      active: true,
+      views: 1200,
+      clicks: 150,
+      likes: 30,
+      dislikes: 2,
     },
   ],
   addAd: (ad) =>
