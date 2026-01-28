@@ -15,7 +15,6 @@
     --primary-foreground: 210 40% 98%;
 
     /* Accent: Subtle Blue-Gray (Mainly for hover states in Shadcn) */
-    /* Note: We keep this subtle to ensure ghost buttons look clean */
     --accent: 210 40% 96.1%;
     --accent-foreground: 222 47% 11%;
 

@@ -14,6 +14,7 @@ export interface Equipment {
   type: string
   serialNumber: string
   status: 'available' | 'in_use' | 'maintenance'
+  location: string
   projectId?: string
   projectName?: string
   purchaseDate: Date
@@ -28,6 +29,7 @@ interface EquipmentState {
     equipmentId: string,
     projectId: string,
     projectName: string,
+    location: string,
   ) => void
   returnEquipment: (equipmentId: string) => void
   scheduleMaintenance: (equipmentId: string, date: Date) => void
@@ -44,6 +46,7 @@ const mockEquipment: Equipment[] = [
     type: 'Pesado',
     serialNumber: 'CAT-416-2023-X99',
     status: 'in_use',
+    location: 'Barueri, SP',
     projectId: 'proj-1',
     projectName: 'Residencial Alphaville',
     purchaseDate: new Date('2023-01-15'),
@@ -56,6 +59,7 @@ const mockEquipment: Equipment[] = [
     type: 'Leve',
     serialNumber: 'BT-400-2022-A12',
     status: 'available',
+    location: 'Depósito Central',
     purchaseDate: new Date('2022-05-20'),
     nextMaintenance: new Date(Date.now() - 86400000 * 2), // Overdue
     maintenanceHistory: [],
@@ -66,6 +70,7 @@ const mockEquipment: Equipment[] = [
     type: 'Estrutura',
     serialNumber: 'AND-2023-B55',
     status: 'maintenance',
+    location: 'Oficina Mecânica',
     purchaseDate: new Date('2023-08-10'),
     nextMaintenance: new Date(Date.now() + 86400000 * 5),
     maintenanceHistory: [],
@@ -85,11 +90,11 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
         },
       ],
     })),
-  assignToProject: (equipmentId, projectId, projectName) =>
+  assignToProject: (equipmentId, projectId, projectName, location) =>
     set((state) => ({
       equipment: state.equipment.map((eq) =>
         eq.id === equipmentId
-          ? { ...eq, status: 'in_use', projectId, projectName }
+          ? { ...eq, status: 'in_use', projectId, projectName, location }
           : eq,
       ),
     })),
@@ -100,6 +105,7 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
           ? {
               ...eq,
               status: 'available',
+              location: 'Depósito Central',
               projectId: undefined,
               projectName: undefined,
             }
@@ -119,6 +125,7 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
           return {
             ...eq,
             status: 'available',
+            location: 'Depósito Central',
             maintenanceHistory: [
               ...eq.maintenanceHistory,
               { ...record, id: Math.random().toString(36).substr(2, 9) },

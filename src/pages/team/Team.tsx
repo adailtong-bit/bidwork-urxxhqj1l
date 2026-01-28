@@ -1,13 +1,7 @@
 import { useState } from 'react'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuthStore, TeamRole } from '@/stores/useAuthStore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -37,16 +31,22 @@ import {
   Activity,
   Settings,
   ShieldCheck,
+  Calculator,
+  LayoutDashboard,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export default function Team() {
   const { user, addTeamMember, removeTeamMember } = useAuthStore()
   const { toast } = useToast()
-  const [newMember, setNewMember] = useState({
+  const [newMember, setNewMember] = useState<{
+    name: string
+    email: string
+    role: TeamRole
+  }>({
     name: '',
     email: '',
-    role: 'Colaborador',
+    role: 'Collaborator',
   })
   const [isDialogOpen, setIsDialogOpen] = useState(false)
 
@@ -59,10 +59,10 @@ export default function Team() {
     if (!newMember.name || !newMember.email) return
     addTeamMember(newMember)
     setIsDialogOpen(false)
-    setNewMember({ name: '', email: '', role: 'Colaborador' })
+    setNewMember({ name: '', email: '', role: 'Collaborator' })
     toast({
       title: 'Membro adicionado',
-      description: 'Convite enviado por email.',
+      description: `Convite enviado para ${newMember.role}.`,
     })
   }
 
@@ -71,7 +71,7 @@ export default function Team() {
     {
       id: 's1',
       name: 'Você',
-      role: 'Administrador',
+      role: 'Admin' as TeamRole,
       email: user.email,
       avatar: user.avatar || '',
       status: 'active' as const,
@@ -80,6 +80,19 @@ export default function Team() {
   ]
 
   const members = isPJ ? user.teamMembers || staticMembers : staticMembers
+
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case 'Admin':
+        return <ShieldCheck className="h-3 w-3" />
+      case 'Accountant':
+        return <Calculator className="h-3 w-3" />
+      case 'Project Manager':
+        return <LayoutDashboard className="h-3 w-3" />
+      default:
+        return <Briefcase className="h-3 w-3" />
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -125,10 +138,10 @@ export default function Team() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Nível de Acesso</Label>
+                  <Label>Nível de Acesso (RBAC)</Label>
                   <Select
                     value={newMember.role}
-                    onValueChange={(val) =>
+                    onValueChange={(val: TeamRole) =>
                       setNewMember({ ...newMember, role: val })
                     }
                   >
@@ -139,13 +152,13 @@ export default function Team() {
                       <SelectItem value="Admin">
                         Admin (Acesso Total)
                       </SelectItem>
-                      <SelectItem value="Gerente de Projetos">
-                        Gerente de Projetos
+                      <SelectItem value="Project Manager">
+                        Gerente de Projetos (Obras)
                       </SelectItem>
-                      <SelectItem value="Contador">
+                      <SelectItem value="Accountant">
                         Contador (Financeiro)
                       </SelectItem>
-                      <SelectItem value="Colaborador">
+                      <SelectItem value="Collaborator">
                         Colaborador (Visualização)
                       </SelectItem>
                     </SelectContent>
@@ -177,7 +190,7 @@ export default function Team() {
         {members.map((member, i) => (
           <Card
             key={i}
-            className="flex flex-col relative overflow-hidden group"
+            className="flex flex-col relative overflow-hidden group hover:border-primary/50 transition-colors"
           >
             <div
               className={`absolute top-0 left-0 w-full h-1 ${
@@ -203,11 +216,7 @@ export default function Team() {
                     variant="secondary"
                     className="font-normal flex items-center gap-1"
                   >
-                    {member.role === 'Admin' ? (
-                      <ShieldCheck className="h-3 w-3" />
-                    ) : (
-                      <Briefcase className="h-3 w-3" />
-                    )}
+                    {getRoleIcon(member.role)}
                     {member.role}
                   </Badge>
                 </div>

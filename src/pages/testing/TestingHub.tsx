@@ -24,6 +24,8 @@ import {
   Zap,
   CheckCircle2,
   Shield,
+  Calculator,
+  LayoutDashboard,
 } from 'lucide-react'
 import { useJobStore } from '@/stores/useJobStore'
 import { useToast } from '@/hooks/use-toast'
@@ -52,8 +54,20 @@ export default function TestingHub() {
     {
       role: 'Contratante PJ',
       email: 'contractor.pj@bidwork.app',
-      desc: 'Conta corporativa com gestão de equipe.',
+      desc: 'Conta corporativa (Admin).',
       icon: Building2,
+    },
+    {
+      role: 'Membro: Contador',
+      email: 'accountant.pj@bidwork.app',
+      desc: 'Acesso restrito ao Financeiro.',
+      icon: Calculator,
+    },
+    {
+      role: 'Membro: Gerente',
+      email: 'manager.pj@bidwork.app',
+      desc: 'Acesso a Obras e Equipe.',
+      icon: LayoutDashboard,
     },
     {
       role: 'Executor PF',
@@ -87,11 +101,11 @@ export default function TestingHub() {
         <h1 className="text-4xl font-bold tracking-tight">Testing Hub</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
           Utilize esta central para acessar perfis pré-configurados e visualizar
-          dados de teste (Jobs ativos, Histórico e Equipes).
+          dados de teste.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {testUsers.map((user, i) => (
           <Card key={i} className="hover:border-primary transition-all">
             <CardHeader className="p-4">

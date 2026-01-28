@@ -64,6 +64,7 @@ export default function EquipmentManager() {
     type: 'Pesado',
     serialNumber: '',
     purchaseDate: new Date(),
+    location: 'Pátio Central',
   })
   const [assignData, setAssignData] = useState({ projectId: '' })
 
@@ -87,6 +88,7 @@ export default function EquipmentManager() {
       status: 'available',
       purchaseDate: newItem.purchaseDate,
       nextMaintenance: addDays(new Date(), 90),
+      location: newItem.location,
     })
     setIsAddOpen(false)
     toast({ title: 'Equipamento cadastrado' })
@@ -96,10 +98,10 @@ export default function EquipmentManager() {
     if (!selectedEq || !assignData.projectId) return
     const project = projects.find((p) => p.id === assignData.projectId)
     if (project) {
-      assignToProject(selectedEq, project.id, project.name)
+      assignToProject(selectedEq, project.id, project.name, project.location)
       toast({
         title: 'Equipamento alocado',
-        description: `Enviado para ${project.name}`,
+        description: `Enviado para ${project.name} (${project.location})`,
       })
       setIsAssignOpen(false)
     }
@@ -142,6 +144,15 @@ export default function EquipmentManager() {
                   value={newItem.serialNumber}
                   onChange={(e) =>
                     setNewItem({ ...newItem, serialNumber: e.target.value })
+                  }
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Localização Inicial</Label>
+                <Input
+                  value={newItem.location}
+                  onChange={(e) =>
+                    setNewItem({ ...newItem, location: e.target.value })
                   }
                 />
               </div>
@@ -235,13 +246,24 @@ export default function EquipmentManager() {
               <CardDescription>Série: {eq.serialNumber}</CardDescription>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
+              <div className="flex items-center gap-2 text-sm">
+                <MapPin className="h-4 w-4 text-muted-foreground" />
+                <span
+                  className={
+                    eq.status === 'in_use'
+                      ? 'font-semibold text-blue-700'
+                      : 'text-muted-foreground'
+                  }
+                >
+                  {eq.location}
+                </span>
+              </div>
               {eq.status === 'in_use' && (
-                <div className="flex items-center gap-2 text-sm text-blue-700 bg-blue-50 p-2 rounded">
-                  <MapPin className="h-4 w-4" />
-                  Alocado em: <strong>{eq.projectName}</strong>
+                <div className="text-xs bg-blue-50 p-2 rounded text-blue-800">
+                  Projeto: <strong>{eq.projectName}</strong>
                 </div>
               )}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-2">
                 <CalendarIcon className="h-4 w-4" />
                 Próx. Manutenção: {format(eq.nextMaintenance, 'dd/MM/yyyy')}
                 {isBefore(eq.nextMaintenance, new Date()) && (
@@ -293,7 +315,9 @@ export default function EquipmentManager() {
                     // Set status to maintenance manually
                     useEquipmentStore.setState((state) => ({
                       equipment: state.equipment.map((e) =>
-                        e.id === eq.id ? { ...e, status: 'maintenance' } : e,
+                        e.id === eq.id
+                          ? { ...e, status: 'maintenance', location: 'Oficina' }
+                          : e,
                       ),
                     }))
                     toast({ title: 'Enviado para manutenção' })
@@ -313,7 +337,7 @@ export default function EquipmentManager() {
           <DialogHeader>
             <DialogTitle>Alocar Equipamento</DialogTitle>
             <DialogDescription>
-              Selecione o projeto de destino.
+              Selecione o projeto de destino para atualizar a localização.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">

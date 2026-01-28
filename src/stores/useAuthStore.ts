@@ -1,9 +1,15 @@
 import { create } from 'zustand'
 
+export type TeamRole =
+  | 'Admin'
+  | 'Project Manager'
+  | 'Accountant'
+  | 'Collaborator'
+
 export interface TeamMember {
   id: string
   name: string
-  role: string
+  role: TeamRole
   email: string
   avatar: string
   status: 'active' | 'inactive' | 'busy'
@@ -32,6 +38,7 @@ export interface User {
   email: string
   avatar?: string
   role: 'contractor' | 'executor' | 'admin'
+  teamRole?: TeamRole // Added to support RBAC for team members
   entityType: 'pf' | 'pj'
   businessArea?: string
   category?: string
@@ -108,6 +115,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     await new Promise((resolve) => setTimeout(resolve, 800))
 
     let role: 'contractor' | 'executor' | 'admin' = 'contractor'
+    let teamRole: TeamRole | undefined = undefined
     let entityType: 'pf' | 'pj' = 'pf'
     let name = 'Usuário Padrão'
     let teamMembers: TeamMember[] | undefined = undefined
@@ -135,15 +143,17 @@ export const useAuthStore = create<AuthState>((set) => ({
     if (email.includes('admin')) role = 'admin'
     if (email.includes('pj')) entityType = 'pj'
 
+    // PJ Owner Logic
     if (email === 'contractor.pj@bidwork.app') {
       name = 'Construtora Tech Corp'
       role = 'contractor'
       entityType = 'pj'
+      teamRole = 'Admin'
       teamMembers = [
         {
           id: 't1',
           name: 'Ana Gerente',
-          role: 'Gestor de Projetos',
+          role: 'Project Manager',
           email: 'ana@techcorp.com',
           avatar:
             'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=10',
@@ -153,7 +163,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         {
           id: 't2',
           name: 'Carlos Engenheiro',
-          role: 'Engenheiro Civil',
+          role: 'Collaborator',
           email: 'carlos@techcorp.com',
           avatar:
             'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=11',
@@ -161,6 +171,20 @@ export const useAuthStore = create<AuthState>((set) => ({
           performance: 8.8,
         },
       ]
+    }
+    // Accountant Team Member Logic
+    else if (email === 'accountant.pj@bidwork.app') {
+      name = 'Marcos Contador'
+      role = 'contractor' // Part of a contractor company
+      entityType = 'pj'
+      teamRole = 'Accountant' // RBAC Key
+    }
+    // Project Manager Team Member Logic
+    else if (email === 'manager.pj@bidwork.app') {
+      name = 'Ana Gerente'
+      role = 'contractor'
+      entityType = 'pj'
+      teamRole = 'Project Manager' // RBAC Key
     } else if (email === 'executor.pj@bidwork.app') {
       name = 'Soluções Rápidas Ltda'
       role = 'executor'
@@ -169,7 +193,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         {
           id: 't3',
           name: 'Marcos Técnico',
-          role: 'Técnico Líder',
+          role: 'Collaborator',
           email: 'marcos@solucoes.com',
           avatar:
             'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=12',
@@ -179,7 +203,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         {
           id: 't4',
           name: 'Julia Assistente',
-          role: 'Atendimento',
+          role: 'Collaborator',
           email: 'julia@solucoes.com',
           avatar:
             'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=13',
@@ -209,6 +233,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         email,
         avatar: `https://img.usecurling.com/ppl/medium?seed=${email.length}`,
         role,
+        teamRole,
         entityType,
         reputation: 4.8,
         serviceRadius: 50,

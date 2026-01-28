@@ -36,14 +36,14 @@ import {
   TrendingUp,
   Clock,
   DollarSign,
-  ArrowUpRight,
   Calendar,
   Plus,
+  Lock,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-import { Link } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -69,6 +69,29 @@ export default function FinanceDashboard() {
   })
 
   if (!user) return null
+
+  // Role-Based Access Control
+  const hasTeamRole = !!user.teamRole
+  const canAccess =
+    !hasTeamRole || ['Admin', 'Accountant'].includes(user.teamRole || '')
+
+  if (!canAccess) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <div className="bg-destructive/10 p-4 rounded-full">
+          <Lock className="h-12 w-12 text-destructive" />
+        </div>
+        <h1 className="text-2xl font-bold">Acesso Restrito</h1>
+        <p className="text-muted-foreground text-center max-w-md">
+          Você não tem permissão para visualizar o painel financeiro. Entre em
+          contato com o administrador da sua organização.
+        </p>
+        <Button asChild>
+          <Link to="/dashboard">Voltar ao Dashboard</Link>
+        </Button>
+      </div>
+    )
+  }
 
   const isPJ = user.entityType === 'pj'
   const transactions = getTransactionsByUser(user.id)

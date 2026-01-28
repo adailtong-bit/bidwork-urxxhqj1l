@@ -82,7 +82,7 @@ export default function ProjectDetail() {
     toast({
       title: 'Orçamento Importado',
       description:
-        'Os valores estimados foram atualizados com base no arquivo externo.',
+        'Os valores estimados foram atualizados com base no arquivo CSV externo.',
     })
   }
 
@@ -261,7 +261,7 @@ export default function ProjectDetail() {
                     </div>
                   </div>
 
-                  {/* BIM Integration Section - NEW */}
+                  {/* BIM Integration Section */}
                   <div className="col-span-1 md:col-span-2 mt-4 pt-4 border-t">
                     <div className="flex items-center justify-between mb-4">
                       <h3 className="font-semibold flex items-center gap-2 text-indigo-700">
@@ -389,7 +389,7 @@ export default function ProjectDetail() {
               <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
                 <DialogTrigger asChild>
                   <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" /> Importar Orçamento
+                    <Upload className="mr-2 h-4 w-4" /> Importar Orçamento (CSV)
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -397,7 +397,7 @@ export default function ProjectDetail() {
                     <DialogTitle>Importar Orçamento Externo</DialogTitle>
                     <DialogDescription>
                       Faça upload de um arquivo CSV ou Excel com as estimativas
-                      atualizadas.
+                      atualizadas para comparação.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -413,7 +413,7 @@ export default function ProjectDetail() {
                     <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-xs flex gap-2">
                       <Upload className="h-4 w-4 shrink-0" />
                       Os valores importados substituirão as estimativas atuais
-                      de todas as etapas correspondentes.
+                      de todas as etapas correspondentes (Mapping: Etapa -> Material/Labor).
                     </div>
                   </div>
                   <DialogFooter>

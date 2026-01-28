@@ -57,7 +57,14 @@ export function MainSidebar() {
   const isPJ = user?.entityType === 'pj'
   const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
 
-  // Construction Company Flag
+  // RBAC Checks
+  const hasTeamRole = !!user?.teamRole
+  const canAccessFinance =
+    !hasTeamRole || ['Admin', 'Accountant'].includes(user?.teamRole || '')
+  const canAccessConstruction =
+    !hasTeamRole || ['Admin', 'Project Manager'].includes(user?.teamRole || '')
+
+  // Construction Company Flag (Needs PJ + Contractor)
   const isConstrutora = isPJ && isContractor
 
   const commonItems = [
@@ -266,7 +273,7 @@ export function MainSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isConstrutora && (
+        {isConstrutora && canAccessConstruction && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-orange-600 font-semibold">
               Construtora
@@ -321,27 +328,29 @@ export function MainSidebar() {
           </SidebarGroup>
         )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {financeItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {canAccessFinance && (
+          <SidebarGroup>
+            <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {financeItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>Utilitários</SidebarGroupLabel>
@@ -398,7 +407,9 @@ export function MainSidebar() {
                   <div className="flex flex-col gap-0.5 text-left text-sm leading-none">
                     <span className="font-semibold truncate">{user?.name}</span>
                     <span className="text-xs text-muted-foreground truncate capitalize">
-                      {user?.role}
+                      {user?.teamRole
+                        ? `${user.teamRole} (${user.role})`
+                        : user?.role}
                     </span>
                   </div>
                   <ChevronUp className="ml-auto" />
