@@ -34,6 +34,15 @@ export interface ProjectPartner {
   }[]
 }
 
+export interface SubStage {
+  id: string
+  name: string
+  status: 'pending' | 'in_progress' | 'completed' | 'delayed'
+  startDate: Date
+  endDate: Date
+  progress: number
+}
+
 export interface Stage {
   id: string
   name: string
@@ -48,6 +57,8 @@ export interface Stage {
   actualLabor: number
   description: string
   bimFiles: BimFile[]
+  progress: number
+  subStages: SubStage[]
 }
 
 export interface ProjectAddress {
@@ -82,12 +93,31 @@ interface ProjectState {
   updateProject: (id: string, data: Partial<Project>) => void
   addStage: (
     projectId: string,
-    stage: Omit<Stage, 'id' | 'actualMaterial' | 'actualLabor' | 'bimFiles'>,
+    stage: Omit<
+      Stage,
+      | 'id'
+      | 'actualMaterial'
+      | 'actualLabor'
+      | 'bimFiles'
+      | 'progress'
+      | 'subStages'
+    >,
   ) => void
   updateStage: (
     projectId: string,
     stageId: string,
     data: Partial<Stage>,
+  ) => void
+  addSubStage: (
+    projectId: string,
+    stageId: string,
+    subStage: Omit<SubStage, 'id'>,
+  ) => void
+  updateSubStage: (
+    projectId: string,
+    stageId: string,
+    subStageId: string,
+    data: Partial<SubStage>,
   ) => void
   updateStageActuals: (
     projectId: string,
@@ -101,7 +131,13 @@ interface ProjectState {
   ) => void
   importTimeline: (
     projectId: string,
-    timelineData: { stageName: string; startDate: Date; endDate: Date }[],
+    timelineData: {
+      level: number
+      name: string
+      startDate: Date
+      endDate: Date
+      progress: number
+    }[],
   ) => void
   addBimFile: (projectId: string, stageId: string, file: BimFile) => void
   addPartner: (projectId: string, partner: Omit<ProjectPartner, 'id'>) => void
@@ -192,6 +228,25 @@ const mockProjects: Project[] = [
         actualMaterial: 82000,
         actualLabor: 38000,
         description: 'Terraplanagem, sapatas e vigas baldrame.',
+        progress: 100,
+        subStages: [
+          {
+            id: 'sub-1',
+            name: 'Terraplanagem',
+            startDate: new Date(Date.now() - 86400000 * 30),
+            endDate: new Date(Date.now() - 86400000 * 20),
+            progress: 100,
+            status: 'completed',
+          },
+          {
+            id: 'sub-2',
+            name: 'Fundações',
+            startDate: new Date(Date.now() - 86400000 * 19),
+            endDate: new Date(Date.now() - 86400000 * 5),
+            progress: 100,
+            status: 'completed',
+          },
+        ],
         bimFiles: [
           {
             id: 'bim-1',
@@ -215,6 +270,25 @@ const mockProjects: Project[] = [
         actualMaterial: 45000,
         actualLabor: 20000,
         description: 'Levantamento de paredes, pilares e lajes.',
+        progress: 35,
+        subStages: [
+          {
+            id: 'sub-3',
+            name: 'Pilares Térreo',
+            startDate: new Date(Date.now() - 86400000 * 4),
+            endDate: new Date(Date.now() + 86400000 * 10),
+            progress: 70,
+            status: 'in_progress',
+          },
+          {
+            id: 'sub-4',
+            name: 'Laje 1º Pavimento',
+            startDate: new Date(Date.now() + 86400000 * 11),
+            endDate: new Date(Date.now() + 86400000 * 25),
+            progress: 0,
+            status: 'pending',
+          },
+        ],
         bimFiles: [],
       },
     ],
@@ -255,6 +329,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                 actualMaterial: 0,
                 actualLabor: 0,
                 bimFiles: [],
+                progress: 0,
+                subStages: [],
               },
             ],
           }
@@ -271,6 +347,54 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             stages: p.stages.map((s) =>
               s.id === stageId ? { ...s, ...data } : s,
             ),
+          }
+        }
+        return p
+      }),
+    })),
+  addSubStage: (projectId, stageId, subStage) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) => {
+              if (s.id === stageId) {
+                return {
+                  ...s,
+                  subStages: [
+                    ...s.subStages,
+                    {
+                      ...subStage,
+                      id: Math.random().toString(36).substr(2, 9),
+                    },
+                  ],
+                }
+              }
+              return s
+            }),
+          }
+        }
+        return p
+      }),
+    })),
+  updateSubStage: (projectId, stageId, subStageId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) => {
+              if (s.id === stageId) {
+                return {
+                  ...s,
+                  subStages: s.subStages.map((sub) =>
+                    sub.id === subStageId ? { ...sub, ...data } : sub,
+                  ),
+                }
+              }
+              return s
+            }),
           }
         }
         return p
@@ -334,20 +458,70 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id === projectId) {
-          const newStages = p.stages.map((s) => {
-            const external = timelineData.find(
-              (t) =>
-                s.name.toLowerCase().includes(t.stageName.toLowerCase()) ||
-                t.stageName.toLowerCase().includes(s.name.toLowerCase()),
-            )
-            if (external) {
-              return {
-                ...s,
-                startDate: external.startDate,
-                endDate: external.endDate,
+          let currentStageIndex = -1
+          const newStages = [...p.stages]
+
+          timelineData.forEach((item) => {
+            if (item.level === 1) {
+              // Try to find stage by fuzzy name match or just update logic
+              const existingIndex = newStages.findIndex(
+                (s) =>
+                  s.name.toLowerCase().includes(item.name.toLowerCase()) ||
+                  item.name.toLowerCase().includes(s.name.toLowerCase()),
+              )
+
+              if (existingIndex >= 0) {
+                currentStageIndex = existingIndex
+                newStages[existingIndex] = {
+                  ...newStages[existingIndex],
+                  startDate: item.startDate,
+                  endDate: item.endDate,
+                  progress: item.progress,
+                }
+              } else {
+                // Create new stage if not found? For now let's skip to avoid duplicates
+                // or just ignore if strict matching is required
+                currentStageIndex = -1
+              }
+            } else if (item.level === 2 && currentStageIndex >= 0) {
+              // Add or Update SubStage
+              const stage = newStages[currentStageIndex]
+              const existingSubIndex = stage.subStages.findIndex(
+                (ss) => ss.name === item.name,
+              )
+
+              if (existingSubIndex >= 0) {
+                const updatedSubStages = [...stage.subStages]
+                updatedSubStages[existingSubIndex] = {
+                  ...updatedSubStages[existingSubIndex],
+                  startDate: item.startDate,
+                  endDate: item.endDate,
+                  progress: item.progress,
+                }
+                newStages[currentStageIndex] = {
+                  ...stage,
+                  subStages: updatedSubStages,
+                }
+              } else {
+                const newSubStage: SubStage = {
+                  id: Math.random().toString(36).substr(2, 9),
+                  name: item.name,
+                  startDate: item.startDate,
+                  endDate: item.endDate,
+                  progress: item.progress,
+                  status:
+                    item.progress === 100
+                      ? 'completed'
+                      : item.progress > 0
+                        ? 'in_progress'
+                        : 'pending',
+                }
+                newStages[currentStageIndex] = {
+                  ...stage,
+                  subStages: [...stage.subStages, newSubStage],
+                }
               }
             }
-            return s
           })
 
           // Only update if we found matches
