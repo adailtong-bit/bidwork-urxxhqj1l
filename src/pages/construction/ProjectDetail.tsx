@@ -898,17 +898,17 @@ export default function ProjectDetail() {
             </DialogTitle>
             <DialogDescription>
               Faça upload de um arquivo CSV ou Excel.
-              {importType === 'timeline' && (
-                <div className="mt-2 text-xs bg-muted p-2 rounded">
-                  <p className="font-semibold">Formatos Suportados:</p>
-                  <p>1. Simples: Nome; Início (dd/mm/aaaa); Fim (dd/mm/aaaa)</p>
-                  <p>
-                    2. Hierárquico: Nível (1 ou 2); Nome; Início; Fim; Progresso
-                    (%)
-                  </p>
-                </div>
-              )}
             </DialogDescription>
+            {importType === 'timeline' && (
+              <div className="mt-2 text-xs bg-muted p-2 rounded text-left">
+                <p className="font-semibold">Formatos Suportados:</p>
+                <p>1. Simples: Nome; Início (dd/mm/aaaa); Fim (dd/mm/aaaa)</p>
+                <p>
+                  2. Hierárquico: Nível (1 ou 2); Nome; Início; Fim; Progresso
+                  (%)
+                </p>
+              </div>
+            )}
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div
