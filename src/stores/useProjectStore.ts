@@ -19,12 +19,29 @@ export interface BimFile {
   size: string
 }
 
+export interface ProjectPartner {
+  id: string
+  companyName: string
+  stageId: string
+  agreedPrice: number
+  contractUrl?: string
+  licensesUrl?: string
+  insuranceUrl?: string
+  employees: {
+    id: string
+    name: string
+    role: string
+  }[]
+}
+
 export interface Stage {
   id: string
   name: string
   status: 'pending' | 'in_progress' | 'completed' | 'delayed'
   startDate: Date
   endDate: Date
+  actualStartDate?: Date
+  actualEndDate?: Date
   budgetMaterial: number
   budgetLabor: number
   actualMaterial: number
@@ -43,17 +60,23 @@ export interface Project {
   endDate: Date
   status: 'planning' | 'in_progress' | 'completed' | 'paused'
   stages: Stage[]
+  partners: ProjectPartner[]
   totalBudget: number
   totalSpent: number
 }
 
 interface ProjectState {
   projects: Project[]
-  addProject: (project: Omit<Project, 'id' | 'totalSpent'>) => void
+  addProject: (project: Omit<Project, 'id' | 'totalSpent' | 'partners'>) => void
   updateProject: (id: string, data: Partial<Project>) => void
   addStage: (
     projectId: string,
     stage: Omit<Stage, 'id' | 'actualMaterial' | 'actualLabor' | 'bimFiles'>,
+  ) => void
+  updateStage: (
+    projectId: string,
+    stageId: string,
+    data: Partial<Stage>,
   ) => void
   updateStageActuals: (
     projectId: string,
@@ -65,9 +88,61 @@ interface ProjectState {
     projectId: string,
     budgetData: { stageName: string; material: number; labor: number }[],
   ) => void
+  importTimeline: (
+    projectId: string,
+    timelineData: { stageName: string; startDate: Date; endDate: Date }[],
+  ) => void
   addBimFile: (projectId: string, stageId: string, file: BimFile) => void
+  addPartner: (projectId: string, partner: Omit<ProjectPartner, 'id'>) => void
   getProject: (id: string) => Project | undefined
 }
+
+export const DEFAULT_STAGES_TEMPLATE = [
+  {
+    name: '1. Compra do Terreno',
+    description: 'Pesquisa, Seleção, Zonas e Licenças.',
+  },
+  {
+    name: '2. Planejamento e Projeto',
+    description: 'Contratação, Desenvolvimento do Projeto.',
+  },
+  {
+    name: '3. Obtenção de Licenças',
+    description: 'Licenças de Construção, Permissões.',
+  },
+  {
+    name: '4. Preparação do Terreno',
+    description: 'Limpeza, Nivelamento, Fundação.',
+  },
+  {
+    name: '5. Construção Estrutural',
+    description: 'Estrutura, Telhado, Encanamento, Elétrica.',
+  },
+  {
+    name: '6. Acabamentos Internos e Externos',
+    description: 'Isolamento, Drywall, Pisos, Pintura.',
+  },
+  {
+    name: '7. Instalações Finais',
+    description: 'Iluminação, Tomadas, Louças, Bancadas.',
+  },
+  {
+    name: '8. Aparelhos e Móveis',
+    description: 'Eletrodomésticos, Móveis Embutidos.',
+  },
+  {
+    name: '9. Acabamentos Externos',
+    description: 'Revestimento Externo, Calçadas, Paisagismo.',
+  },
+  {
+    name: '10. Inspeções e Aprovações Finais',
+    description: 'Inspeções, Habite-se.',
+  },
+  {
+    name: '11. Mudança, Manutenção e Limpeza',
+    description: 'Mudança, Limpeza Final, Correções.',
+  },
+]
 
 const mockProjects: Project[] = [
   {
@@ -82,13 +157,16 @@ const mockProjects: Project[] = [
     status: 'in_progress',
     totalBudget: 1500000,
     totalSpent: 350000,
+    partners: [],
     stages: [
       {
         id: 'st-1',
-        name: 'Fundação',
+        name: '4. Preparação do Terreno',
         status: 'completed',
         startDate: new Date(Date.now() - 86400000 * 30),
         endDate: new Date(Date.now() - 86400000 * 5),
+        actualStartDate: new Date(Date.now() - 86400000 * 28),
+        actualEndDate: new Date(Date.now() - 86400000 * 4),
         budgetMaterial: 80000,
         budgetLabor: 40000,
         actualMaterial: 82000,
@@ -107,28 +185,16 @@ const mockProjects: Project[] = [
       },
       {
         id: 'st-2',
-        name: 'Alvenaria e Estrutura',
+        name: '5. Construção Estrutural',
         status: 'in_progress',
         startDate: new Date(Date.now() - 86400000 * 4),
         endDate: new Date(Date.now() + 86400000 * 45),
+        actualStartDate: new Date(Date.now() - 86400000 * 3),
         budgetMaterial: 150000,
         budgetLabor: 90000,
         actualMaterial: 45000,
         actualLabor: 20000,
         description: 'Levantamento de paredes, pilares e lajes.',
-        bimFiles: [],
-      },
-      {
-        id: 'st-3',
-        name: 'Instalações',
-        status: 'pending',
-        startDate: new Date(Date.now() + 86400000 * 46),
-        endDate: new Date(Date.now() + 86400000 * 90),
-        budgetMaterial: 60000,
-        budgetLabor: 50000,
-        actualMaterial: 0,
-        actualLabor: 0,
-        description: 'Elétrica, hidráulica e ar condicionado.',
         bimFiles: [],
       },
     ],
@@ -145,6 +211,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           ...project,
           id: Math.random().toString(36).substr(2, 9),
           totalSpent: 0,
+          partners: [],
         },
       ],
     })),
@@ -170,6 +237,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
                 bimFiles: [],
               },
             ],
+          }
+        }
+        return p
+      }),
+    })),
+  updateStage: (projectId, stageId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            stages: p.stages.map((s) =>
+              s.id === stageId ? { ...s, ...data } : s,
+            ),
           }
         }
         return p
@@ -207,8 +288,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       projects: state.projects.map((p) => {
         if (p.id === projectId) {
           const newStages = p.stages.map((s) => {
-            const external = budgetData.find((b) =>
-              b.stageName.includes(s.name),
+            const external = budgetData.find(
+              (b) =>
+                b.stageName.includes(s.name) || s.name.includes(b.stageName),
             )
             if (external) {
               return {
@@ -228,6 +310,41 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return p
       }),
     })),
+  importTimeline: (projectId, timelineData) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newStages = p.stages.map((s) => {
+            const external = timelineData.find(
+              (t) =>
+                t.stageName.includes(s.name) || s.name.includes(t.stageName),
+            )
+            if (external) {
+              return {
+                ...s,
+                startDate: external.startDate,
+                endDate: external.endDate,
+              }
+            }
+            return s
+          })
+          // Update project start/end based on stages
+          const dates = newStages.flatMap((s) => [
+            s.startDate.getTime(),
+            s.endDate.getTime(),
+          ])
+          const minDate = new Date(Math.min(...dates))
+          const maxDate = new Date(Math.max(...dates))
+          return {
+            ...p,
+            stages: newStages,
+            startDate: minDate,
+            endDate: maxDate,
+          }
+        }
+        return p
+      }),
+    })),
   addBimFile: (projectId, stageId, file) =>
     set((state) => ({
       projects: state.projects.map((p) => {
@@ -237,6 +354,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             stages: p.stages.map((s) =>
               s.id === stageId ? { ...s, bimFiles: [...s.bimFiles, file] } : s,
             ),
+          }
+        }
+        return p
+      }),
+    })),
+  addPartner: (projectId, partner) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            partners: [
+              ...p.partners,
+              { ...partner, id: Math.random().toString(36).substr(2, 9) },
+            ],
           }
         }
         return p

@@ -11,12 +11,26 @@ export interface InventoryItem {
   lastUpdated: Date
 }
 
+export interface PurchaseRequest {
+  id: string
+  projectId: string
+  materialName: string
+  quantity: number
+  unit: string
+  requestedAt: Date
+  status: 'pending' | 'ordered' | 'fulfilled'
+}
+
 interface InventoryState {
   items: InventoryItem[]
+  purchaseRequests: PurchaseRequest[]
   addItem: (item: Omit<InventoryItem, 'id' | 'lastUpdated'>) => void
   updateQuantity: (id: string, quantity: number) => void
   updateMinStock: (id: string, minStock: number) => void
   removeItem: (id: string) => void
+  reportShortage: (
+    request: Omit<PurchaseRequest, 'id' | 'requestedAt' | 'status'>,
+  ) => void
   getItemsByProject: (projectId: string) => InventoryItem[]
 }
 
@@ -55,6 +69,7 @@ const mockInventory: InventoryItem[] = [
 
 export const useInventoryStore = create<InventoryState>((set, get) => ({
   items: mockInventory,
+  purchaseRequests: [],
   addItem: (item) =>
     set((state) => ({
       items: [
@@ -79,6 +94,18 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   removeItem: (id) =>
     set((state) => ({
       items: state.items.filter((i) => i.id !== id),
+    })),
+  reportShortage: (request) =>
+    set((state) => ({
+      purchaseRequests: [
+        ...state.purchaseRequests,
+        {
+          ...request,
+          id: Math.random().toString(36).substr(2, 9),
+          requestedAt: new Date(),
+          status: 'pending',
+        },
+      ],
     })),
   getItemsByProject: (projectId) =>
     get().items.filter((i) => i.projectId === projectId),

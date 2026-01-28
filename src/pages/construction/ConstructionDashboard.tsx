@@ -11,21 +11,69 @@ import {
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
   Plus,
   HardHat,
   TrendingUp,
   AlertCircle,
   ArrowRight,
+  PieChart,
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, differenceInDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 
 export default function ConstructionDashboard() {
   const { projects } = useProjectStore()
 
   const activeProjects = projects.filter((p) => p.status === 'in_progress')
+  const completedProjects = projects.filter((p) => p.status === 'completed')
+
   const totalBudget = projects.reduce((acc, p) => acc + p.totalBudget, 0)
   const totalSpent = projects.reduce((acc, p) => acc + p.totalSpent, 0)
+
+  // Calculate variances for completed projects
+  const finishedProjectStats = completedProjects.map((p) => {
+    const plannedDays = differenceInDays(p.endDate, p.startDate)
+    // Mock actual end date if not present (using last stage actualEndDate or just endDate)
+    const actualEnd = p.stages[p.stages.length - 1]?.actualEndDate || p.endDate
+    const actualDays = differenceInDays(actualEnd, p.startDate)
+
+    const plannedMat = p.stages.reduce((acc, s) => acc + s.budgetMaterial, 0)
+    const actualMat = p.stages.reduce((acc, s) => acc + s.actualMaterial, 0)
+
+    return {
+      name: p.name,
+      plannedDays,
+      actualDays,
+      timeVariance: actualDays - plannedDays,
+      plannedMat,
+      actualMat,
+      matVariance: actualMat - plannedMat,
+    }
+  })
+
+  // For active projects (mock data for visualization if none completed)
+  const analyticsData =
+    finishedProjectStats.length > 0
+      ? finishedProjectStats
+      : [
+          {
+            name: 'Residencial Beta (Mock)',
+            plannedDays: 120,
+            actualDays: 135,
+            timeVariance: 15,
+            plannedMat: 50000,
+            actualMat: 55000,
+            matVariance: 5000,
+          },
+        ]
 
   return (
     <div className="space-y-8">
@@ -71,10 +119,15 @@ export default function ConstructionDashboard() {
             </div>
             <div className="text-xs text-muted-foreground flex justify-between mt-1">
               <span>Executado: R$ {totalSpent.toLocaleString('pt-BR')}</span>
-              <span>{((totalSpent / totalBudget) * 100).toFixed(1)}%</span>
+              <span>
+                {totalBudget > 0
+                  ? ((totalSpent / totalBudget) * 100).toFixed(1)
+                  : 0}
+                %
+              </span>
             </div>
             <Progress
-              value={(totalSpent / totalBudget) * 100}
+              value={totalBudget > 0 ? (totalSpent / totalBudget) * 100 : 0}
               className="h-1.5 mt-2"
             />
           </CardContent>
@@ -94,6 +147,68 @@ export default function ConstructionDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <Card className="bg-slate-50 border-slate-200">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-primary" /> Análise Pós-Obra
+            (Planejado x Realizado)
+          </CardTitle>
+          <CardDescription>
+            Comparativo de eficiência para identificação de desperdícios.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Projeto</TableHead>
+                <TableHead>Tempo Planejado</TableHead>
+                <TableHead>Tempo Real</TableHead>
+                <TableHead>Desvio (Dias)</TableHead>
+                <TableHead>Material Planejado</TableHead>
+                <TableHead>Material Real</TableHead>
+                <TableHead>Desvio (R$)</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {analyticsData.map((d, i) => (
+                <TableRow key={i}>
+                  <TableCell className="font-medium">{d.name}</TableCell>
+                  <TableCell>{d.plannedDays} dias</TableCell>
+                  <TableCell>{d.actualDays} dias</TableCell>
+                  <TableCell
+                    className={
+                      d.timeVariance > 0
+                        ? 'text-red-500 font-bold'
+                        : 'text-green-600'
+                    }
+                  >
+                    {d.timeVariance > 0 ? `+${d.timeVariance}` : d.timeVariance}
+                  </TableCell>
+                  <TableCell>
+                    R$ {d.plannedMat.toLocaleString('pt-BR')}
+                  </TableCell>
+                  <TableCell>
+                    R$ {d.actualMat.toLocaleString('pt-BR')}
+                  </TableCell>
+                  <TableCell
+                    className={
+                      d.matVariance > 0
+                        ? 'text-red-500 font-bold'
+                        : 'text-green-600'
+                    }
+                  >
+                    {d.matVariance > 0
+                      ? `+${d.matVariance.toLocaleString('pt-BR')}`
+                      : d.matVariance}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
 
       <div>
         <h2 className="text-xl font-bold tracking-tight mb-4">Meus Projetos</h2>
@@ -137,15 +252,21 @@ export default function ConstructionDashboard() {
                       Progresso Financeiro
                     </span>
                     <span className="font-medium">
-                      {(
-                        (project.totalSpent / project.totalBudget) *
-                        100
-                      ).toFixed(0)}
+                      {project.totalBudget > 0
+                        ? (
+                            (project.totalSpent / project.totalBudget) *
+                            100
+                          ).toFixed(0)
+                        : 0}
                       %
                     </span>
                   </div>
                   <Progress
-                    value={(project.totalSpent / project.totalBudget) * 100}
+                    value={
+                      project.totalBudget > 0
+                        ? (project.totalSpent / project.totalBudget) * 100
+                        : 0
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-2 text-sm">

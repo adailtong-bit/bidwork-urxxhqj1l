@@ -33,6 +33,7 @@ import {
   ArrowUp,
   Search,
   RefreshCw,
+  Megaphone,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -42,18 +43,21 @@ import {
   DialogTitle,
   DialogTrigger,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 
 export default function InventoryManager() {
-  const { items, addItem, updateQuantity } = useInventoryStore()
+  const { items, addItem, updateQuantity, reportShortage } = useInventoryStore()
   const { projects } = useProjectStore()
   const { toast } = useToast()
 
   const [selectedProject, setSelectedProject] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
   const [isAddOpen, setIsAddOpen] = useState(false)
+  const [isReportOpen, setIsReportOpen] = useState(false)
+
   const [newItem, setNewItem] = useState({
     materialName: '',
     quantity: '',
@@ -61,6 +65,15 @@ export default function InventoryManager() {
     minStock: '',
     location: '',
   })
+
+  const [shortageReport, setShortageReport] = useState({
+    materialName: '',
+    quantity: '',
+    unit: 'un',
+  })
+
+  // Filter active projects for dynamic location
+  const activeProjects = projects.filter((p) => p.status === 'in_progress')
 
   // Filter items
   const filteredItems = items.filter((item) => {
@@ -85,10 +98,16 @@ export default function InventoryManager() {
       toast({
         variant: 'destructive',
         title: 'Erro',
-        description: 'Preencha todos os campos e selecione um projeto.',
+        description:
+          'Preencha todos os campos e selecione um projeto no filtro principal.',
       })
       return
     }
+
+    const project = projects.find((p) => p.id === selectedProject)
+    const locationName = project
+      ? `${project.name} (${project.location})`
+      : newItem.location
 
     addItem({
       projectId: selectedProject,
@@ -96,7 +115,7 @@ export default function InventoryManager() {
       quantity: Number(newItem.quantity),
       unit: newItem.unit,
       minStock: Number(newItem.minStock),
-      location: newItem.location || 'Depósito Central',
+      location: locationName,
     })
 
     setIsAddOpen(false)
@@ -108,6 +127,31 @@ export default function InventoryManager() {
       location: '',
     })
     toast({ title: 'Item adicionado ao estoque' })
+  }
+
+  const handleReportShortage = () => {
+    if (!selectedProject || selectedProject === 'all') {
+      toast({
+        variant: 'destructive',
+        title: 'Selecione um Projeto',
+        description:
+          'O reporte de falta deve ser vinculado a um projeto específico.',
+      })
+      return
+    }
+
+    reportShortage({
+      projectId: selectedProject,
+      materialName: shortageReport.materialName,
+      quantity: Number(shortageReport.quantity),
+      unit: shortageReport.unit,
+    })
+    setIsReportOpen(false)
+    setShortageReport({ materialName: '', quantity: '', unit: 'un' })
+    toast({
+      title: 'Solicitação Enviada',
+      description: 'O setor de compras foi notificado da necessidade.',
+    })
   }
 
   const handleUpdateStock = (id: string, current: number, delta: number) => {
@@ -146,7 +190,7 @@ export default function InventoryManager() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos os Projetos</SelectItem>
-              {projects.map((p) => (
+              {activeProjects.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
                 </SelectItem>
@@ -163,73 +207,143 @@ export default function InventoryManager() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
-          <DialogTrigger asChild>
-            <Button disabled={selectedProject === 'all'}>
-              <Plus className="mr-2 h-4 w-4" /> Novo Item
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Adicionar ao Inventário</DialogTitle>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Nome do Material</Label>
-                <Input
-                  value={newItem.materialName}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, materialName: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
+
+        <div className="flex gap-2">
+          <Dialog open={isReportOpen} onOpenChange={setIsReportOpen}>
+            <DialogTrigger asChild>
+              <Button
+                variant="secondary"
+                className="border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700"
+              >
+                <Megaphone className="mr-2 h-4 w-4" /> Relatar Falta
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Reportar Necessidade de Compra</DialogTitle>
+                <DialogDescription>
+                  Solicite materiais urgentes para o projeto selecionado.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label>Quantidade Inicial</Label>
+                  <Label>Material Necessário</Label>
+                  <Input
+                    value={shortageReport.materialName}
+                    onChange={(e) =>
+                      setShortageReport({
+                        ...shortageReport,
+                        materialName: e.target.value,
+                      })
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Quantidade</Label>
+                    <Input
+                      type="number"
+                      value={shortageReport.quantity}
+                      onChange={(e) =>
+                        setShortageReport({
+                          ...shortageReport,
+                          quantity: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Unidade</Label>
+                    <Input
+                      value={shortageReport.unit}
+                      onChange={(e) =>
+                        setShortageReport({
+                          ...shortageReport,
+                          unit: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button onClick={handleReportShortage}>
+                  Enviar Solicitação
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+
+          <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+            <DialogTrigger asChild>
+              <Button disabled={selectedProject === 'all'}>
+                <Plus className="mr-2 h-4 w-4" /> Novo Item
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Adicionar ao Inventário</DialogTitle>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label>Nome do Material</Label>
+                  <Input
+                    value={newItem.materialName}
+                    onChange={(e) =>
+                      setNewItem({ ...newItem, materialName: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>Quantidade Inicial</Label>
+                    <Input
+                      type="number"
+                      value={newItem.quantity}
+                      onChange={(e) =>
+                        setNewItem({ ...newItem, quantity: e.target.value })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Unidade</Label>
+                    <Input
+                      placeholder="kg, m³, un"
+                      value={newItem.unit}
+                      onChange={(e) =>
+                        setNewItem({ ...newItem, unit: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label>Estoque Mínimo (Alerta)</Label>
                   <Input
                     type="number"
-                    value={newItem.quantity}
+                    value={newItem.minStock}
                     onChange={(e) =>
-                      setNewItem({ ...newItem, quantity: e.target.value })
+                      setNewItem({ ...newItem, minStock: e.target.value })
                     }
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Unidade</Label>
+                  <Label>Localização (Automático)</Label>
                   <Input
-                    placeholder="kg, m³, un"
-                    value={newItem.unit}
-                    onChange={(e) =>
-                      setNewItem({ ...newItem, unit: e.target.value })
+                    value={
+                      projects.find((p) => p.id === selectedProject)?.name ||
+                      'Manual'
                     }
+                    disabled
+                    className="bg-muted"
                   />
                 </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Estoque Mínimo (Alerta)</Label>
-                <Input
-                  type="number"
-                  value={newItem.minStock}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, minStock: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Localização (Canteiro)</Label>
-                <Input
-                  value={newItem.location}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, location: e.target.value })
-                  }
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button onClick={handleAddItem}>Salvar Item</Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <DialogFooter>
+                <Button onClick={handleAddItem}>Salvar Item</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       <Card>

@@ -42,6 +42,7 @@ import Logistics from '@/pages/construction/Logistics'
 import InventoryManager from '@/pages/construction/InventoryManager'
 import Leaderboard from '@/pages/gamification/Leaderboard'
 import TrainingCenter from '@/pages/training/TrainingCenter'
+import NewProject from '@/pages/construction/NewProject'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
@@ -141,7 +142,7 @@ const App = () => {
               />
               <Route
                 path="/construction/projects/new"
-                element={<ConstructionDashboard />}
+                element={<NewProject />}
               />
               <Route path="/construction/projects" element={<ProjectList />} />
               <Route

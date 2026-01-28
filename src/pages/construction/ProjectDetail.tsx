@@ -30,12 +30,15 @@ import {
   CheckCircle2,
   Calendar as CalendarIcon,
   MapPin,
-  UserCheck,
   Upload,
   FileSpreadsheet,
   FileBox,
   Eye,
   Download,
+  Building2,
+  FileText,
+  Clock,
+  Edit2,
 } from 'lucide-react'
 import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
@@ -50,10 +53,32 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import { cn } from '@/lib/utils'
+import { ptBR } from 'date-fns/locale'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
-  const { getProject, importExternalBudget, addBimFile } = useProjectStore()
+  const {
+    getProject,
+    importExternalBudget,
+    importTimeline,
+    addBimFile,
+    addPartner,
+    updateStage,
+  } = useProjectStore()
   const { getJobsByProject } = useJobStore()
   const { getOrdersByProject } = useMaterialStore()
   const { toast } = useToast()
@@ -63,26 +88,98 @@ export default function ProjectDetail() {
   const orders = id ? getOrdersByProject(id) : []
 
   const [isImportOpen, setIsImportOpen] = useState(false)
+  const [importType, setImportType] = useState<'budget' | 'timeline'>('budget')
   const [isBimUploadOpen, setIsBimUploadOpen] = useState(false)
+  const [isPartnerOpen, setIsPartnerOpen] = useState(false)
   const [selectedStageForBim, setSelectedStageForBim] = useState<string | null>(
     null,
   )
 
+  // Partner Form State
+  const [newPartner, setNewPartner] = useState({
+    companyName: '',
+    stageId: '',
+    agreedPrice: '',
+  })
+
+  // Date Edit State
+  const [editingStage, setEditingStage] = useState<string | null>(null)
+  const [stageDates, setStageDates] = useState<{
+    start: Date
+    end: Date
+  } | null>(null)
+
   if (!project) return <div>Projeto não encontrado</div>
 
-  const handleImportBudget = () => {
-    // Mock parsing of a file
-    importExternalBudget(project.id, [
-      { stageName: 'Fundação', material: 85000, labor: 42000 },
-      { stageName: 'Alvenaria', material: 160000, labor: 95000 },
-      { stageName: 'Instalações', material: 65000, labor: 52000 },
-    ])
+  const handleImport = () => {
+    if (importType === 'budget') {
+      importExternalBudget(project.id, [
+        { stageName: 'Fundação', material: 85000, labor: 42000 },
+        { stageName: 'Alvenaria', material: 160000, labor: 95000 },
+        { stageName: 'Instalações', material: 65000, labor: 52000 },
+      ])
+      toast({
+        title: 'Orçamento Importado',
+        description: 'Os valores estimados foram atualizados.',
+      })
+    } else {
+      // Mock timeline import
+      const today = new Date()
+      importTimeline(
+        project.id,
+        project.stages.map((s, i) => ({
+          stageName: s.name,
+          startDate: new Date(today.getTime() + i * 30 * 86400000),
+          endDate: new Date(today.getTime() + (i + 1) * 30 * 86400000),
+        })),
+      )
+      toast({
+        title: 'Cronograma Importado',
+        description:
+          'As datas das etapas foram atualizadas via arquivo externo.',
+      })
+    }
     setIsImportOpen(false)
-    toast({
-      title: 'Orçamento Importado',
-      description:
-        'Os valores estimados foram atualizados com base no arquivo CSV externo.',
+  }
+
+  const handleAddPartner = () => {
+    if (
+      !newPartner.companyName ||
+      !newPartner.stageId ||
+      !newPartner.agreedPrice
+    ) {
+      toast({
+        variant: 'destructive',
+        title: 'Campos obrigatórios',
+        description: 'Preencha todos os dados da empresa parceira.',
+      })
+      return
+    }
+
+    addPartner(project.id, {
+      companyName: newPartner.companyName,
+      stageId: newPartner.stageId,
+      agreedPrice: Number(newPartner.agreedPrice),
+      employees: [],
+      // Mock file URLs
+      contractUrl: '#',
+      licensesUrl: '#',
+      insuranceUrl: '#',
     })
+    setIsPartnerOpen(false)
+    setNewPartner({ companyName: '', stageId: '', agreedPrice: '' })
+    toast({ title: 'Parceiro Registrado com Sucesso!' })
+  }
+
+  const handleStageDateUpdate = (stageId: string) => {
+    if (stageDates) {
+      updateStage(project.id, stageId, {
+        startDate: stageDates.start,
+        endDate: stageDates.end,
+      })
+      setEditingStage(null)
+      toast({ title: 'Datas atualizadas' })
+    }
   }
 
   const handleBimUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,20 +249,31 @@ export default function ProjectDetail() {
 
       <Tabs defaultValue="stages" className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:w-[400px]">
-          <TabsTrigger value="stages">Etapas da Obra</TabsTrigger>
+          <TabsTrigger value="stages">Etapas (Workflow)</TabsTrigger>
           <TabsTrigger value="financial">Financeiro</TabsTrigger>
-          <TabsTrigger value="team">Equipe & Jobs</TabsTrigger>
+          <TabsTrigger value="team">Equipe & Parceiros</TabsTrigger>
         </TabsList>
 
         <TabsContent value="stages" className="mt-6 space-y-6">
+          <div className="flex justify-end mb-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setIsImportOpen(true)
+                setImportType('timeline')
+              }}
+            >
+              <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Cronograma
+              (CSV)
+            </Button>
+          </div>
           {project.stages.map((stage) => {
-            const {
-              jobs: stageJobs,
-              orders: stageOrders,
-              totalBudget,
-              totalActual,
-            } = getStageFinancials(stage)
-            const percent = Math.min(100, (totalActual / totalBudget) * 100)
+            const { totalBudget, totalActual } = getStageFinancials(stage)
+            const percent =
+              totalBudget > 0
+                ? Math.min(100, (totalActual / totalBudget) * 100)
+                : 0
 
             return (
               <Card
@@ -182,6 +290,90 @@ export default function ProjectDetail() {
                         )}
                       </CardTitle>
                       <CardDescription>{stage.description}</CardDescription>
+
+                      {/* Workflow Date Management */}
+                      <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+                        {editingStage === stage.id ? (
+                          <div className="flex items-center gap-2 bg-background p-2 rounded border shadow-sm">
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                >
+                                  {stageDates
+                                    ? format(stageDates.start, 'dd/MM')
+                                    : 'Início'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={stageDates?.start}
+                                  onSelect={(d) =>
+                                    d &&
+                                    setStageDates((prev) => ({
+                                      ...prev!,
+                                      start: d,
+                                    }))
+                                  }
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <span>até</span>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                >
+                                  {stageDates
+                                    ? format(stageDates.end, 'dd/MM')
+                                    : 'Fim'}
+                                </Button>
+                              </PopoverTrigger>
+                              <PopoverContent className="p-0">
+                                <Calendar
+                                  mode="single"
+                                  selected={stageDates?.end}
+                                  onSelect={(d) =>
+                                    d &&
+                                    setStageDates((prev) => ({
+                                      ...prev!,
+                                      end: d,
+                                    }))
+                                  }
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <Button
+                              size="sm"
+                              className="h-8 w-8 p-0"
+                              onClick={() => handleStageDateUpdate(stage.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div
+                            className="flex items-center gap-2 group cursor-pointer"
+                            onClick={() => {
+                              setEditingStage(stage.id)
+                              setStageDates({
+                                start: stage.startDate,
+                                end: stage.endDate,
+                              })
+                            }}
+                          >
+                            <Clock className="h-4 w-4" />
+                            {format(stage.startDate, 'dd/MM/yyyy')} -{' '}
+                            {format(stage.endDate, 'dd/MM/yyyy')}
+                            <Edit2 className="h-3 w-3 opacity-0 group-hover:opacity-100 transition-opacity" />
+                          </div>
+                        )}
+                      </div>
                     </div>
                     <div className="text-right">
                       <div className="text-sm font-medium">
@@ -212,7 +404,6 @@ export default function ProjectDetail() {
                         </Link>
                       </Button>
                     </div>
-                    {/* ... (Existing Labor details logic) ... */}
                     <div className="bg-muted/30 rounded-lg p-3 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Orçado</span>
@@ -243,7 +434,6 @@ export default function ProjectDetail() {
                         </Link>
                       </Button>
                     </div>
-                    {/* ... (Existing Materials details logic) ... */}
                     <div className="bg-muted/30 rounded-lg p-3 space-y-2">
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Orçado</span>
@@ -321,54 +511,6 @@ export default function ProjectDetail() {
                       </div>
                     )}
                   </div>
-
-                  {/* Suggestions Section */}
-                  <div className="col-span-1 md:col-span-2 mt-2 pt-4 border-t">
-                    <div className="flex items-center gap-2 text-sm text-purple-700 font-medium mb-3">
-                      <UserCheck className="h-4 w-4" /> Sugestões Inteligentes
-                      de Executores (IA)
-                    </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="flex items-center gap-3 p-2 rounded border border-purple-100 bg-purple-50/50">
-                        <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-xs">
-                          A
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">Andre Silva</p>
-                          <p className="text-xs text-muted-foreground">
-                            Certificado NR-18 • 98% Match
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="ml-auto h-7 text-xs"
-                        >
-                          Convidar
-                        </Button>
-                      </div>
-                      <div className="flex items-center gap-3 p-2 rounded border border-purple-100 bg-purple-50/50">
-                        <div className="h-8 w-8 rounded-full bg-purple-200 flex items-center justify-center text-purple-700 font-bold text-xs">
-                          R
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium">
-                            Roberto Construções
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Especialista Alvenaria • 95% Match
-                          </p>
-                        </div>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="ml-auto h-7 text-xs"
-                        >
-                          Convidar
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             )
@@ -376,7 +518,6 @@ export default function ProjectDetail() {
         </TabsContent>
 
         <TabsContent value="financial">
-          {/* ... Existing Financial Content ... */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
@@ -385,44 +526,15 @@ export default function ProjectDetail() {
                   Consolidado de todas as etapas.
                 </CardDescription>
               </div>
-              <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
-                <DialogTrigger asChild>
-                  <Button variant="outline">
-                    <Upload className="mr-2 h-4 w-4" /> Importar Orçamento (CSV)
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Importar Orçamento Externo</DialogTitle>
-                    <DialogDescription>
-                      Faça upload de um arquivo CSV ou Excel com as estimativas
-                      atualizadas para comparação.
-                    </DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-colors">
-                      <FileSpreadsheet className="h-10 w-10 text-muted-foreground mb-4" />
-                      <p className="font-medium">
-                        Clique para selecionar o arquivo
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        .CSV, .XLSX (Max 5MB)
-                      </p>
-                    </div>
-                    <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-xs flex gap-2">
-                      <Upload className="h-4 w-4 shrink-0" />
-                      Os valores importados substituirão as estimativas atuais
-                      de todas as etapas correspondentes (Mapping: Etapa &rarr;
-                      Material/Labor).
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button onClick={handleImportBudget}>
-                      Processar Arquivo (Mock)
-                    </Button>
-                  </DialogFooter>
-                </DialogContent>
-              </Dialog>
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setIsImportOpen(true)
+                  setImportType('budget')
+                }}
+              >
+                <Upload className="mr-2 h-4 w-4" /> Importar Orçamento (CSV)
+              </Button>
             </CardHeader>
             <CardContent>
               <Table>
@@ -473,73 +585,191 @@ export default function ProjectDetail() {
 
         <TabsContent value="team">
           <Card>
-            <CardHeader>
-              <CardTitle>Equipe Contratada</CardTitle>
-              <CardDescription>
-                Executores vinculados a este projeto.
-              </CardDescription>
+            <CardHeader className="flex flex-row justify-between items-center">
+              <div>
+                <CardTitle>Parceiros e Empresas</CardTitle>
+                <CardDescription>
+                  Gestão de contratados externos e contratos.
+                </CardDescription>
+              </div>
+              <Dialog open={isPartnerOpen} onOpenChange={setIsPartnerOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="mr-2 h-4 w-4" /> Registrar Parceiro
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Novo Contrato de Parceria</DialogTitle>
+                    <DialogDescription>
+                      Associe uma empresa a uma etapa do projeto.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label>Nome da Empresa/Parceiro</Label>
+                      <Input
+                        value={newPartner.companyName}
+                        onChange={(e) =>
+                          setNewPartner({
+                            ...newPartner,
+                            companyName: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Etapa Responsável</Label>
+                      <Select
+                        onValueChange={(val) =>
+                          setNewPartner({ ...newPartner, stageId: val })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {project.stages.map((s) => (
+                            <SelectItem key={s.id} value={s.id}>
+                              {s.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Preço Combinado (R$)</Label>
+                      <Input
+                        type="number"
+                        value={newPartner.agreedPrice}
+                        onChange={(e) =>
+                          setNewPartner({
+                            ...newPartner,
+                            agreedPrice: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="border border-dashed p-4 rounded text-center text-sm text-muted-foreground">
+                      <p className="mb-2">Documentos Obrigatórios</p>
+                      <div className="flex justify-center gap-2">
+                        <Badge variant="outline">
+                          <FileText className="w-3 h-3 mr-1" /> Contrato
+                        </Badge>
+                        <Badge variant="outline">
+                          <FileText className="w-3 h-3 mr-1" /> Licenças
+                        </Badge>
+                        <Badge variant="outline">
+                          <FileText className="w-3 h-3 mr-1" /> Seguro
+                        </Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2"
+                        disabled
+                      >
+                        Upload (Mock)
+                      </Button>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button onClick={handleAddPartner}>Salvar Registro</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Função/Job</TableHead>
-                    <TableHead>Certificações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {jobs
-                    .filter((j) => j.acceptedBidId)
-                    .map((job) => {
-                      const bid = job.bids.find(
-                        (b) => b.id === job.acceptedBidId,
-                      )
-                      if (!bid) return null
-
-                      const hasCerts = Math.random() > 0.5
-
-                      return (
-                        <TableRow key={job.id}>
-                          <TableCell className="font-medium">
-                            {bid.executorName}
-                          </TableCell>
-                          <TableCell>{job.title}</TableCell>
-                          <TableCell>
-                            {hasCerts ? (
-                              <Badge
-                                variant="secondary"
-                                className="bg-blue-50 text-blue-700 hover:bg-blue-50"
-                              >
-                                <CheckCircle2 className="h-3 w-3 mr-1" />{' '}
-                                Certificado BIDWORK
-                              </Badge>
-                            ) : (
-                              <span className="text-muted-foreground text-xs">
-                                -
-                              </span>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  {jobs.filter((j) => j.acceptedBidId).length === 0 && (
-                    <TableRow>
-                      <TableCell
-                        colSpan={3}
-                        className="text-center py-8 text-muted-foreground"
-                      >
-                        Nenhum executor contratado ainda.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+              {project.partners && project.partners.length > 0 ? (
+                <div className="grid gap-4">
+                  {project.partners.map((partner) => (
+                    <div
+                      key={partner.id}
+                      className="flex items-center justify-between p-4 border rounded-lg bg-card hover:bg-muted/50 transition-colors"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="h-10 w-10 bg-primary/10 rounded flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">{partner.companyName}</p>
+                          <p className="text-sm text-muted-foreground">
+                            Etapa:{' '}
+                            {
+                              project.stages.find(
+                                (s) => s.id === partner.stageId,
+                              )?.name
+                            }
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-bold">
+                          R$ {partner.agreedPrice.toLocaleString('pt-BR')}
+                        </div>
+                        <div className="flex gap-2 mt-1">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] cursor-pointer hover:bg-muted"
+                          >
+                            Contrato
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] cursor-pointer hover:bg-muted"
+                          >
+                            Seguro
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  Nenhum parceiro registrado.
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
+      {/* Import Dialog (Shared for Budget and Timeline) */}
+      <Dialog open={isImportOpen} onOpenChange={setIsImportOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {importType === 'budget'
+                ? 'Importar Orçamento'
+                : 'Importar Cronograma'}
+            </DialogTitle>
+            <DialogDescription>
+              Faça upload de um arquivo CSV ou Excel.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-colors">
+              <FileSpreadsheet className="h-10 w-10 text-muted-foreground mb-4" />
+              <p className="font-medium">Clique para selecionar o arquivo</p>
+              <p className="text-xs text-muted-foreground">
+                .CSV, .XLSX (Max 5MB)
+              </p>
+            </div>
+            <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-xs flex gap-2">
+              <Upload className="h-4 w-4 shrink-0" />
+              {importType === 'budget'
+                ? 'Substituirá estimativas financeiras.'
+                : 'Atualizará datas de início/fim das etapas.'}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleImport}>Processar Arquivo (Mock)</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* BIM Upload Dialog */}
       <Dialog open={isBimUploadOpen} onOpenChange={setIsBimUploadOpen}>
         <DialogContent>
           <DialogHeader>
