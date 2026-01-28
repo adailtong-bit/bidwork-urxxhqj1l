@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useProjectStore, Stage } from '@/stores/useProjectStore'
 import { useJobStore } from '@/stores/useJobStore'
@@ -40,7 +40,7 @@ import {
   Clock,
   Edit2,
 } from 'lucide-react'
-import { format } from 'date-fns'
+import { format, parse, isValid } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
@@ -83,6 +83,8 @@ export default function ProjectDetail() {
   const { getOrdersByProject } = useMaterialStore()
   const { toast } = useToast()
 
+  const csvInputRef = useRef<HTMLInputElement>(null)
+
   const project = getProject(id!)
   const jobs = id ? getJobsByProject(id) : []
   const orders = id ? getOrdersByProject(id) : []
@@ -111,8 +113,75 @@ export default function ProjectDetail() {
 
   if (!project) return <div>Projeto não encontrado</div>
 
-  const handleImport = () => {
-    if (importType === 'budget') {
+  const parseCSV = (text: string) => {
+    const lines = text.split('\n')
+    // Remove header
+    if (lines.length > 0) lines.shift()
+
+    return lines
+      .map((line) => {
+        const parts = line.split(/;|,\s?/) // Split by ; or ,
+        if (parts.length < 3) return null
+
+        const name = parts[0].trim()
+        const startStr = parts[1].trim()
+        const endStr = parts[2].trim()
+
+        // Parse dates (assuming dd/MM/yyyy)
+        const startDate = parse(startStr, 'dd/MM/yyyy', new Date())
+        const endDate = parse(endStr, 'dd/MM/yyyy', new Date())
+
+        if (!isValid(startDate) || !isValid(endDate)) return null
+
+        return {
+          stageName: name,
+          startDate,
+          endDate,
+        }
+      })
+      .filter(
+        (item): item is { stageName: string; startDate: Date; endDate: Date } =>
+          item !== null,
+      )
+  }
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (importType === 'timeline') {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        const text = event.target?.result
+        if (typeof text === 'string') {
+          try {
+            const timelineData = parseCSV(text)
+            if (timelineData.length === 0) {
+              toast({
+                variant: 'destructive',
+                title: 'Erro na leitura',
+                description: 'Nenhuma data válida encontrada no arquivo.',
+              })
+              return
+            }
+            importTimeline(project.id, timelineData)
+            toast({
+              title: 'Cronograma Importado',
+              description: `${timelineData.length} etapas atualizadas com sucesso via CSV.`,
+            })
+            setIsImportOpen(false)
+          } catch (err) {
+            toast({
+              variant: 'destructive',
+              title: 'Erro ao importar',
+              description: 'Formato de arquivo inválido.',
+            })
+          }
+        }
+      }
+      reader.readAsText(file)
+    } else {
+      // Mock Budget Import for now as per requirements focus on timeline
       importExternalBudget(project.id, [
         { stageName: 'Fundação', material: 85000, labor: 42000 },
         { stageName: 'Alvenaria', material: 160000, labor: 95000 },
@@ -120,26 +189,14 @@ export default function ProjectDetail() {
       ])
       toast({
         title: 'Orçamento Importado',
-        description: 'Os valores estimados foram atualizados.',
+        description: 'Os valores estimados foram atualizados (Mock Data).',
       })
-    } else {
-      // Mock timeline import
-      const today = new Date()
-      importTimeline(
-        project.id,
-        project.stages.map((s, i) => ({
-          stageName: s.name,
-          startDate: new Date(today.getTime() + i * 30 * 86400000),
-          endDate: new Date(today.getTime() + (i + 1) * 30 * 86400000),
-        })),
-      )
-      toast({
-        title: 'Cronograma Importado',
-        description:
-          'As datas das etapas foram atualizadas via arquivo externo.',
-      })
+      setIsImportOpen(false)
     }
-    setIsImportOpen(false)
+  }
+
+  const handleImportClick = () => {
+    csvInputRef.current?.click()
   }
 
   const handleAddPartner = () => {
@@ -234,9 +291,12 @@ export default function ProjectDetail() {
                 : project.status}
             </Badge>
           </h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-muted-foreground mt-1">
             <span className="flex items-center gap-1">
-              <MapPin className="h-3 w-3" /> {project.location}
+              <MapPin className="h-3 w-3" />
+              {project.address
+                ? `${project.address.street}, ${project.address.number} - ${project.address.neighborhood}, ${project.address.city} - ${project.address.state}`
+                : project.location}
             </span>
             <span className="flex items-center gap-1">
               <CalendarIcon className="h-3 w-3" />{' '}
@@ -745,27 +805,34 @@ export default function ProjectDetail() {
                 : 'Importar Cronograma'}
             </DialogTitle>
             <DialogDescription>
-              Faça upload de um arquivo CSV ou Excel.
+              Faça upload de um arquivo CSV ou Excel.{' '}
+              {importType === 'timeline' &&
+                'Formato: Nome Etapa; Início (dd/mm/aaaa); Fim (dd/mm/aaaa)'}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <div className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-colors">
+            <div
+              className="border-2 border-dashed rounded-lg p-10 flex flex-col items-center justify-center text-center cursor-pointer hover:bg-muted/50 transition-colors"
+              onClick={handleImportClick}
+            >
+              <input
+                type="file"
+                accept=".csv"
+                ref={csvInputRef}
+                className="hidden"
+                onChange={handleFileUpload}
+              />
               <FileSpreadsheet className="h-10 w-10 text-muted-foreground mb-4" />
               <p className="font-medium">Clique para selecionar o arquivo</p>
-              <p className="text-xs text-muted-foreground">
-                .CSV, .XLSX (Max 5MB)
-              </p>
+              <p className="text-xs text-muted-foreground">.CSV (Max 5MB)</p>
             </div>
             <div className="bg-yellow-50 text-yellow-800 p-3 rounded text-xs flex gap-2">
               <Upload className="h-4 w-4 shrink-0" />
               {importType === 'budget'
                 ? 'Substituirá estimativas financeiras.'
-                : 'Atualizará datas de início/fim das etapas.'}
+                : 'Atualizará datas de início/fim das etapas correspondentes.'}
             </div>
           </div>
-          <DialogFooter>
-            <Button onClick={handleImport}>Processar Arquivo (Mock)</Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 

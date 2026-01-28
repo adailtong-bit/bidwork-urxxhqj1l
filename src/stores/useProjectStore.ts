@@ -50,12 +50,23 @@ export interface Stage {
   bimFiles: BimFile[]
 }
 
+export interface ProjectAddress {
+  zipCode: string
+  street: string
+  number: string
+  complement?: string
+  neighborhood: string
+  city: string
+  state: string
+}
+
 export interface Project {
   id: string
   ownerId: string
   name: string
   description: string
-  location: string
+  location: string // Formatted string (City - State) for display
+  address: ProjectAddress // Detailed address
   startDate: Date
   endDate: Date
   status: 'planning' | 'in_progress' | 'completed' | 'paused'
@@ -151,7 +162,16 @@ const mockProjects: Project[] = [
     name: 'Residencial Alphaville',
     description:
       'Construção de residência de alto padrão com 4 suítes e área de lazer.',
-    location: 'Barueri, SP',
+    location: 'Barueri - SP',
+    address: {
+      zipCode: '06454-000',
+      street: 'Alameda Rio Negro',
+      number: '500',
+      complement: '',
+      neighborhood: 'Alphaville',
+      city: 'Barueri',
+      state: 'SP',
+    },
     startDate: new Date(Date.now() - 86400000 * 30),
     endDate: new Date(Date.now() + 86400000 * 180),
     status: 'in_progress',
@@ -317,7 +337,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           const newStages = p.stages.map((s) => {
             const external = timelineData.find(
               (t) =>
-                t.stageName.includes(s.name) || s.name.includes(t.stageName),
+                s.name.toLowerCase().includes(t.stageName.toLowerCase()) ||
+                t.stageName.toLowerCase().includes(s.name.toLowerCase()),
             )
             if (external) {
               return {
@@ -328,18 +349,21 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
             return s
           })
-          // Update project start/end based on stages
-          const dates = newStages.flatMap((s) => [
-            s.startDate.getTime(),
-            s.endDate.getTime(),
-          ])
-          const minDate = new Date(Math.min(...dates))
-          const maxDate = new Date(Math.max(...dates))
-          return {
-            ...p,
-            stages: newStages,
-            startDate: minDate,
-            endDate: maxDate,
+
+          // Only update if we found matches
+          if (newStages.length > 0) {
+            const dates = newStages.flatMap((s) => [
+              s.startDate.getTime(),
+              s.endDate.getTime(),
+            ])
+            const minDate = new Date(Math.min(...dates))
+            const maxDate = new Date(Math.max(...dates))
+            return {
+              ...p,
+              stages: newStages,
+              startDate: minDate,
+              endDate: maxDate,
+            }
           }
         }
         return p

@@ -19,9 +19,9 @@ import {
 import { useToast } from '@/hooks/use-toast'
 import {
   ArrowLeft,
-  Save,
-  Calendar as CalendarIcon,
   Loader2,
+  Calendar as CalendarIcon,
+  MapPin,
 } from 'lucide-react'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -32,6 +32,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import { CurrencyInput } from '@/components/CurrencyInput'
 
 export default function NewProject() {
   const navigate = useNavigate()
@@ -42,19 +43,41 @@ export default function NewProject() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    location: '',
     startDate: new Date(),
     endDate: addDays(new Date(), 180),
     totalBudget: 0,
+    address: {
+      zipCode: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+    },
   })
+
+  const handleAddressChange = (
+    field: keyof typeof formData.address,
+    value: string,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      address: {
+        ...prev.address,
+        [field]: value,
+      },
+    }))
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!formData.name || !formData.location) {
+    if (!formData.name || !formData.address.city || !formData.address.state) {
       toast({
         variant: 'destructive',
         title: 'Campos Obrigatórios',
-        description: 'Por favor, preencha nome e localização do projeto.',
+        description:
+          'Por favor, preencha nome e os dados de endereço do projeto.',
       })
       return
     }
@@ -79,8 +102,16 @@ export default function NewProject() {
       bimFiles: [],
     }))
 
+    const formattedLocation = `${formData.address.city} - ${formData.address.state}`
+
     addProject({
-      ...formData,
+      name: formData.name,
+      description: formData.description,
+      location: formattedLocation,
+      address: formData.address,
+      startDate: formData.startDate,
+      endDate: formData.endDate,
+      totalBudget: formData.totalBudget,
       ownerId: 'current-user-id', // Mock ID
       status: 'planning',
       stages,
@@ -95,7 +126,7 @@ export default function NewProject() {
   }
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto py-8">
+    <div className="space-y-6 max-w-3xl mx-auto py-8">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
@@ -118,7 +149,7 @@ export default function NewProject() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <Label htmlFor="name">Nome do Projeto</Label>
               <Input
@@ -131,19 +162,101 @@ export default function NewProject() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="location">Localização</Label>
-              <Input
-                id="location"
-                placeholder="Cidade, Estado"
-                value={formData.location}
-                onChange={(e) =>
-                  setFormData({ ...formData, location: e.target.value })
-                }
-              />
+            <div className="border rounded-lg p-4 bg-muted/20 space-y-4">
+              <div className="flex items-center gap-2 mb-2">
+                <MapPin className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold text-sm">Endereço da Obra</h3>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="zipCode">CEP</Label>
+                  <Input
+                    id="zipCode"
+                    placeholder="00000-000"
+                    value={formData.address.zipCode}
+                    onChange={(e) =>
+                      handleAddressChange('zipCode', e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="street">Logradouro (Rua, Av.)</Label>
+                  <Input
+                    id="street"
+                    placeholder="Endereço"
+                    value={formData.address.street}
+                    onChange={(e) =>
+                      handleAddressChange('street', e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="number">Número</Label>
+                  <Input
+                    id="number"
+                    placeholder="123"
+                    value={formData.address.number}
+                    onChange={(e) =>
+                      handleAddressChange('number', e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-2 md:col-span-3">
+                  <Label htmlFor="complement">Complemento</Label>
+                  <Input
+                    id="complement"
+                    placeholder="Apto, Bloco, etc."
+                    value={formData.address.complement}
+                    onChange={(e) =>
+                      handleAddressChange('complement', e.target.value)
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Input
+                    id="neighborhood"
+                    placeholder="Bairro"
+                    value={formData.address.neighborhood}
+                    onChange={(e) =>
+                      handleAddressChange('neighborhood', e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Cidade</Label>
+                  <Input
+                    id="city"
+                    placeholder="Cidade"
+                    value={formData.address.city}
+                    onChange={(e) =>
+                      handleAddressChange('city', e.target.value)
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="state">Estado (UF)</Label>
+                  <Input
+                    id="state"
+                    placeholder="UF"
+                    maxLength={2}
+                    value={formData.address.state}
+                    onChange={(e) =>
+                      handleAddressChange('state', e.target.value.toUpperCase())
+                    }
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Data de Início</Label>
                 <Popover>
@@ -209,18 +322,14 @@ export default function NewProject() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="budget">Orçamento Estimado Total (R$)</Label>
-              <Input
+              <Label htmlFor="budget">Orçamento Estimado Total</Label>
+              <CurrencyInput
                 id="budget"
-                type="number"
-                placeholder="0.00"
                 value={formData.totalBudget}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    totalBudget: Number(e.target.value),
-                  })
+                onChange={(value) =>
+                  setFormData({ ...formData, totalBudget: value })
                 }
+                placeholder="R$ 0,00"
               />
             </div>
 
