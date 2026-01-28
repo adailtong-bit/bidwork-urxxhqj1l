@@ -1,4 +1,7 @@
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -6,50 +9,135 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { getCountryValidation, CountryCode } from '@/lib/validation'
 import {
   Building2,
   MapPin,
   ShieldCheck,
-  User,
+  User as UserIcon,
   Upload,
   CheckCircle2,
   AlertCircle,
   Clock,
   Trophy,
   Award,
+  Edit2,
+  Save,
+  X,
+  CreditCard,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { AdSection } from '@/components/AdSection'
-import { Badge } from '@/components/ui/badge'
+
+// Dynamic schema based on user type and country
+const createProfileSchema = (entityType: 'pf' | 'pj', country: CountryCode) => {
+  const { phone, zip, taxId } = getCountryValidation(country)
+
+  return z.object({
+    name: z
+      .string()
+      .min(2, 'Nome/Razão Social deve ter no mínimo 2 caracteres'),
+    companyName:
+      entityType === 'pj'
+        ? z.string().min(2, 'Nome da Empresa é obrigatório')
+        : z.string().optional(),
+    phone: phone,
+    taxId: taxId,
+    // Address
+    street: z.string().min(3, 'Rua é obrigatória'),
+    number: z.string().min(1, 'Número é obrigatório'),
+    complement: z.string().optional(),
+    neighborhood: z.string().min(2, 'Bairro é obrigatório'),
+    city: z.string().min(2, 'Cidade é obrigatória'),
+    state: z.string().min(2, 'Estado é obrigatório'),
+    zipCode: zip,
+  })
+}
+
+type ProfileFormValues = z.infer<ReturnType<typeof createProfileSchema>>
 
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
   const { toast } = useToast()
   const { t } = useLanguageStore()
 
+  const [isEditing, setIsEditing] = useState(false)
   const [banking, setBanking] = useState(
     user?.bankingDetails || { bank: '', agency: '', account: '', document: '' },
   )
   const [radius, setRadius] = useState([user?.serviceRadius || 10])
   const [isUploadingKYC, setIsUploadingKYC] = useState(false)
 
-  const handleSave = () => {
+  if (!user) return null
+
+  const country = user.address?.country || 'BR'
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(createProfileSchema(user.entityType, country)),
+    defaultValues: {
+      name: user.name,
+      companyName: user.companyName || '',
+      phone: user.phone || '',
+      taxId: user.taxId || '',
+      street: user.address?.street || '',
+      number: user.address?.number || '',
+      complement: user.address?.complement || '',
+      neighborhood: user.address?.neighborhood || '',
+      city: user.address?.city || '',
+      state: user.address?.state || '',
+      zipCode: user.address?.zipCode || '',
+    },
+  })
+
+  const onSubmit = (data: ProfileFormValues) => {
+    updateSettings({
+      name: data.name,
+      companyName: data.companyName,
+      phone: data.phone,
+      taxId: data.taxId,
+      address: {
+        street: data.street,
+        number: data.number,
+        complement: data.complement,
+        neighborhood: data.neighborhood,
+        city: data.city,
+        state: data.state,
+        zipCode: data.zipCode,
+        country: country,
+      },
+    })
+    setIsEditing(false)
+    toast({
+      title: t('success'),
+      description: 'Perfil atualizado com sucesso.',
+    })
+  }
+
+  const handleSaveBanking = () => {
     updateSettings({
       bankingDetails: banking,
       serviceRadius: radius[0],
     })
     toast({
       title: t('success'),
-      description: 'Seu perfil foi atualizado com sucesso.',
+      description: 'Configurações adicionais salvas.',
     })
   }
 
@@ -75,8 +163,6 @@ export default function Settings() {
     }
   }
 
-  if (!user) return null
-
   return (
     <div className="space-y-6 max-w-4xl">
       <AdSection segment="profile" />
@@ -84,224 +170,240 @@ export default function Settings() {
       <h1 className="text-3xl font-bold tracking-tight">{t('nav.settings')}</h1>
 
       <div className="grid gap-6">
-        {/* Profile Info */}
+        {/* Profile Info Form */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="space-y-1">
                 <CardTitle className="flex items-center gap-2">
-                  <User className="h-5 w-5" /> Perfil{' '}
-                  {user.entityType.toUpperCase()}
+                  <UserIcon className="h-5 w-5" />
+                  {user.entityType === 'pj'
+                    ? 'Perfil Corporativo'
+                    : 'Perfil Pessoal'}
                 </CardTitle>
                 <CardDescription>
-                  Gerencie suas informações pessoais.
+                  Gerencie suas informações de cadastro.
                 </CardDescription>
               </div>
-              {user.isVerified && (
-                <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
-                  <CheckCircle2 className="h-4 w-4" /> {t('header.verified')}
-                </div>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="grid gap-2">
-                <Label>Nome de exibição</Label>
-                <Input defaultValue={user.name} disabled />
-              </div>
-              <div className="grid gap-2">
-                <Label>Email</Label>
-                <Input defaultValue={user.email} disabled />
-              </div>
-              <div className="grid gap-2">
-                <Label>Tipo de Pessoa</Label>
-                <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50 text-sm">
-                  {user.entityType === 'pj'
-                    ? 'Pessoa Jurídica'
-                    : 'Pessoa Física'}
-                </div>
-              </div>
-              <div className="grid gap-2">
-                <Label>Função</Label>
-                <div className="flex items-center h-10 px-3 rounded-md border bg-muted/50 text-sm capitalize">
-                  {user.role === 'contractor' ? 'Contratante' : 'Executor'}
-                </div>
-              </div>
-            </div>
-
-            {/* Badges Section */}
-            {user.role === 'executor' && (
-              <div className="mt-6 border-t pt-4">
-                <h3 className="text-sm font-medium mb-3 flex items-center gap-2">
-                  <Award className="h-4 w-4 text-yellow-600" /> Suas Conquistas
-                  (Badges)
-                </h3>
-                {user.badges && user.badges.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {user.badges.map((badge) => (
-                      <div
-                        key={badge.id}
-                        className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-3 py-2 rounded-lg"
-                        title={badge.description}
-                      >
-                        <Award className="h-4 w-4 text-yellow-600" />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-bold text-yellow-900">
-                            {badge.name}
-                          </span>
-                          <span className="text-[10px] text-yellow-700">
-                            {new Date(badge.earnedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
+              <div className="flex items-center gap-2">
+                {user.isVerified && (
+                  <div className="flex items-center gap-1 bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm font-medium">
+                    <CheckCircle2 className="h-4 w-4" /> {t('header.verified')}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    Você ainda não possui badges. Continue trabalhando para
-                    ganhar reconhecimento!
-                  </p>
                 )}
-                <Button variant="link" asChild className="px-0 mt-2">
-                  <Link to="/leaderboard">Ver Ranking Global</Link>
-                </Button>
+                {!isEditing ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsEditing(true)}
+                  >
+                    <Edit2 className="mr-2 h-4 w-4" /> {t('edit')}
+                  </Button>
+                ) : (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditing(false)}
+                  >
+                    <X className="mr-2 h-4 w-4" /> {t('cancel')}
+                  </Button>
+                )}
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Loyalty Program Summary */}
-        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-orange-100">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-orange-800">
-              <Trophy className="h-5 w-5" /> Programa de Fidelidade
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center justify-between">
-            <div>
-              <p className="text-3xl font-bold text-orange-900">
-                {user.loyaltyPoints}{' '}
-                <span className="text-sm font-normal text-orange-700">
-                  pontos
-                </span>
-              </p>
-              <p className="text-sm text-orange-700">
-                Continue usando a plataforma para ganhar recompensas.
-              </p>
             </div>
-            <Button
-              asChild
-              variant="outline"
-              className="border-orange-200 text-orange-800 hover:bg-orange-100"
-            >
-              <Link to="/loyalty">Ver Extrato</Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        {/* KYC Verification */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-indigo-600" /> Verificação de
-              Identidade (KYC)
-            </CardTitle>
-            <CardDescription>
-              Aumente a confiança no seu perfil enviando um documento oficial.
-            </CardDescription>
           </CardHeader>
           <CardContent>
-            {user.kycStatus === 'verified' ? (
-              <div className="flex flex-col items-center justify-center p-6 bg-green-50 rounded-lg border border-green-200">
-                <CheckCircle2 className="h-12 w-12 text-green-600 mb-2" />
-                <h3 className="text-lg font-semibold text-green-800">
-                  Identidade Verificada
-                </h3>
-                <p className="text-green-700 text-center">
-                  Seu perfil possui o selo de verificação oficial.
-                </p>
-              </div>
-            ) : user.kycStatus === 'pending' ? (
-              <div className="flex flex-col items-center justify-center p-6 bg-yellow-50 rounded-lg border border-yellow-200">
-                <Clock className="h-12 w-12 text-yellow-600 mb-2 animate-pulse" />
-                <h3 className="text-lg font-semibold text-yellow-800">
-                  Em Análise
-                </h3>
-                <p className="text-yellow-700 text-center">
-                  Estamos analisando seus documentos. Isso pode levar até 24h.
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex items-start gap-4 p-4 bg-muted/30 rounded-lg">
-                  <AlertCircle className="h-5 w-5 text-primary mt-0.5" />
-                  <div className="text-sm text-muted-foreground">
-                    <p className="font-medium text-foreground mb-1">
-                      Por que verificar?
-                    </p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      <li>Selo de verificado no perfil</li>
-                      <li>Maior visibilidade em buscas</li>
-                      <li>Acesso a jobs exclusivos (Executores)</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="border-2 border-dashed rounded-lg p-8 text-center hover:bg-muted/20 transition-colors relative">
-                  <input
-                    type="file"
-                    accept="image/*,.pdf"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                    onChange={handleKYCUpload}
-                    disabled={isUploadingKYC}
+            <Form {...form}>
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {user.entityType === 'pj'
+                            ? 'Razão Social'
+                            : 'Nome Completo'}
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                  <div className="flex flex-col items-center gap-2">
-                    <Upload
-                      className={`h-8 w-8 text-muted-foreground ${isUploadingKYC ? 'animate-bounce' : ''}`}
-                    />
-                    <p className="font-medium">
-                      {isUploadingKYC
-                        ? 'Enviando...'
-                        : 'Clique para enviar documento (RG ou CNH)'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      PNG, JPG ou PDF até 5MB
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
-        {/* Geofencing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" /> Raio de Atuação (Geofencing)
-            </CardTitle>
-            <CardDescription>
-              Defina a distância máxima para encontrar serviços ou prestadores.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="flex items-center justify-between">
-              <Label>Raio de Cobertura</Label>
-              <span className="font-bold text-primary">{radius[0]} milhas</span>
-            </div>
-            <Slider
-              value={radius}
-              onValueChange={setRadius}
-              max={100}
-              step={1}
-              className="w-full"
-            />
-            <p className="text-sm text-muted-foreground">
-              {user.role === 'executor'
-                ? 'Você receberá notificações de jobs apenas dentro deste raio.'
-                : 'Executores dentro deste raio terão prioridade no seu job.'}
-            </p>
+                  {user.entityType === 'pj' && (
+                    <FormField
+                      control={form.control}
+                      name="companyName"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Nome Fantasia</FormLabel>
+                          <FormControl>
+                            <Input {...field} disabled={!isEditing} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Email</Label>
+                    <Input value={user.email} disabled className="bg-muted" />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Telefone</FormLabel>
+                        <FormControl>
+                          <Input
+                            {...field}
+                            disabled={!isEditing}
+                            placeholder="(00) 00000-0000"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="taxId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {user.entityType === 'pj' ? 'CNPJ' : 'CPF'}
+                        </FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Separator className="my-4" />
+                <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 w-4" /> Endereço Completo
+                </h3>
+
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="zipCode"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>CEP/Zip</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="street"
+                    render={({ field }) => (
+                      <FormItem className="md:col-span-3">
+                        <FormLabel>Rua</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Número</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="complement"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Comp.</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Bairro</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="city"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cidade</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="state"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Estado/UF</FormLabel>
+                        <FormControl>
+                          <Input {...field} disabled={!isEditing} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {isEditing && (
+                  <div className="flex justify-end pt-4">
+                    <Button type="submit">
+                      <Save className="mr-2 h-4 w-4" /> {t('save')}
+                    </Button>
+                  </div>
+                )}
+              </form>
+            </Form>
           </CardContent>
         </Card>
 
@@ -351,7 +453,7 @@ export default function Settings() {
             <div className="grid gap-2">
               <Label>CPF/CNPJ (Titular)</Label>
               <div className="relative">
-                <ShieldCheck className="absolute left-2.5 top-2.5 h-4 w-4 text-emerald-600" />
+                <CreditCard className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
                   placeholder="Documento para faturamento"
@@ -361,47 +463,90 @@ export default function Settings() {
                   }
                 />
               </div>
-              <p className="text-xs text-muted-foreground flex items-center gap-1">
-                <ShieldCheck className="h-3 w-3" /> Seus dados são armazenados
-                com criptografia de ponta a ponta.
-              </p>
             </div>
+            <Button onClick={handleSaveBanking}>{t('save')}</Button>
           </CardContent>
         </Card>
 
+        {/* Geofencing */}
         <Card>
           <CardHeader>
-            <CardTitle>Preferências</CardTitle>
-            <CardDescription>Personalize sua experiência.</CardDescription>
+            <CardTitle className="flex items-center gap-2">
+              <MapPin className="h-5 w-5" /> Raio de Atuação (Geofencing)
+            </CardTitle>
+            <CardDescription>
+              Defina a distância máxima para encontrar serviços ou prestadores.
+            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Notificações SMS/Email</Label>
-                <p className="text-sm text-muted-foreground">
-                  Receba alertas prioritários de novos jobs.
-                </p>
-              </div>
-              <Switch defaultChecked />
+              <Label>Raio de Cobertura</Label>
+              <span className="font-bold text-primary">{radius[0]} km</span>
             </div>
-            <Separator />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <Label>Tema Escuro</Label>
-                <p className="text-sm text-muted-foreground">
-                  Alternar entre tema claro e escuro.
-                </p>
-              </div>
-              <Switch />
-            </div>
+            <Slider
+              value={radius}
+              onValueChange={setRadius}
+              max={100}
+              step={1}
+              className="w-full"
+            />
+            <Button onClick={handleSaveBanking} className="mt-4">
+              {t('save')}
+            </Button>
           </CardContent>
         </Card>
 
-        <div className="flex justify-end">
-          <Button size="lg" onClick={handleSave}>
-            {t('save')}
-          </Button>
-        </div>
+        {/* KYC Verification */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="h-5 w-5 text-indigo-600" /> Verificação de
+              Identidade (KYC)
+            </CardTitle>
+            <CardDescription>
+              Aumente a confiança no seu perfil enviando um documento oficial.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {user.kycStatus === 'verified' ? (
+              <div className="flex flex-col items-center justify-center p-6 bg-green-50 rounded-lg border border-green-200">
+                <CheckCircle2 className="h-12 w-12 text-green-600 mb-2" />
+                <h3 className="text-lg font-semibold text-green-800">
+                  Identidade Verificada
+                </h3>
+              </div>
+            ) : user.kycStatus === 'pending' ? (
+              <div className="flex flex-col items-center justify-center p-6 bg-yellow-50 rounded-lg border border-yellow-200">
+                <Clock className="h-12 w-12 text-yellow-600 mb-2 animate-pulse" />
+                <h3 className="text-lg font-semibold text-yellow-800">
+                  Em Análise
+                </h3>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="border-2 border-dashed rounded-lg p-8 text-center hover:bg-muted/20 transition-colors relative">
+                  <input
+                    type="file"
+                    accept="image/*,.pdf"
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    onChange={handleKYCUpload}
+                    disabled={isUploadingKYC}
+                  />
+                  <div className="flex flex-col items-center gap-2">
+                    <Upload
+                      className={`h-8 w-8 text-muted-foreground ${isUploadingKYC ? 'animate-bounce' : ''}`}
+                    />
+                    <p className="font-medium">
+                      {isUploadingKYC
+                        ? 'Enviando...'
+                        : 'Clique para enviar documento (RG ou CNH)'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

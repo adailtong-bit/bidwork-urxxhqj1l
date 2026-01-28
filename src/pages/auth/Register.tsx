@@ -21,7 +21,6 @@ import {
   UserCircle,
   MapPin,
   CreditCard,
-  Globe,
 } from 'lucide-react'
 import {
   Form,
@@ -30,7 +29,6 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-  FormDescription,
 } from '@/components/ui/form'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
@@ -42,7 +40,6 @@ import {
 } from '@/components/ui/select'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
-// Dynamic schema generator
 const createRegisterSchema = (country: CountryCode) => {
   const { phone, zip } = getCountryValidation(country)
 
@@ -56,9 +53,17 @@ const createRegisterSchema = (country: CountryCode) => {
       entityType: z.enum(['pf', 'pj']),
       country: z.enum(['BR', 'US']),
       businessArea: z.string().optional(),
-      address: z.string().min(5, 'Endereço completo é obrigatório'),
+
+      // Address Fields
+      street: z.string().min(3, 'Rua é obrigatória'),
+      number: z.string().min(1, 'Número é obrigatório'),
+      complement: z.string().optional(),
+      neighborhood: z.string().min(2, 'Bairro é obrigatório'),
+      city: z.string().min(2, 'Cidade é obrigatória'),
+      state: z.string().min(2, 'Estado é obrigatório'),
       zipCode: zip,
       phone: phone,
+
       // Executor specific fields
       category: z.string().optional(),
       bank: z.string().optional(),
@@ -100,12 +105,10 @@ export default function Register() {
   const { toast } = useToast()
   const { t } = useLanguageStore()
 
-  // Default country
   const [country, setCountry] = useState<CountryCode>('BR')
 
   const form = useForm<RegisterForm>({
     resolver: (values, context, options) => {
-      // Resolve schema based on current country state
       return zodResolver(createRegisterSchema(country))(
         values,
         context,
@@ -120,7 +123,12 @@ export default function Register() {
       role: 'contractor',
       entityType: 'pf',
       country: 'BR',
-      address: '',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
       zipCode: '',
       phone: '',
       bank: '',
@@ -133,17 +141,34 @@ export default function Register() {
   const role = form.watch('role')
   const entityType = form.watch('entityType')
 
-  // Update country state when form field changes to trigger re-validation logic
   const handleCountryChange = (val: CountryCode) => {
     setCountry(val)
     form.setValue('country', val)
-    form.trigger(['phone', 'zipCode']) // Re-validate dependent fields
+    form.trigger(['phone', 'zipCode'])
   }
 
   async function onSubmit(data: RegisterForm) {
     try {
       await registerUser({
-        ...data,
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        role: data.role,
+        entityType: data.entityType,
+        businessArea: data.businessArea,
+        category: data.category,
+        taxId: '', // To be filled in Profile Edit
+        address: {
+          street: data.street,
+          number: data.number,
+          complement: data.complement,
+          neighborhood: data.neighborhood,
+          city: data.city,
+          state: data.state,
+          zipCode: data.zipCode,
+          country: data.country,
+        },
         bankingDetails:
           data.role === 'executor'
             ? {
@@ -301,7 +326,6 @@ export default function Register() {
               )}
             />
 
-            {/* Business Area (PJ) */}
             {entityType === 'pj' && (
               <FormField
                 control={form.control}
@@ -336,7 +360,6 @@ export default function Register() {
               />
             )}
 
-            {/* Executor Category */}
             {role === 'executor' && (
               <FormField
                 control={form.control}
@@ -363,8 +386,6 @@ export default function Register() {
                         <SelectItem value="Serviços Domésticos">
                           Serviços Domésticos
                         </SelectItem>
-                        <SelectItem value="Enfermagem">Enfermagem</SelectItem>
-                        <SelectItem value="Limpeza">Limpeza</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -401,7 +422,7 @@ export default function Register() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email Corporativo ou Pessoal</FormLabel>
+                    <FormLabel>Email</FormLabel>
                     <FormControl>
                       <Input placeholder="seu@email.com" {...field} />
                     </FormControl>
@@ -451,29 +472,94 @@ export default function Register() {
                 />
               </div>
 
-              <FormField
-                control={form.control}
-                name="address"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Endereço Completo</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          className="pl-9"
-                          placeholder="Rua, Número, Bairro, Cidade - UF"
-                          {...field}
-                        />
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="grid grid-cols-3 gap-2">
+                <FormField
+                  control={form.control}
+                  name="street"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Rua</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Rua das Flores" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Número</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Bairro</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Centro" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="complement"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Complemento</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Apto 101" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <FormField
+                  control={form.control}
+                  name="city"
+                  render={({ field }) => (
+                    <FormItem className="col-span-2">
+                      <FormLabel>Cidade</FormLabel>
+                      <FormControl>
+                        <Input placeholder="São Paulo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="state"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>UF/State</FormLabel>
+                      <FormControl>
+                        <Input placeholder="SP" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
-            {/* Banking Details for Executors */}
             {role === 'executor' && (
               <div className="space-y-4 pt-4 border-t">
                 <div className="flex items-center gap-2 text-primary">
@@ -585,7 +671,6 @@ export default function Register() {
           </form>
         </Form>
       </ScrollArea>
-
       <div className="text-center text-sm pt-4 shrink-0">
         Já tem uma conta?{' '}
         <Link

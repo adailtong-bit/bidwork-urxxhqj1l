@@ -32,18 +32,32 @@ export interface Badge {
   earnedAt: Date
 }
 
+export interface Address {
+  street: string
+  number: string
+  complement?: string
+  neighborhood: string
+  city: string
+  state: string
+  zipCode: string
+  country: 'BR' | 'US'
+}
+
 export interface User {
   id: string
   name: string
   email: string
+  phone?: string
+  taxId?: string // CPF or CNPJ
   avatar?: string
   role: 'contractor' | 'executor' | 'admin' | 'partner'
-  teamRole?: TeamRole // Added to support RBAC for team members
+  teamRole?: TeamRole
   entityType: 'pf' | 'pj'
+  companyName?: string // For PJ
   businessArea?: string
   category?: string
   reputation: number
-  address?: string
+  address?: Address
   bankingDetails?: {
     bank: string
     agency: string
@@ -72,12 +86,14 @@ export interface User {
 export interface RegisterData {
   name: string
   email: string
+  phone: string
   password: string
   role: 'contractor' | 'executor' | 'partner'
   entityType: 'pf' | 'pj'
   businessArea?: string
   category?: string
-  address: string
+  address: Address
+  taxId?: string
   bankingDetails?: {
     bank: string
     agency: string
@@ -118,8 +134,11 @@ export const useAuthStore = create<AuthState>((set) => ({
     let teamRole: TeamRole | undefined = undefined
     let entityType: 'pf' | 'pj' = 'pf'
     let name = 'Usuário Padrão'
+    let companyName = ''
     let teamMembers: TeamMember[] | undefined = undefined
     let badges: Badge[] = []
+    let taxId = '000.000.000-00'
+    let phone = '(11) 99999-9999'
 
     if (email.includes('executor')) {
       role = 'executor'
@@ -149,7 +168,9 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // PJ Owner Logic
     if (email === 'contractor.pj@bidwork.app') {
-      name = 'Construtora Tech Corp'
+      name = 'Admin Tech Corp'
+      companyName = 'Construtora Tech Corp'
+      taxId = '12.345.678/0001-90'
       role = 'contractor'
       entityType = 'pj'
       teamRole = 'Admin'
@@ -191,6 +212,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       teamRole = 'Project Manager' // RBAC Key
     } else if (email === 'executor.pj@bidwork.app') {
       name = 'Soluções Rápidas Ltda'
+      companyName = 'Soluções Rápidas Ltda'
+      taxId = '98.765.432/0001-10'
       role = 'executor'
       entityType = 'pj'
       teamMembers = [
@@ -216,15 +239,19 @@ export const useAuthStore = create<AuthState>((set) => ({
         },
       ]
     } else if (email === 'partner@bidwork.app') {
-      name = 'Parceiro Construções Ltda'
+      name = 'Roberto Parceiro'
+      companyName = 'Parceiro Construções Ltda'
+      taxId = '45.678.901/0001-23'
       role = 'partner'
       entityType = 'pj'
     } else if (email === 'executor.pf@bidwork.app') {
       name = 'João Freelancer'
+      taxId = '123.456.789-00'
       role = 'executor'
       entityType = 'pf'
     } else if (email === 'contractor.pf@bidwork.app') {
       name = 'Maria Contratante'
+      taxId = '321.654.987-11'
       role = 'contractor'
       entityType = 'pf'
     } else if (email === 'admin@bidwork.app') {
@@ -238,20 +265,31 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: {
         id: Math.random().toString(36),
         name,
+        companyName,
         email,
+        phone,
+        taxId,
         avatar: `https://img.usecurling.com/ppl/medium?seed=${email.length}`,
         role,
         teamRole,
         entityType,
         reputation: 4.8,
         serviceRadius: 50,
-        location: 'SP',
+        location: 'São Paulo - SP',
         isPremium: entityType === 'pj',
         subscriptionTier: entityType === 'pj' ? 'business' : 'free',
         credits: 100,
         isVerified: true,
         kycStatus: 'verified',
-        address: 'Av. Paulista, 1000 - São Paulo, SP',
+        address: {
+          street: 'Av. Paulista',
+          number: '1000',
+          neighborhood: 'Bela Vista',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01310-100',
+          country: 'BR',
+        },
         category: role === 'executor' ? 'TI e Programação' : undefined,
         bankingDetails: {
           bank: 'Test Bank',
@@ -284,6 +322,8 @@ export const useAuthStore = create<AuthState>((set) => ({
         id: Math.random().toString(36),
         name: data.name,
         email: data.email,
+        phone: data.phone,
+        taxId: data.taxId,
         avatar: `https://img.usecurling.com/ppl/medium?seed=${Math.floor(Math.random() * 100)}`,
         role: data.role,
         entityType: data.entityType,
@@ -293,7 +333,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         bankingDetails: data.bankingDetails,
         reputation: 0,
         serviceRadius: 50,
-        location: 'SP',
+        location: `${data.address.city} - ${data.address.state}`,
         isPremium: false,
         subscriptionTier: 'free',
         credits: 0,
@@ -351,7 +391,8 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   addTeamMember: (member) =>
     set((state) => {
-      if (!state.user || !state.user.teamMembers) return state
+      if (!state.user) return state
+      const currentMembers = state.user.teamMembers || []
       const newMember: TeamMember = {
         ...member,
         id: Math.random().toString(36).substr(2, 9),
@@ -362,7 +403,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       return {
         user: {
           ...state.user,
-          teamMembers: [...state.user.teamMembers, newMember],
+          teamMembers: [...currentMembers, newMember],
         },
       }
     }),

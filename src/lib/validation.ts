@@ -9,6 +9,8 @@ export const countryConfigs = {
     zipRegex: /^\d{5}-\d{3}$/, // 00000-000
     phonePlaceholder: '(11) 99999-0000',
     zipPlaceholder: '00000-000',
+    taxIdRegex:
+      /^\d{3}\.\d{3}\.\d{3}-\d{2}$|^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/,
   },
   US: {
     label: 'United States',
@@ -16,6 +18,7 @@ export const countryConfigs = {
     zipRegex: /^\d{5}(-\d{4})?$/, // 12345 or 12345-6789
     phonePlaceholder: '(555) 555-0123',
     zipPlaceholder: '12345',
+    taxIdRegex: /^\d{2}-\d{7}$/, // EIN format (approx)
   },
 }
 
@@ -25,13 +28,24 @@ export const getCountryValidation = (country: CountryCode) => {
   return {
     phone: z
       .string()
-      .regex(config.phoneRegex, 'Invalid phone format for selected country'),
+      .regex(
+        config.phoneRegex,
+        'Formato de telefone inválido para o país selecionado',
+      ),
     zip: z
       .string()
-      .regex(config.zipRegex, 'Invalid ZIP/CEP format for selected country'),
+      .regex(
+        config.zipRegex,
+        'Formato de CEP/Zip inválido para o país selecionado',
+      ),
+    taxId: z
+      .string()
+      .regex(config.taxIdRegex, 'Documento inválido para o país selecionado')
+      .optional()
+      .or(z.literal('')),
   }
 }
 
 export const commonValidation = {
-  email: z.string().email('Invalid email address format'),
+  email: z.string().email('Formato de email inválido'),
 }

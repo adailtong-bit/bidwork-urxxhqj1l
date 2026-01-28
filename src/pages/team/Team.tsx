@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuthStore, TeamRole } from '@/stores/useAuthStore'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
@@ -33,53 +33,92 @@ import {
   ShieldCheck,
   Calculator,
   LayoutDashboard,
+  Search,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { z } from 'zod'
 
 export default function Team() {
   const { user, addTeamMember, removeTeamMember } = useAuthStore()
   const { toast } = useToast()
-  const [newMember, setNewMember] = useState<{
+
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [emailToSearch, setEmailToSearch] = useState('')
+  const [searchResult, setSearchResult] = useState<{
     name: string
     email: string
-    role: TeamRole
-  }>({
-    name: '',
-    email: '',
-    role: 'Collaborator',
-  })
-  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  } | null>(null)
+  const [searchError, setSearchError] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
+  const [role, setRole] = useState<TeamRole>('Collaborator')
 
   if (!user) return null
 
   // PJ Corporate Logic
   const isPJ = user.entityType === 'pj'
+  const members = isPJ ? user.teamMembers || [] : []
 
-  const handleAddMember = () => {
-    if (!newMember.name || !newMember.email) return
-    addTeamMember(newMember)
-    setIsDialogOpen(false)
-    setNewMember({ name: '', email: '', role: 'Collaborator' })
-    toast({
-      title: 'Membro adicionado',
-      description: `Convite enviado para ${newMember.role}.`,
-    })
+  // Mock search function
+  const handleSearchUser = () => {
+    if (!z.string().email().safeParse(emailToSearch).success) {
+      setSearchError('Email inválido')
+      setSearchResult(null)
+      return
+    }
+
+    setIsSearching(true)
+    setSearchError('')
+    setSearchResult(null)
+
+    // Simulate API call
+    setTimeout(() => {
+      setIsSearching(false)
+      // Mock: only allow emails that contain "bidwork" or "test" or "gmail" to be "found"
+      if (
+        emailToSearch.includes('bidwork') ||
+        emailToSearch.includes('test') ||
+        emailToSearch.includes('gmail')
+      ) {
+        setSearchResult({
+          name: emailToSearch.split('@')[0].toUpperCase(), // Mock name
+          email: emailToSearch,
+        })
+      } else {
+        setSearchError('Usuário não encontrado na plataforma.')
+      }
+    }, 1000)
   }
 
-  // Static members for PF or fallback
-  const staticMembers = [
-    {
-      id: 's1',
-      name: 'Você',
-      role: 'Admin' as TeamRole,
-      email: user.email,
-      avatar: user.avatar || '',
-      status: 'active' as const,
-      performance: 0,
-    },
-  ]
+  const handleAddMember = () => {
+    if (!searchResult) return
 
-  const members = isPJ ? user.teamMembers || staticMembers : staticMembers
+    // Check if already in team
+    if (members.some((m) => m.email === searchResult.email)) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'Usuário já está na equipe.',
+      })
+      return
+    }
+
+    addTeamMember({
+      name: searchResult.name,
+      email: searchResult.email,
+      role: role,
+    })
+
+    setIsDialogOpen(false)
+    setEmailToSearch('')
+    setSearchResult(null)
+    setRole('Collaborator')
+    toast({
+      title: 'Membro adicionado',
+      description: `${searchResult.name} agora faz parte da equipe corporativa.`,
+    })
+  }
 
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -118,55 +157,82 @@ export default function Team() {
               <DialogHeader>
                 <DialogTitle>Novo Membro da Equipe</DialogTitle>
               </DialogHeader>
+
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Nome Completo</Label>
-                  <Input
-                    value={newMember.name}
-                    onChange={(e) =>
-                      setNewMember({ ...newMember, name: e.target.value })
-                    }
-                  />
+                  <Label>Buscar Usuário Registrado</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Email do usuário..."
+                      value={emailToSearch}
+                      onChange={(e) => setEmailToSearch(e.target.value)}
+                    />
+                    <Button
+                      variant="secondary"
+                      onClick={handleSearchUser}
+                      disabled={isSearching}
+                    >
+                      {isSearching ? (
+                        <Activity className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Search className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  {searchError && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <XCircle className="h-3 w-3" /> {searchError}
+                    </p>
+                  )}
                 </div>
-                <div className="space-y-2">
-                  <Label>Email Corporativo</Label>
-                  <Input
-                    value={newMember.email}
-                    onChange={(e) =>
-                      setNewMember({ ...newMember, email: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Nível de Acesso (RBAC)</Label>
-                  <Select
-                    value={newMember.role}
-                    onValueChange={(val: TeamRole) =>
-                      setNewMember({ ...newMember, role: val })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Admin">
-                        Admin (Acesso Total)
-                      </SelectItem>
-                      <SelectItem value="Project Manager">
-                        Gerente de Projetos (Obras)
-                      </SelectItem>
-                      <SelectItem value="Accountant">
-                        Contador (Financeiro)
-                      </SelectItem>
-                      <SelectItem value="Collaborator">
-                        Colaborador (Visualização)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+
+                {searchResult && (
+                  <div className="bg-muted p-3 rounded-md flex items-center gap-3 border border-green-200">
+                    <div className="bg-green-100 p-2 rounded-full">
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-sm">
+                        {searchResult.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {searchResult.email}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {searchResult && (
+                  <div className="space-y-2">
+                    <Label>Nível de Acesso (RBAC)</Label>
+                    <Select
+                      value={role}
+                      onValueChange={(val: TeamRole) => setRole(val)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Admin">
+                          Admin (Acesso Total)
+                        </SelectItem>
+                        <SelectItem value="Project Manager">
+                          Gerente de Projetos
+                        </SelectItem>
+                        <SelectItem value="Accountant">Contador</SelectItem>
+                        <SelectItem value="Collaborator">
+                          Colaborador
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
+
               <DialogFooter>
-                <Button onClick={handleAddMember}>Enviar Convite</Button>
+                <Button onClick={handleAddMember} disabled={!searchResult}>
+                  Adicionar ao Time
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -180,26 +246,42 @@ export default function Team() {
             <h3 className="text-lg font-semibold">Funcionalidade PJ</h3>
             <p className="text-muted-foreground max-w-md mt-2">
               A gestão avançada de múltiplos membros é exclusiva para contas
-              Pessoa Jurídica (Corporate). Atualize sua conta para acessar.
+              Pessoa Jurídica.
             </p>
           </CardContent>
         </Card>
       )}
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {/* Always show current user card */}
+        <Card className="flex flex-col relative overflow-hidden group hover:border-primary/50 transition-colors">
+          <div className="absolute top-0 left-0 w-full h-1 bg-green-500" />
+          <CardContent className="pt-6 flex flex-col items-center text-center flex-1">
+            <Avatar className="h-20 w-20 mb-4 border-2 border-background shadow-sm">
+              <AvatarImage src={user.avatar} />
+              <AvatarFallback>
+                <UserIcon />
+              </AvatarFallback>
+            </Avatar>
+            <div className="space-y-1 mb-4">
+              <h3 className="font-semibold text-lg">{user.name} (Você)</h3>
+              <Badge variant="secondary">{user.teamRole || 'Admin'}</Badge>
+            </div>
+            <div className="w-full space-y-3 mt-auto">
+              <div className="flex items-center justify-center text-sm text-muted-foreground bg-muted/50 py-1.5 rounded-md gap-2">
+                <Mail className="h-3 w-3" /> {user.email}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {members.map((member, i) => (
           <Card
             key={i}
             className="flex flex-col relative overflow-hidden group hover:border-primary/50 transition-colors"
           >
             <div
-              className={`absolute top-0 left-0 w-full h-1 ${
-                member.status === 'busy'
-                  ? 'bg-yellow-500'
-                  : member.status === 'inactive'
-                    ? 'bg-gray-300'
-                    : 'bg-green-500'
-              }`}
+              className={`absolute top-0 left-0 w-full h-1 ${member.status === 'busy' ? 'bg-yellow-500' : 'bg-green-500'}`}
             />
             <CardContent className="pt-6 flex flex-col items-center text-center flex-1">
               <Avatar className="h-20 w-20 mb-4 border-2 border-background shadow-sm">
@@ -227,7 +309,7 @@ export default function Team() {
                   <Mail className="h-3 w-3" /> {member.email}
                 </div>
 
-                {isPJ && member.id !== user.id && (
+                {isPJ && (
                   <div className="pt-2 border-t w-full space-y-2">
                     <div className="flex justify-between items-center text-xs text-muted-foreground px-2">
                       <span className="flex items-center gap-1">
