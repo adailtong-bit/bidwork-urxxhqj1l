@@ -97,6 +97,36 @@ export interface ProjectAddress {
   country?: 'BR' | 'US'
 }
 
+// New Types for Advanced Management
+export interface BudgetItem {
+  id: string
+  description: string
+  category: 'material' | 'labor' | 'other'
+  unitCost: number
+  quantity: number
+  totalCost: number
+}
+
+export interface ApprovalLog {
+  id: string
+  type: 'invoice' | 'document' | 'activity'
+  referenceId: string // Link to invoice ID or SubStage ID
+  description: string
+  status: 'pending' | 'approved' | 'rejected' | 'in_review'
+  date: Date
+  history: {
+    date: Date
+    status: string
+    user: string
+  }[]
+}
+
+export interface Integration {
+  platform: 'trello' | 'asana' | 'jira'
+  connected: boolean
+  lastSync?: Date
+}
+
 export interface Project {
   id: string
   ownerId: string
@@ -111,11 +141,25 @@ export interface Project {
   partners: ProjectPartner[]
   totalBudget: number
   totalSpent: number
+  // New Fields
+  budgetItems: BudgetItem[]
+  approvalLogs: ApprovalLog[]
+  integrations: Integration[]
 }
 
 interface ProjectState {
   projects: Project[]
-  addProject: (project: Omit<Project, 'id' | 'totalSpent' | 'partners'>) => void
+  addProject: (
+    project: Omit<
+      Project,
+      | 'id'
+      | 'totalSpent'
+      | 'partners'
+      | 'budgetItems'
+      | 'approvalLogs'
+      | 'integrations'
+    >,
+  ) => void
   updateProject: (id: string, data: Partial<Project>) => void
   addStage: (
     projectId: string,
@@ -217,6 +261,19 @@ interface ProjectState {
     subStageId: string,
     rating: number,
   ) => void
+  // New Actions
+  addBudgetItem: (projectId: string, item: Omit<BudgetItem, 'id'>) => void
+  removeBudgetItem: (projectId: string, itemId: string) => void
+  updateApprovalStatus: (
+    projectId: string,
+    approvalId: string,
+    status: ApprovalLog['status'],
+    user: string,
+  ) => void
+  toggleIntegration: (
+    projectId: string,
+    platform: Integration['platform'],
+  ) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -308,6 +365,55 @@ const mockProjects: Project[] = [
         bimFiles: [],
       },
     ],
+    budgetItems: [
+      {
+        id: 'b-1',
+        description: 'Cimento CP II (Saco 50kg)',
+        category: 'material',
+        unitCost: 35.5,
+        quantity: 500,
+        totalCost: 17750,
+      },
+      {
+        id: 'b-2',
+        description: 'Mão de Obra (Pedreiro - Hora)',
+        category: 'labor',
+        unitCost: 25.0,
+        quantity: 1200,
+        totalCost: 30000,
+      },
+    ],
+    approvalLogs: [
+      {
+        id: 'app-1',
+        type: 'invoice',
+        referenceId: 'inv-001',
+        description: 'Pagamento 1ª Parcela - Concretagem',
+        status: 'pending',
+        date: new Date(),
+        history: [],
+      },
+      {
+        id: 'app-2',
+        type: 'document',
+        referenceId: 'doc-005',
+        description: 'Alvará de Construção Atualizado',
+        status: 'approved',
+        date: new Date(Date.now() - 86400000 * 2),
+        history: [
+          {
+            date: new Date(Date.now() - 86400000 * 2),
+            status: 'approved',
+            user: 'Eng. Roberto',
+          },
+        ],
+      },
+    ],
+    integrations: [
+      { platform: 'trello', connected: false },
+      { platform: 'asana', connected: true, lastSync: new Date() },
+      { platform: 'jira', connected: false },
+    ],
   },
 ]
 
@@ -322,6 +428,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           id: Math.random().toString(36).substr(2, 9),
           totalSpent: 0,
           partners: [],
+          budgetItems: [],
+          approvalLogs: [],
+          integrations: [],
         },
       ],
     })),
@@ -785,6 +894,92 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               }
               return s
             }),
+          }
+        }
+        return p
+      }),
+    })),
+  // New Actions Implementation
+  addBudgetItem: (projectId, item) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            budgetItems: [
+              ...(p.budgetItems || []),
+              { ...item, id: Math.random().toString(36).substr(2, 9) },
+            ],
+          }
+        }
+        return p
+      }),
+    })),
+  removeBudgetItem: (projectId, itemId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            budgetItems: (p.budgetItems || []).filter((i) => i.id !== itemId),
+          }
+        }
+        return p
+      }),
+    })),
+  updateApprovalStatus: (projectId, approvalId, status, user) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            approvalLogs: (p.approvalLogs || []).map((log) => {
+              if (log.id === approvalId) {
+                return {
+                  ...log,
+                  status,
+                  history: [
+                    ...log.history,
+                    {
+                      date: new Date(),
+                      status,
+                      user,
+                    },
+                  ],
+                }
+              }
+              return log
+            }),
+          }
+        }
+        return p
+      }),
+    })),
+  toggleIntegration: (projectId, platform) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const exists = p.integrations?.find((i) => i.platform === platform)
+          if (exists) {
+            return {
+              ...p,
+              integrations: p.integrations.map((i) =>
+                i.platform === platform
+                  ? {
+                      ...i,
+                      connected: !i.connected,
+                      lastSync: !i.connected ? new Date() : i.lastSync,
+                    }
+                  : i,
+              ),
+            }
+          }
+          return {
+            ...p,
+            integrations: [
+              ...(p.integrations || []),
+              { platform, connected: true, lastSync: new Date() },
+            ],
           }
         }
         return p

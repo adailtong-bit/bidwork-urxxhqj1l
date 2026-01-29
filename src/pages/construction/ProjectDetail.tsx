@@ -24,6 +24,10 @@ import {
   Users,
   HardHat,
   CheckCircle2,
+  PieChart,
+  DollarSign,
+  FileCheck,
+  Link2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -35,6 +39,10 @@ import {
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { PartnerEditModal } from '@/components/partner/PartnerEditModal'
 import { ProjectTeamManager } from '@/components/construction/ProjectTeamManager'
+import { ProjectBudget } from '@/components/construction/ProjectBudget'
+import { ProjectReports } from '@/components/construction/ProjectReports'
+import { ProjectApprovalWorkflow } from '@/components/construction/ProjectApprovalWorkflow'
+import { ExternalIntegrationDialog } from '@/components/construction/ExternalIntegrationDialog'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Progress } from '@/components/ui/progress'
 
@@ -53,6 +61,7 @@ export default function ProjectDetail() {
   )
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false)
+  const [isSyncOpen, setIsSyncOpen] = useState(false)
 
   if (!project) return <div className="p-8 text-center">{t('error')}</div>
 
@@ -104,22 +113,33 @@ export default function ProjectDetail() {
           </span>
         </div>
 
-        {/* Team Manager Button */}
-        <Button
-          className="absolute right-0 top-4 md:top-auto"
-          variant="outline"
-          onClick={() => setIsTeamManagerOpen(true)}
-        >
-          <HardHat className="mr-2 h-4 w-4" /> {t('proj.team.btn')}
-        </Button>
+        {/* Action Buttons */}
+        <div className="absolute right-0 top-4 md:top-auto flex gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsSyncOpen(true)}
+            title={t('proj.sync.btn')}
+          >
+            <Link2 className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" onClick={() => setIsTeamManagerOpen(true)}>
+            <HardHat className="mr-2 h-4 w-4" /> {t('proj.team.btn')}
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="stages" className="w-full flex flex-col items-center">
-        <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
+        <TabsList className="grid w-full max-w-3xl grid-cols-3 md:grid-cols-6 mb-8 h-auto">
           <TabsTrigger value="stages">{t('proj.detail.schedule')}</TabsTrigger>
+          <TabsTrigger value="budget">{t('proj.budget.title')}</TabsTrigger>
           <TabsTrigger value="partners">
             {t('proj.detail.partners')}
           </TabsTrigger>
+          <TabsTrigger value="approvals">
+            {t('proj.approvals.title')}
+          </TabsTrigger>
+          <TabsTrigger value="reports">{t('proj.reports.title')}</TabsTrigger>
           <TabsTrigger value="financial">
             {t('proj.detail.finance')}
           </TabsTrigger>
@@ -240,6 +260,11 @@ export default function ProjectDetail() {
           </div>
         </TabsContent>
 
+        {/* Budget Tab */}
+        <TabsContent value="budget" className="w-full animate-fade-in">
+          <ProjectBudget projectId={project.id} />
+        </TabsContent>
+
         <TabsContent value="partners" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
@@ -351,6 +376,16 @@ export default function ProjectDetail() {
           </Card>
         </TabsContent>
 
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="w-full animate-fade-in">
+          <ProjectReports projectId={project.id} />
+        </TabsContent>
+
+        {/* Approvals Tab */}
+        <TabsContent value="approvals" className="w-full animate-fade-in">
+          <ProjectApprovalWorkflow projectId={project.id} />
+        </TabsContent>
+
         <TabsContent value="financial" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
@@ -411,6 +446,13 @@ export default function ProjectDetail() {
       <ProjectTeamManager
         open={isTeamManagerOpen}
         onClose={() => setIsTeamManagerOpen(false)}
+        projectId={project.id}
+      />
+
+      {/* External Integration Dialog */}
+      <ExternalIntegrationDialog
+        open={isSyncOpen}
+        onClose={() => setIsSyncOpen(false)}
         projectId={project.id}
       />
     </div>
