@@ -21,21 +21,24 @@ import {
 import { Button } from '@/components/ui/button'
 import { AdSection } from '@/components/AdSection'
 import { Card, CardContent } from '@/components/ui/card'
-
-const categories = [
-  { name: 'Serviços Domésticos', icon: Home },
-  { name: 'Tecnologia', icon: Laptop },
-  { name: 'Serviços Empresariais', icon: Briefcase },
-  { name: 'Saúde', icon: HeartPulse },
-  { name: 'Educação', icon: GraduationCap },
-  { name: 'Serviços Criativos', icon: Palette },
-  { name: 'Transporte', icon: Truck },
-  { name: 'Construção', icon: Hammer },
-  { name: 'Automotivo', icon: Car },
-  { name: 'Serviços Pessoais', icon: User },
-]
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function Index() {
+  const { t, currentLanguage } = useLanguageStore()
+
+  const categories = [
+    { name: t('cat.domestic'), icon: Home, query: 'domestic' },
+    { name: t('cat.tech'), icon: Laptop, query: 'tech' },
+    { name: t('cat.business'), icon: Briefcase, query: 'business' },
+    { name: t('cat.health'), icon: HeartPulse, query: 'health' },
+    { name: t('cat.education'), icon: GraduationCap, query: 'education' },
+    { name: t('cat.creative'), icon: Palette, query: 'creative' },
+    { name: t('cat.transport'), icon: Truck, query: 'transport' },
+    { name: t('cat.construction'), icon: Hammer, query: 'construction' },
+    { name: t('cat.auto'), icon: Car, query: 'auto' },
+    { name: t('cat.personal'), icon: User, query: 'personal' },
+  ]
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Navigation Header */}
@@ -55,20 +58,23 @@ export default function Index() {
                 to="/find-jobs"
                 className="transition-colors hover:text-foreground/80 text-foreground/60"
               >
-                Explorar Projetos
+                {t('nav.explore')}
               </Link>
             </nav>
           </div>
           <div className="flex items-center gap-4">
             <div className="hidden md:flex items-center gap-1 text-sm font-medium border rounded-md px-3 py-1.5 bg-muted/20">
-              <span className="text-base">🇧🇷</span> Português
+              <span className="text-base">
+                {currentLanguage === 'pt' ? '🇧🇷' : '🇺🇸'}
+              </span>{' '}
+              {currentLanguage === 'pt' ? 'Português' : 'English'}
             </div>
             <div className="flex items-center gap-2">
               <Button variant="ghost" asChild>
-                <Link to="/login">Entrar</Link>
+                <Link to="/login">{t('nav.login')}</Link>
               </Button>
               <Button asChild>
-                <Link to="/register">Começar</Link>
+                <Link to="/register">{t('nav.start')}</Link>
               </Button>
             </div>
           </div>
@@ -81,18 +87,18 @@ export default function Index() {
           <div className="container px-4 md:px-6 relative z-10">
             <div className="flex flex-col items-center space-y-4 text-center">
               <h1 className="text-4xl font-extrabold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl max-w-4xl">
-                Lance Inteligente, <br className="hidden sm:inline" />
-                <span className="text-primary">Trabalhe Melhor</span>
+                {t('home.hero.title_part1')} <br className="hidden sm:inline" />
+                <span className="text-primary">
+                  {t('home.hero.title_part2')}
+                </span>
               </h1>
               <p className="mx-auto max-w-[700px] text-muted-foreground md:text-xl">
-                Conecte-se com profissionais de destaque ou encontre sua próxima
-                oportunidade no marketplace de serviços que mais cresce na
-                América.
+                {t('home.hero.subtitle')}
               </p>
               <div className="flex flex-col sm:flex-row gap-4 mt-8">
                 <Button size="lg" className="h-12 px-8 text-base" asChild>
                   <Link to="/register?role=contractor">
-                    Contratar Profissionais
+                    {t('home.hero.contractor_btn')}
                   </Link>
                 </Button>
                 <Button
@@ -101,7 +107,9 @@ export default function Index() {
                   className="h-12 px-8 text-base"
                   asChild
                 >
-                  <Link to="/register?role=executor">Encontrar Trabalho</Link>
+                  <Link to="/register?role=executor">
+                    {t('home.hero.executor_btn')}
+                  </Link>
                 </Button>
               </div>
             </div>
@@ -113,10 +121,10 @@ export default function Index() {
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tight mb-4">
-                Como Funciona o BidWork
+                {t('home.process.title')}
               </h2>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Simplificamos a conexão entre quem precisa e quem faz.
+                {t('home.process.subtitle')}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -124,29 +132,33 @@ export default function Index() {
                 <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
                   <FileText className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Publique Seu Projeto</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  {t('home.process.step1.title')}
+                </h3>
                 <p className="text-muted-foreground">
-                  Descreva o que você precisa, defina o orçamento e o prazo
-                  ideal.
+                  {t('home.process.step1.desc')}
                 </p>
               </div>
               <div className="flex flex-col items-center text-center p-6 bg-background rounded-xl shadow-sm border">
                 <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
                   <DollarSign className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Compare Lances</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  {t('home.process.step2.title')}
+                </h3>
                 <p className="text-muted-foreground">
-                  Receba propostas de profissionais qualificados e escolha a
-                  melhor.
+                  {t('home.process.step2.desc')}
                 </p>
               </div>
               <div className="flex flex-col items-center text-center p-6 bg-background rounded-xl shadow-sm border">
                 <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mb-4 text-primary">
                   <CheckCircle className="h-8 w-8" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">Realize o Trabalho</h3>
+                <h3 className="text-xl font-bold mb-2">
+                  {t('home.process.step3.title')}
+                </h3>
                 <p className="text-muted-foreground">
-                  Acompanhe a execução, libere o pagamento e avalie o resultado.
+                  {t('home.process.step3.desc')}
                 </p>
               </div>
             </div>
@@ -157,11 +169,11 @@ export default function Index() {
         <section className="py-16 md:py-24">
           <div className="container px-4 md:px-6">
             <h2 className="text-3xl font-bold tracking-tight mb-8">
-              Categorias Populares
+              {t('home.categories.title')}
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
               {categories.map((cat, i) => (
-                <Link key={i} to={`/find-jobs?category=${cat.name}`}>
+                <Link key={i} to={`/find-jobs?category=${cat.query}`}>
                   <Card className="hover:border-primary hover:shadow-md transition-all cursor-pointer h-full group">
                     <CardContent className="flex flex-col items-center justify-center p-6 text-center h-full gap-3">
                       <cat.icon className="h-8 w-8 text-primary group-hover:scale-110 transition-transform duration-300" />
@@ -179,10 +191,10 @@ export default function Index() {
           <div className="container px-4 md:px-6">
             <div className="text-center mb-12">
               <h2 className="text-3xl font-bold tracking-tight mb-4">
-                Recursos Avançados para Grandes Projetos
+                {t('home.features.title')}
               </h2>
               <p className="text-primary-foreground/80 max-w-2xl mx-auto">
-                Soluções corporativas completas para gestão de obras e equipes.
+                {t('home.features.subtitle')}
               </p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -191,10 +203,11 @@ export default function Index() {
                   <HardHat className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg mb-1">Gestão de Obras</h3>
+                  <h3 className="font-bold text-lg mb-1">
+                    {t('home.features.mgmt.title')}
+                  </h3>
                   <p className="text-sm text-primary-foreground/80">
-                    Acompanhamento financeiro, cronogramas e diário de obra em
-                    tempo real.
+                    {t('home.features.mgmt.desc')}
                   </p>
                 </div>
               </div>
@@ -203,10 +216,11 @@ export default function Index() {
                   <Box className="h-6 w-6" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-lg mb-1">Integração BIM</h3>
+                  <h3 className="font-bold text-lg mb-1">
+                    {t('home.features.bim.title')}
+                  </h3>
                   <p className="text-sm text-primary-foreground/80">
-                    Visualize modelos 3D e vincule documentos técnicos às etapas
-                    do projeto.
+                    {t('home.features.bim.desc')}
                   </p>
                 </div>
               </div>
@@ -216,11 +230,10 @@ export default function Index() {
                 </div>
                 <div>
                   <h3 className="font-bold text-lg mb-1">
-                    Logística Otimizada
+                    {t('home.features.logistics.title')}
                   </h3>
                   <p className="text-sm text-primary-foreground/80">
-                    Roteirização inteligente para entrega de materiais e
-                    movimentação de frota.
+                    {t('home.features.logistics.desc')}
                   </p>
                 </div>
               </div>
@@ -239,11 +252,11 @@ export default function Index() {
         <section className="py-20 md:py-28 text-center">
           <div className="container px-4 md:px-6">
             <h2 className="text-4xl font-bold tracking-tight mb-6">
-              Pronto para Começar?
+              {t('home.cta.title')}
             </h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
               <Button size="lg" className="h-14 px-8 text-lg" asChild>
-                <Link to="/register">Cadastre-se Agora</Link>
+                <Link to="/register">{t('home.cta.btn')}</Link>
               </Button>
               <Button
                 size="lg"
@@ -252,7 +265,8 @@ export default function Index() {
                 asChild
               >
                 <Link to="/find-jobs">
-                  Explorar Projetos <ArrowRight className="ml-2 h-5 w-5" />
+                  {t('home.cta.explore')}{' '}
+                  <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
             </div>
@@ -272,11 +286,11 @@ export default function Index() {
                 <span className="font-bold text-lg">BIDWORK</span>
               </Link>
               <p className="text-sm text-muted-foreground text-center md:text-left">
-                Conectando profissionais com oportunidades em toda a América.
+                {t('footer.slogan')}
               </p>
             </div>
             <div className="text-sm text-muted-foreground">
-              © 2024 BidWork. Todos os direitos reservados.
+              {t('footer.rights')}
             </div>
           </div>
         </div>

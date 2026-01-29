@@ -1,7 +1,6 @@
 import { useState, Fragment } from 'react'
 import {
   Stage,
-  SubStage,
   useProjectStore,
   ProjectPartner,
 } from '@/stores/useProjectStore'
@@ -61,6 +60,7 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface ProjectScheduleTableProps {
   projectId: string
@@ -77,6 +77,8 @@ export function ProjectScheduleTable({
 }: ProjectScheduleTableProps) {
   const { updateStage, updateSubStage, addSubStage, deleteSubStage } =
     useProjectStore()
+  const { t } = useLanguageStore()
+
   const [expandedStages, setExpandedStages] = useState<Set<string>>(
     new Set((stages || []).map((s) => s.id)),
   )
@@ -199,9 +201,6 @@ export function ProjectScheduleTable({
 
   const safeStages = Array.isArray(stages) ? stages : []
 
-  // Filter team members based on view context
-  // If Partner View, show ONLY partner's team (assuming first partner for demo or passed via props)
-  // For demo, we use the first partner in list if isPartnerView is true, else all
   const availablePartners =
     isPartnerView && partners.length > 0 ? [partners[0]] : partners
   const teamMembersToSelect = availablePartners.flatMap((p) =>
@@ -213,11 +212,13 @@ export function ProjectScheduleTable({
       <Table>
         <TableHeader>
           <TableRow className="bg-muted/50">
-            <TableHead className="w-[300px]">Tarefa / Etapa (WBS)</TableHead>
-            <TableHead>Início</TableHead>
+            <TableHead className="w-[300px]">{t('proj.stage.tasks')}</TableHead>
+            <TableHead>{t('construction.start')}</TableHead>
             <TableHead>Fim</TableHead>
-            <TableHead className="w-[180px]">Progresso</TableHead>
-            <TableHead>Status</TableHead>
+            <TableHead className="w-[180px]">
+              {t('proj.task.progress')}
+            </TableHead>
+            <TableHead>{t('proj.task.status')}</TableHead>
             <TableHead className="w-[50px]"></TableHead>
           </TableRow>
         </TableHeader>
@@ -276,7 +277,7 @@ export function ProjectScheduleTable({
                         }
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        Adicionar Atividade
+                        {t('add')} Atividade
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -390,7 +391,7 @@ export function ProjectScheduleTable({
                               <CheckCircle2 className="mr-2 h-4 w-4" />
                               {sub.status === 'completed'
                                 ? 'Reabrir'
-                                : 'Concluir'}
+                                : t('confirm')}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
@@ -408,7 +409,7 @@ export function ProjectScheduleTable({
                                 handleDeleteClick(stage.id, sub.id)
                               }
                             >
-                              <Trash2 className="mr-2 h-4 w-4" /> Remover
+                              <Trash2 className="mr-2 h-4 w-4" /> {t('remove')}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -474,13 +475,13 @@ export function ProjectScheduleTable({
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setDeleteStep(0)}>
-              Cancelar
+              {t('cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteStep === 1 ? 'Continuar' : 'Confirmar Exclusão'}
+              {deleteStep === 1 ? 'Continuar' : t('confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -534,7 +535,7 @@ export function ProjectScheduleTable({
             </div>
           </div>
           <DialogFooter>
-            <Button onClick={handleAssign}>Salvar Alocação</Button>
+            <Button onClick={handleAssign}>{t('save')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

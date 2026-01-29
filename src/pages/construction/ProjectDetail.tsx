@@ -355,28 +355,18 @@ export default function ProjectDetail() {
         <TabsContent value="financial" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
-              <CardTitle>Visão Financeira do Projeto</CardTitle>
-              <CardDescription>
-                Acompanhamento de custos e pagamentos.
-              </CardDescription>
+              <CardTitle>{t('proj.finance.title')}</CardTitle>
+              <CardDescription>{t('proj.finance.desc')}</CardDescription>
             </CardHeader>
             <CardContent className="text-center py-12">
               <div className="inline-flex items-center justify-center p-4 bg-blue-50 rounded-full mb-4">
                 <FileSpreadsheet className="h-8 w-8 text-blue-500" />
               </div>
               <h3 className="text-lg font-medium mb-2">
-                Módulo Financeiro Integrado
+                {t('proj.finance.module')}
               </h3>
               <p className="text-muted-foreground max-w-md mx-auto">
-                Para detalhes completos de faturamento e fluxo de caixa, acesse
-                o
-                <Link
-                  to="/finance"
-                  className="text-primary hover:underline ml-1 font-medium"
-                >
-                  Dashboard Financeiro
-                </Link>
-                .
+                {t('proj.finance.link')}
               </p>
             </CardContent>
           </Card>

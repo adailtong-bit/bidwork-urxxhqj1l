@@ -1,6 +1,9 @@
 import { Outlet } from 'react-router-dom'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function AuthLayout() {
+  const { t } = useLanguageStore()
+
   return (
     <div className="flex min-h-screen w-full">
       {/* Left side - Decorative */}
@@ -18,11 +21,10 @@ export default function AuthLayout() {
             <span className="text-2xl font-bold tracking-tight">BIDWORK</span>
           </div>
           <h1 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
-            Planejamento estratégico simplificado para equipes modernas.
+            {t('layout.hero.title')}
           </h1>
           <p className="text-lg text-indigo-100 leading-relaxed">
-            Organize metas, acompanhe o progresso e colabore com seu time em uma
-            única plataforma projetada para o crescimento.
+            {t('layout.hero.subtitle')}
           </p>
 
           <div className="mt-12 flex items-center gap-4">
@@ -44,7 +46,7 @@ export default function AuthLayout() {
               />
             </div>
             <p className="text-sm font-medium text-indigo-100">
-              Junte-se a mais de 10.000 líderes.
+              {t('layout.hero.user_count')}
             </p>
           </div>
         </div>

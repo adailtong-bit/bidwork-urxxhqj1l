@@ -25,7 +25,6 @@ import {
   Route,
   ClipboardList,
   Medal,
-  Building,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -49,11 +48,14 @@ import {
 import { useAuthStore } from '@/stores/useAuthStore'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export function MainSidebar() {
   const { user, logout } = useAuthStore()
   const location = useLocation()
   const { state } = useSidebar()
+  const { t } = useLanguageStore()
+
   const isContractor = user?.role === 'contractor'
   const isPartner = user?.role === 'partner'
   const isPJ = user?.entityType === 'pj'
@@ -71,12 +73,14 @@ export function MainSidebar() {
 
   const commonItems = [
     {
-      title: isPartner ? 'Painel do Parceiro' : 'Dashboard',
+      title: isPartner
+        ? t('sidebar.partner_dashboard')
+        : t('sidebar.dashboard'),
       url: isPartner ? '/partner/dashboard' : '/dashboard',
       icon: LayoutDashboard,
     },
     {
-      title: 'Minhas Mensagens',
+      title: t('sidebar.messages'),
       url: '/messages',
       icon: MessageSquare,
     },
@@ -84,12 +88,12 @@ export function MainSidebar() {
 
   const contractorItems = [
     {
-      title: 'Publicar Job',
+      title: t('sidebar.post_job'),
       url: '/post-job',
       icon: PlusCircle,
     },
     {
-      title: 'Meus Jobs',
+      title: t('sidebar.my_jobs'),
       url: '/my-jobs',
       icon: Briefcase,
     },
@@ -97,27 +101,27 @@ export function MainSidebar() {
 
   const constructionItems = [
     {
-      title: 'Gestão de Obras',
+      title: t('sidebar.construction'),
       url: '/construction/dashboard',
       icon: HardHat,
     },
     {
-      title: 'Materiais',
+      title: t('sidebar.materials'),
       url: '/construction/materials',
       icon: Package,
     },
     {
-      title: 'Estoque & Inventário',
+      title: t('sidebar.inventory'),
       url: '/construction/inventory',
       icon: ClipboardList,
     },
     {
-      title: 'Logística',
+      title: t('sidebar.logistics'),
       url: '/construction/logistics',
       icon: Route,
     },
     {
-      title: 'Maquinário & Frota',
+      title: t('sidebar.equipment'),
       url: '/construction/equipment',
       icon: Truck,
     },
@@ -125,22 +129,22 @@ export function MainSidebar() {
 
   const executorItems = [
     {
-      title: 'Encontrar Jobs',
+      title: t('sidebar.find_jobs'),
       url: '/find-jobs',
       icon: Search,
     },
     {
-      title: 'Minhas Candidaturas',
+      title: t('sidebar.applications'),
       url: '/my-jobs',
       icon: Briefcase,
     },
     {
-      title: 'Treinamento',
+      title: t('sidebar.training'),
       url: '/training',
       icon: GraduationCap,
     },
     {
-      title: 'Ranking (Leaderboard)',
+      title: t('sidebar.leaderboard'),
       url: '/leaderboard',
       icon: Medal,
     },
@@ -148,12 +152,12 @@ export function MainSidebar() {
 
   const partnerItems = [
     {
-      title: 'Minha Equipe',
+      title: t('sidebar.team'),
       url: '/partner/dashboard', // handled via tabs in dashboard for simplicity
       icon: Users,
     },
     {
-      title: 'Faturas',
+      title: t('sidebar.invoices'),
       url: '/finance',
       icon: FileSpreadsheet,
     },
@@ -161,22 +165,22 @@ export function MainSidebar() {
 
   const financeItems = [
     {
-      title: 'Minhas Finanças',
+      title: t('sidebar.finance'),
       url: '/finance',
       icon: Wallet,
     },
     {
-      title: 'Planos & Assinatura',
+      title: t('sidebar.subscription'),
       url: '/subscription',
       icon: Crown,
     },
     {
-      title: 'Créditos',
+      title: t('sidebar.credits'),
       url: '/credits',
       icon: Coins,
     },
     {
-      title: 'Fidelidade',
+      title: t('sidebar.loyalty'),
       url: '/loyalty',
       icon: Trophy,
     },
@@ -184,7 +188,7 @@ export function MainSidebar() {
 
   if (isPJ) {
     financeItems.splice(1, 0, {
-      title: 'Relatórios Contábeis',
+      title: t('sidebar.accounting'),
       url: '/finance/accounting',
       icon: FileSpreadsheet,
     })
@@ -192,12 +196,12 @@ export function MainSidebar() {
 
   const utilityItems = [
     {
-      title: 'Documentos',
+      title: t('sidebar.documents'),
       url: '/documents',
       icon: FolderOpen,
     },
     {
-      title: 'Configurações',
+      title: t('sidebar.settings'),
       url: '/settings',
       icon: Settings,
     },
@@ -205,7 +209,7 @@ export function MainSidebar() {
 
   if (isPJ) {
     utilityItems.unshift({
-      title: 'Gestão de Usuários',
+      title: t('sidebar.users'),
       url: '/team',
       icon: Users,
     })
@@ -213,12 +217,12 @@ export function MainSidebar() {
 
   const adminItems = [
     {
-      title: 'Categorias',
+      title: t('sidebar.categories'),
       url: '/admin/categories',
       icon: Tags,
     },
     {
-      title: 'Publicidade',
+      title: t('sidebar.ads'),
       url: '/admin/ads',
       icon: Megaphone,
     },
@@ -226,7 +230,7 @@ export function MainSidebar() {
 
   const devItems = [
     {
-      title: 'Testing Hub',
+      title: t('sidebar.testing'),
       url: '/testing',
       icon: TestTube2,
     },
@@ -258,10 +262,10 @@ export function MainSidebar() {
         <SidebarGroup>
           <SidebarGroupLabel>
             {isContractor
-              ? 'Área do Contratante'
+              ? t('sidebar.group.contractor')
               : isPartner
-                ? 'Área do Parceiro'
-                : 'Área do Executor'}
+                ? t('sidebar.group.partner')
+                : t('sidebar.group.executor')}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -289,7 +293,7 @@ export function MainSidebar() {
         {isConstrutora && canAccessConstruction && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-orange-600 font-semibold">
-              Construtora
+              {t('sidebar.group.construction')}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -318,7 +322,7 @@ export function MainSidebar() {
         {isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-destructive font-bold">
-              Administração
+              {t('sidebar.group.admin')}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -343,7 +347,7 @@ export function MainSidebar() {
 
         {canAccessFinance && (
           <SidebarGroup>
-            <SidebarGroupLabel>Financeiro</SidebarGroupLabel>
+            <SidebarGroupLabel>{t('sidebar.group.finance')}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {financeItems.map((item) => (
@@ -366,7 +370,7 @@ export function MainSidebar() {
         )}
 
         <SidebarGroup>
-          <SidebarGroupLabel>Utilitários</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.group.utilities')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {utilityItems.map((item) => (
@@ -388,7 +392,7 @@ export function MainSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Desenvolvimento</SidebarGroupLabel>
+          <SidebarGroupLabel>{t('sidebar.group.dev')}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {devItems.map((item) => (
@@ -437,7 +441,7 @@ export function MainSidebar() {
                   className="text-destructive focus:text-destructive cursor-pointer"
                 >
                   <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sair da conta</span>
+                  <span>{t('sidebar.logout')}</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

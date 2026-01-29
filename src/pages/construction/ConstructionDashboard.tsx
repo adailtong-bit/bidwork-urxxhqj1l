@@ -27,10 +27,11 @@ import {
   PieChart,
 } from 'lucide-react'
 import { format, differenceInDays } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function ConstructionDashboard() {
   const { projects } = useProjectStore()
+  const { t } = useLanguageStore()
 
   const activeProjects = projects.filter((p) => p.status === 'in_progress')
   const completedProjects = projects.filter((p) => p.status === 'completed')
@@ -79,14 +80,16 @@ export default function ConstructionDashboard() {
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestão de Obras</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            {t('construction.dashboard.title')}
+          </h1>
           <p className="text-muted-foreground">
-            Controle total de projetos, custos e cronogramas.
+            {t('construction.dashboard.desc')}
           </p>
         </div>
         <Button asChild>
           <Link to="/construction/projects/new">
-            <Plus className="mr-2 h-4 w-4" /> Novo Projeto
+            <Plus className="mr-2 h-4 w-4" /> {t('construction.new_project')}
           </Link>
         </Button>
       </div>
@@ -95,21 +98,21 @@ export default function ConstructionDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Obras em Andamento
+              {t('construction.active_projects')}
             </CardTitle>
             <HardHat className="h-4 w-4 text-orange-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{activeProjects.length}</div>
             <p className="text-xs text-muted-foreground">
-              {projects.length} projetos totais
+              {t('construction.total_projects', { count: projects.length })}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Orçamento Global
+              {t('construction.global_budget')}
             </CardTitle>
             <TrendingUp className="h-4 w-4 text-emerald-500" />
           </CardHeader>
@@ -118,7 +121,10 @@ export default function ConstructionDashboard() {
               R$ {totalBudget.toLocaleString('pt-BR')}
             </div>
             <div className="text-xs text-muted-foreground flex justify-between mt-1">
-              <span>Executado: R$ {totalSpent.toLocaleString('pt-BR')}</span>
+              <span>
+                {t('construction.executed')}: R${' '}
+                {totalSpent.toLocaleString('pt-BR')}
+              </span>
               <span>
                 {totalBudget > 0
                   ? ((totalSpent / totalBudget) * 100).toFixed(1)
@@ -135,7 +141,7 @@ export default function ConstructionDashboard() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Alertas de Cronograma
+              {t('construction.alerts')}
             </CardTitle>
             <AlertCircle className="h-4 w-4 text-red-500" />
           </CardHeader>
@@ -151,12 +157,10 @@ export default function ConstructionDashboard() {
       <Card className="bg-slate-50 border-slate-200">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <PieChart className="h-5 w-5 text-primary" /> Análise Pós-Obra
-            (Planejado x Realizado)
+            <PieChart className="h-5 w-5 text-primary" />{' '}
+            {t('construction.analysis')}
           </CardTitle>
-          <CardDescription>
-            Comparativo de eficiência para identificação de desperdícios.
-          </CardDescription>
+          <CardDescription>{t('construction.analysis_desc')}</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
@@ -211,7 +215,9 @@ export default function ConstructionDashboard() {
       </Card>
 
       <div>
-        <h2 className="text-xl font-bold tracking-tight mb-4">Meus Projetos</h2>
+        <h2 className="text-xl font-bold tracking-tight mb-4">
+          {t('construction.my_projects')}
+        </h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <Card
@@ -249,7 +255,7 @@ export default function ConstructionDashboard() {
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">
-                      Progresso Financeiro
+                      {t('construction.financial_progress')}
                     </span>
                     <span className="font-medium">
                       {project.totalBudget > 0
@@ -272,7 +278,7 @@ export default function ConstructionDashboard() {
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-muted-foreground block text-xs">
-                      Início
+                      {t('construction.start')}
                     </span>
                     <span className="font-medium">
                       {format(project.startDate, 'dd/MM/yyyy')}
@@ -280,7 +286,7 @@ export default function ConstructionDashboard() {
                   </div>
                   <div>
                     <span className="text-muted-foreground block text-xs">
-                      Local
+                      {t('construction.local')}
                     </span>
                     <span className="font-medium truncate block">
                       {project.location}
@@ -291,7 +297,8 @@ export default function ConstructionDashboard() {
               <CardFooter className="pt-0">
                 <Button asChild className="w-full" variant="outline">
                   <Link to={`/construction/projects/${project.id}`}>
-                    Gerenciar Obra <ArrowRight className="ml-2 h-4 w-4" />
+                    {t('construction.manage')}{' '}
+                    <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
               </CardFooter>

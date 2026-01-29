@@ -39,10 +39,12 @@ import {
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { z } from 'zod'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function Team() {
   const { user, addTeamMember, removeTeamMember } = useAuthStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [emailToSearch, setEmailToSearch] = useState('')
@@ -63,7 +65,7 @@ export default function Team() {
   // Mock search function
   const handleSearchUser = () => {
     if (!z.string().email().safeParse(emailToSearch).success) {
-      setSearchError('Email inválido')
+      setSearchError(t('val.email'))
       setSearchResult(null)
       return
     }
@@ -98,7 +100,7 @@ export default function Team() {
     if (members.some((m) => m.email === searchResult.email)) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
+        title: t('error'),
         description: 'Usuário já está na equipe.',
       })
       return
@@ -115,7 +117,7 @@ export default function Team() {
     setSearchResult(null)
     setRole('Collaborator')
     toast({
-      title: 'Membro adicionado',
+      title: t('team.added'),
       description: `${searchResult.name} agora faz parte da equipe corporativa.`,
     })
   }
@@ -138,32 +140,30 @@ export default function Team() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isPJ ? 'Gestão Corporativa de Equipe' : 'Minha Equipe'}
+            {isPJ ? t('team.corporate') : t('team.my_team')}
           </h1>
           <p className="text-muted-foreground mt-1">
-            {isPJ
-              ? 'Gerencie acessos, colaboradores e permissões do time.'
-              : 'Visualização dos membros da conta.'}
+            {isPJ ? t('team.desc_pj') : t('team.desc_pf')}
           </p>
         </div>
         {isPJ && (
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button>
-                <Plus className="mr-2 h-4 w-4" /> Adicionar Membro
+                <Plus className="mr-2 h-4 w-4" /> {t('team.add')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Novo Membro da Equipe</DialogTitle>
+                <DialogTitle>{t('team.add')}</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
-                  <Label>Buscar Usuário Registrado</Label>
+                  <Label>{t('team.search_user')}</Label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder="Email do usuário..."
+                      placeholder="Email..."
                       value={emailToSearch}
                       onChange={(e) => setEmailToSearch(e.target.value)}
                     />
@@ -204,7 +204,7 @@ export default function Team() {
 
                 {searchResult && (
                   <div className="space-y-2">
-                    <Label>Nível de Acesso (RBAC)</Label>
+                    <Label>{t('team.access_level')}</Label>
                     <Select
                       value={role}
                       onValueChange={(val: TeamRole) => setRole(val)}
@@ -231,7 +231,7 @@ export default function Team() {
 
               <DialogFooter>
                 <Button onClick={handleAddMember} disabled={!searchResult}>
-                  Adicionar ao Time
+                  {t('add')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -243,10 +243,9 @@ export default function Team() {
         <Card className="bg-muted/50 border-dashed">
           <CardContent className="flex flex-col items-center justify-center py-8 text-center">
             <Shield className="h-10 w-10 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold">Funcionalidade PJ</h3>
+            <h3 className="text-lg font-semibold">{t('team.function_pj')}</h3>
             <p className="text-muted-foreground max-w-md mt-2">
-              A gestão avançada de múltiplos membros é exclusiva para contas
-              Pessoa Jurídica.
+              {t('team.function_pj_desc')}
             </p>
           </CardContent>
         </Card>
@@ -313,7 +312,7 @@ export default function Team() {
                   <div className="pt-2 border-t w-full space-y-2">
                     <div className="flex justify-between items-center text-xs text-muted-foreground px-2">
                       <span className="flex items-center gap-1">
-                        <Activity className="h-3 w-3" /> Performance
+                        <Activity className="h-3 w-3" /> {t('team.performance')}
                       </span>
                       <span className="font-bold text-primary">
                         {member.performance?.toFixed(1) || '0.0'}
@@ -326,7 +325,8 @@ export default function Team() {
                         size="sm"
                         className="w-full h-8 text-xs"
                       >
-                        <Settings className="h-3 w-3 mr-1" /> Permissões
+                        <Settings className="h-3 w-3 mr-1" />{' '}
+                        {t('team.permissions')}
                       </Button>
                       <Button
                         variant="ghost"

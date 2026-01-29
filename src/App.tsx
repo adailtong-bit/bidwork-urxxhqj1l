@@ -47,6 +47,7 @@ import PartnerDashboard from '@/pages/partner/PartnerDashboard'
 import Resources from '@/pages/construction/Resources'
 import TeamInvoicing from '@/pages/construction/TeamInvoicing'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
@@ -82,9 +83,11 @@ const AdminRoute = ({ children }: { children: JSX.Element }) => {
 }
 
 const App = () => {
+  const { t } = useLanguageStore()
+
   useEffect(() => {
-    document.title = 'BIDWORK - Marketplace de Serviços'
-  }, [])
+    document.title = t('app.title') + ' - Marketplace'
+  }, [t])
 
   return (
     <BrowserRouter

@@ -9,11 +9,9 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
 import {
@@ -35,17 +33,21 @@ import {
   User as UserIcon,
   Upload,
   CheckCircle2,
-  AlertCircle,
   Clock,
-  Trophy,
-  Award,
   Edit2,
   Save,
   X,
   CreditCard,
+  Globe,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
 import { AdSection } from '@/components/AdSection'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 // Dynamic schema based on user type and country
 const createProfileSchema = (entityType: 'pf' | 'pj', country: CountryCode) => {
@@ -77,10 +79,9 @@ type ProfileFormValues = z.infer<ReturnType<typeof createProfileSchema>>
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
   const { toast } = useToast()
-  const { t } = useLanguageStore()
+  const { t, currentLanguage, setLanguage } = useLanguageStore()
 
   // Ensure hooks are always called in the same order
-  // Safe defaults for when user is null (to satisfy hook rules)
   const entityType = user?.entityType || 'pf'
   const country = user?.address?.country || 'BR'
 
@@ -196,11 +197,24 @@ export default function Settings() {
     }
   }
 
+  const handleLanguageChange = (val: string) => {
+    setLanguage(val as 'pt' | 'en')
+    toast({
+      title: t('success'),
+      description:
+        val === 'pt'
+          ? 'Idioma alterado para Português'
+          : 'Language changed to English',
+    })
+  }
+
   return (
     <div className="space-y-6 max-w-4xl">
       <AdSection segment="profile" />
 
-      <h1 className="text-3xl font-bold tracking-tight">{t('nav.settings')}</h1>
+      <h1 className="text-3xl font-bold tracking-tight">
+        {t('settings.title')}
+      </h1>
 
       <div className="grid gap-6">
         {/* Profile Info Form */}
@@ -211,12 +225,10 @@ export default function Settings() {
                 <CardTitle className="flex items-center gap-2">
                   <UserIcon className="h-5 w-5" />
                   {user.entityType === 'pj'
-                    ? 'Perfil Corporativo'
-                    : 'Perfil Pessoal'}
+                    ? t('settings.profile.corporate')
+                    : t('settings.profile.personal')}
                 </CardTitle>
-                <CardDescription>
-                  Gerencie suas informações de cadastro.
-                </CardDescription>
+                <CardDescription>{t('settings.profile.desc')}</CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 {user.isVerified && (
@@ -258,8 +270,8 @@ export default function Settings() {
                       <FormItem>
                         <FormLabel>
                           {user.entityType === 'pj'
-                            ? 'Razão Social'
-                            : 'Nome Completo'}
+                            ? t('settings.form.company')
+                            : t('settings.form.name')}
                         </FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
@@ -275,7 +287,7 @@ export default function Settings() {
                       name="companyName"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Nome Fantasia</FormLabel>
+                          <FormLabel>{t('settings.form.fantasy')}</FormLabel>
                           <FormControl>
                             <Input {...field} disabled={!isEditing} />
                           </FormControl>
@@ -286,7 +298,7 @@ export default function Settings() {
                   )}
 
                   <div className="space-y-2">
-                    <Label>Email</Label>
+                    <Label>{t('settings.form.email')}</Label>
                     <Input value={user.email} disabled className="bg-muted" />
                   </div>
 
@@ -295,7 +307,7 @@ export default function Settings() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Telefone</FormLabel>
+                        <FormLabel>{t('settings.form.phone')}</FormLabel>
                         <FormControl>
                           <Input
                             {...field}
@@ -313,9 +325,7 @@ export default function Settings() {
                     name="taxId"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>
-                          {user.entityType === 'pj' ? 'CNPJ' : 'CPF'}
-                        </FormLabel>
+                        <FormLabel>{t('settings.form.tax_id')}</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -327,7 +337,7 @@ export default function Settings() {
 
                 <Separator className="my-4" />
                 <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
-                  <MapPin className="h-4 w-4" /> Endereço Completo
+                  <MapPin className="h-4 w-4" /> {t('settings.address.title')}
                 </h3>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -336,7 +346,7 @@ export default function Settings() {
                     name="zipCode"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CEP/Zip</FormLabel>
+                        <FormLabel>{t('settings.address.zip')}</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -349,7 +359,7 @@ export default function Settings() {
                     name="street"
                     render={({ field }) => (
                       <FormItem className="md:col-span-3">
-                        <FormLabel>Rua</FormLabel>
+                        <FormLabel>{t('settings.address.street')}</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -364,7 +374,7 @@ export default function Settings() {
                     name="number"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Número</FormLabel>
+                        <FormLabel>{t('settings.address.number')}</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -377,7 +387,9 @@ export default function Settings() {
                     name="complement"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Comp.</FormLabel>
+                        <FormLabel>
+                          {t('settings.address.complement')}
+                        </FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -390,7 +402,9 @@ export default function Settings() {
                     name="neighborhood"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Bairro</FormLabel>
+                        <FormLabel>
+                          {t('settings.address.neighborhood')}
+                        </FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -403,7 +417,7 @@ export default function Settings() {
                     name="city"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Cidade</FormLabel>
+                        <FormLabel>{t('settings.address.city')}</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -418,7 +432,7 @@ export default function Settings() {
                     name="state"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Estado/UF</FormLabel>
+                        <FormLabel>{t('settings.address.state')}</FormLabel>
                         <FormControl>
                           <Input {...field} disabled={!isEditing} />
                         </FormControl>
@@ -440,20 +454,49 @@ export default function Settings() {
           </CardContent>
         </Card>
 
+        {/* Language Settings - Restored Feature */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Globe className="h-5 w-5" /> {t('settings.language.title')}
+            </CardTitle>
+            <CardDescription>{t('settings.language.desc')}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col md:flex-row gap-4 items-center">
+              <div className="w-full md:w-1/2">
+                <Label className="mb-2 block">
+                  {t('settings.language.select')}
+                </Label>
+                <Select
+                  value={currentLanguage}
+                  onValueChange={handleLanguageChange}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pt">{t('language.pt')}</SelectItem>
+                    <SelectItem value="en">{t('language.en')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Banking */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Building2 className="h-5 w-5" /> Dados Bancários
+              <Building2 className="h-5 w-5" /> {t('settings.banking.title')}
             </CardTitle>
-            <CardDescription>
-              Informações criptografadas para recebimento de pagamentos.
-            </CardDescription>
+            <CardDescription>{t('settings.banking.desc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
-                <Label>Banco</Label>
+                <Label>{t('settings.banking.bank')}</Label>
                 <Input
                   placeholder="Ex: Nubank"
                   value={banking.bank}
@@ -463,7 +506,7 @@ export default function Settings() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Agência</Label>
+                <Label>{t('settings.banking.agency')}</Label>
                 <Input
                   placeholder="0000"
                   value={banking.agency}
@@ -473,7 +516,7 @@ export default function Settings() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Conta</Label>
+                <Label>{t('settings.banking.account')}</Label>
                 <Input
                   placeholder="00000-0"
                   value={banking.account}
@@ -484,12 +527,12 @@ export default function Settings() {
               </div>
             </div>
             <div className="grid gap-2">
-              <Label>CPF/CNPJ (Titular)</Label>
+              <Label>{t('settings.banking.doc')}</Label>
               <div className="relative">
                 <CreditCard className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Documento para faturamento"
+                  placeholder="Documento"
                   value={banking.document}
                   onChange={(e) =>
                     setBanking({ ...banking, document: e.target.value })
@@ -505,15 +548,13 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" /> Raio de Atuação (Geofencing)
+              <MapPin className="h-5 w-5" /> {t('settings.geo.title')}
             </CardTitle>
-            <CardDescription>
-              Defina a distância máxima para encontrar serviços ou prestadores.
-            </CardDescription>
+            <CardDescription>{t('settings.geo.desc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex items-center justify-between">
-              <Label>Raio de Cobertura</Label>
+              <Label>{t('settings.geo.radius')}</Label>
               <span className="font-bold text-primary">{radius[0]} km</span>
             </div>
             <Slider
@@ -533,26 +574,24 @@ export default function Settings() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <ShieldCheck className="h-5 w-5 text-indigo-600" /> Verificação de
-              Identidade (KYC)
+              <ShieldCheck className="h-5 w-5 text-indigo-600" />{' '}
+              {t('settings.kyc.title')}
             </CardTitle>
-            <CardDescription>
-              Aumente a confiança no seu perfil enviando um documento oficial.
-            </CardDescription>
+            <CardDescription>{t('settings.kyc.desc')}</CardDescription>
           </CardHeader>
           <CardContent>
             {user.kycStatus === 'verified' ? (
               <div className="flex flex-col items-center justify-center p-6 bg-green-50 rounded-lg border border-green-200">
                 <CheckCircle2 className="h-12 w-12 text-green-600 mb-2" />
                 <h3 className="text-lg font-semibold text-green-800">
-                  Identidade Verificada
+                  {t('settings.kyc.verified')}
                 </h3>
               </div>
             ) : user.kycStatus === 'pending' ? (
               <div className="flex flex-col items-center justify-center p-6 bg-yellow-50 rounded-lg border border-yellow-200">
                 <Clock className="h-12 w-12 text-yellow-600 mb-2 animate-pulse" />
                 <h3 className="text-lg font-semibold text-yellow-800">
-                  Em Análise
+                  {t('settings.kyc.pending')}
                 </h3>
               </div>
             ) : (
@@ -570,9 +609,7 @@ export default function Settings() {
                       className={`h-8 w-8 text-muted-foreground ${isUploadingKYC ? 'animate-bounce' : ''}`}
                     />
                     <p className="font-medium">
-                      {isUploadingKYC
-                        ? 'Enviando...'
-                        : 'Clique para enviar documento (RG ou CNH)'}
+                      {isUploadingKYC ? t('loading') : t('settings.kyc.upload')}
                     </p>
                   </div>
                 </div>

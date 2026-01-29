@@ -19,7 +19,6 @@ import {
   Briefcase,
   Building2,
   UserCircle,
-  MapPin,
   CreditCard,
 } from 'lucide-react'
 import {
@@ -45,9 +44,9 @@ const createRegisterSchema = (country: CountryCode) => {
 
   return z
     .object({
-      name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
+      name: z.string().min(2, 'Min 2 chars'),
       email: commonValidation.email,
-      password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
+      password: z.string().min(6, 'Min 6 chars'),
       confirmPassword: z.string(),
       role: z.enum(['contractor', 'executor']),
       entityType: z.enum(['pf', 'pj']),
@@ -55,12 +54,12 @@ const createRegisterSchema = (country: CountryCode) => {
       businessArea: z.string().optional(),
 
       // Address Fields
-      street: z.string().min(3, 'Rua é obrigatória'),
-      number: z.string().min(1, 'Número é obrigatório'),
+      street: z.string().min(3, 'Required'),
+      number: z.string().min(1, 'Required'),
       complement: z.string().optional(),
-      neighborhood: z.string().min(2, 'Bairro é obrigatório'),
-      city: z.string().min(2, 'Cidade é obrigatória'),
-      state: z.string().min(2, 'Estado é obrigatório'),
+      neighborhood: z.string().min(2, 'Required'),
+      city: z.string().min(2, 'Required'),
+      state: z.string().min(2, 'Required'),
       zipCode: zip,
       phone: phone,
 
@@ -72,7 +71,7 @@ const createRegisterSchema = (country: CountryCode) => {
       document: z.string().optional(),
     })
     .refine((data) => data.password === data.confirmPassword, {
-      message: 'Senhas não conferem',
+      message: 'Passwords do not match',
       path: ['confirmPassword'],
     })
     .refine(
@@ -81,7 +80,7 @@ const createRegisterSchema = (country: CountryCode) => {
         return true
       },
       {
-        message: 'Área de atuação é obrigatória para PJ',
+        message: 'Required for Company',
         path: ['businessArea'],
       },
     )
@@ -91,7 +90,7 @@ const createRegisterSchema = (country: CountryCode) => {
         return true
       },
       {
-        message: 'Categoria profissional é obrigatória para Executores',
+        message: 'Required for Executors',
         path: ['category'],
       },
     )
@@ -180,8 +179,8 @@ export default function Register() {
             : undefined,
       })
       toast({
-        title: t('success'),
-        description: `Bem-vindo ao BIDWORK como ${data.role === 'contractor' ? 'Contratante' : 'Executor'}.`,
+        title: t('auth.register.success_title'),
+        description: t('auth.register.success_desc'),
       })
       navigate('/dashboard')
     } catch (error) {
@@ -240,7 +239,7 @@ export default function Register() {
               name="role"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Eu quero...</FormLabel>
+                  <FormLabel>{t('auth.register.role_label')}</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -258,9 +257,11 @@ export default function Register() {
                           className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                         >
                           <User className="mb-3 h-6 w-6" />
-                          <span className="font-semibold">Contratar</span>
+                          <span className="font-semibold">
+                            {t('auth.register.contractor')}
+                          </span>
                           <span className="text-xs text-muted-foreground mt-1">
-                            Publicar Jobs
+                            {t('auth.register.contractor_desc')}
                           </span>
                         </label>
                       </div>
@@ -275,9 +276,11 @@ export default function Register() {
                           className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer transition-all"
                         >
                           <Briefcase className="mb-3 h-6 w-6" />
-                          <span className="font-semibold">Trabalhar</span>
+                          <span className="font-semibold">
+                            {t('auth.register.executor')}
+                          </span>
                           <span className="text-xs text-muted-foreground mt-1">
-                            Fazer Lances
+                            {t('auth.register.executor_desc')}
                           </span>
                         </label>
                       </div>
@@ -293,7 +296,7 @@ export default function Register() {
               name="entityType"
               render={({ field }) => (
                 <FormItem className="space-y-3">
-                  <FormLabel>Tipo de Pessoa</FormLabel>
+                  <FormLabel>{t('auth.register.entity_type')}</FormLabel>
                   <FormControl>
                     <RadioGroup
                       onValueChange={field.onChange}
@@ -306,7 +309,8 @@ export default function Register() {
                           htmlFor="pf"
                           className="flex items-center gap-2 cursor-pointer"
                         >
-                          <UserCircle className="h-4 w-4" /> Pessoa Física (CPF)
+                          <UserCircle className="h-4 w-4" />{' '}
+                          {t('auth.register.pf')}
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -315,8 +319,8 @@ export default function Register() {
                           htmlFor="pj"
                           className="flex items-center gap-2 cursor-pointer"
                         >
-                          <Building2 className="h-4 w-4" /> Pessoa Jurídica
-                          (CNPJ)
+                          <Building2 className="h-4 w-4" />{' '}
+                          {t('auth.register.pj')}
                         </label>
                       </div>
                     </RadioGroup>
@@ -332,14 +336,14 @@ export default function Register() {
                 name="businessArea"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Área de Atuação da Empresa</FormLabel>
+                    <FormLabel>{t('auth.register.business_area')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione a área" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -366,14 +370,14 @@ export default function Register() {
                 name="category"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Sua Categoria Profissional</FormLabel>
+                    <FormLabel>{t('auth.register.category')}</FormLabel>
                     <Select
                       onValueChange={field.onChange}
                       defaultValue={field.value}
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione sua especialidade" />
+                          <SelectValue placeholder="Select" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
@@ -401,7 +405,9 @@ export default function Register() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>
-                      {entityType === 'pj' ? 'Razão Social' : 'Nome Completo'}
+                      {entityType === 'pj'
+                        ? t('auth.register.company_name')
+                        : t('auth.register.name')}
                     </FormLabel>
                     <FormControl>
                       <Input
@@ -422,7 +428,7 @@ export default function Register() {
                 name="email"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>{t('auth.register.email')}</FormLabel>
                     <FormControl>
                       <Input placeholder="seu@email.com" {...field} />
                     </FormControl>
@@ -437,7 +443,7 @@ export default function Register() {
                   name="phone"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Telefone</FormLabel>
+                      <FormLabel>{t('auth.register.phone')}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder={
@@ -457,9 +463,7 @@ export default function Register() {
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>
-                        {country === 'BR' ? 'CEP' : 'Zip Code'}
-                      </FormLabel>
+                      <FormLabel>{t('auth.register.zip')}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder={country === 'BR' ? '00000-000' : '12345'}
@@ -478,9 +482,9 @@ export default function Register() {
                   name="street"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
-                      <FormLabel>Rua</FormLabel>
+                      <FormLabel>{t('auth.register.street')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Rua das Flores" {...field} />
+                        <Input placeholder="Main St" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -491,7 +495,7 @@ export default function Register() {
                   name="number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número</FormLabel>
+                      <FormLabel>{t('auth.register.number')}</FormLabel>
                       <FormControl>
                         <Input placeholder="123" {...field} />
                       </FormControl>
@@ -507,9 +511,9 @@ export default function Register() {
                   name="neighborhood"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bairro</FormLabel>
+                      <FormLabel>{t('auth.register.neighborhood')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Centro" {...field} />
+                        <Input placeholder="Downtown" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -520,9 +524,9 @@ export default function Register() {
                   name="complement"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Complemento</FormLabel>
+                      <FormLabel>{t('auth.register.complement')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Apto 101" {...field} />
+                        <Input placeholder="Apt 101" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -536,9 +540,9 @@ export default function Register() {
                   name="city"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
-                      <FormLabel>Cidade</FormLabel>
+                      <FormLabel>{t('auth.register.city')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="São Paulo" {...field} />
+                        <Input placeholder="New York" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -549,9 +553,9 @@ export default function Register() {
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>UF/State</FormLabel>
+                      <FormLabel>{t('auth.register.state')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="SP" {...field} />
+                        <Input placeholder="NY" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -565,7 +569,7 @@ export default function Register() {
                 <div className="flex items-center gap-2 text-primary">
                   <CreditCard className="h-5 w-5" />
                   <h3 className="font-semibold">
-                    Dados Bancários para Recebimento
+                    {t('auth.register.banking')}
                   </h3>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -574,7 +578,7 @@ export default function Register() {
                     name="bank"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Banco</FormLabel>
+                        <FormLabel>{t('auth.register.bank')}</FormLabel>
                         <FormControl>
                           <Input placeholder="Ex: Nubank" {...field} />
                         </FormControl>
@@ -587,7 +591,7 @@ export default function Register() {
                     name="agency"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Agência</FormLabel>
+                        <FormLabel>{t('auth.register.agency')}</FormLabel>
                         <FormControl>
                           <Input placeholder="0000" {...field} />
                         </FormControl>
@@ -602,7 +606,7 @@ export default function Register() {
                     name="account"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Conta</FormLabel>
+                        <FormLabel>{t('auth.register.account')}</FormLabel>
                         <FormControl>
                           <Input placeholder="00000-0" {...field} />
                         </FormControl>
@@ -615,7 +619,7 @@ export default function Register() {
                     name="document"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CPF/CNPJ Titular</FormLabel>
+                        <FormLabel>{t('auth.register.doc')}</FormLabel>
                         <FormControl>
                           <Input placeholder="Documento" {...field} />
                         </FormControl>
@@ -633,7 +637,7 @@ export default function Register() {
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Senha</FormLabel>
+                    <FormLabel>{t('auth.register.password')}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -650,7 +654,7 @@ export default function Register() {
                 name="confirmPassword"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Confirmar</FormLabel>
+                    <FormLabel>{t('auth.register.confirm_password')}</FormLabel>
                     <FormControl>
                       <Input
                         type="password"
@@ -666,18 +670,18 @@ export default function Register() {
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('auth.register.title')}
+              {t('auth.register.submit')}
             </Button>
           </form>
         </Form>
       </ScrollArea>
       <div className="text-center text-sm pt-4 shrink-0">
-        Já tem uma conta?{' '}
+        {t('auth.register.has_account')}{' '}
         <Link
           to="/login"
           className="font-semibold text-primary hover:underline"
         >
-          {t('auth.login')}
+          {t('auth.register.login_link')}
         </Link>
       </div>
     </div>
