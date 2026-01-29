@@ -5,46 +5,41 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
-import {
-  BarChart,
-  Bar,
-  ResponsiveContainer,
-  XAxis,
-  YAxis,
-  Tooltip,
-  Legend,
-} from 'recharts'
+import { BarChart, Bar, XAxis, YAxis, Legend } from 'recharts'
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
 } from '@/components/ui/chart'
-
-const data = [
-  { name: 'Jan', vendas: 4000, mkt: 2400 },
-  { name: 'Fev', vendas: 3000, mkt: 1398 },
-  { name: 'Mar', vendas: 2000, mkt: 9800 },
-  { name: 'Abr', vendas: 2780, mkt: 3908 },
-  { name: 'Mai', vendas: 1890, mkt: 4800 },
-  { name: 'Jun', vendas: 2390, mkt: 3800 },
-]
-
-const chartConfig = {
-  vendas: {
-    label: 'Vendas',
-    color: 'hsl(var(--chart-1))',
-  },
-  mkt: {
-    label: 'Marketing',
-    color: 'hsl(var(--chart-2))',
-  },
-}
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function Reports() {
+  const { t, formatCurrency } = useLanguageStore()
+
+  const data = [
+    { name: t('dashboard.months.jan'), vendas: 4000, mkt: 2400 },
+    { name: t('dashboard.months.feb'), vendas: 3000, mkt: 1398 },
+    { name: t('dashboard.months.mar'), vendas: 2000, mkt: 9800 },
+    { name: t('dashboard.months.apr'), vendas: 2780, mkt: 3908 },
+    { name: t('dashboard.months.may'), vendas: 1890, mkt: 4800 },
+    { name: t('dashboard.months.jun'), vendas: 2390, mkt: 3800 },
+  ]
+
+  const chartConfig = {
+    vendas: {
+      label: t('dashboard.chart.label.value'),
+      color: 'hsl(var(--chart-1))',
+    },
+    mkt: {
+      label: 'Marketing',
+      color: 'hsl(var(--chart-2))',
+    },
+  }
+
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold tracking-tight">
-        Relatórios de Desempenho
+        {t('header.reports')}
       </h1>
       <p className="text-muted-foreground">
         Análise detalhada do progresso da empresa.
@@ -72,7 +67,7 @@ export default function Reports() {
                     fontSize={12}
                     tickLine={false}
                     axisLine={false}
-                    tickFormatter={(value) => `R$${value}`}
+                    tickFormatter={(value) => formatCurrency(value)}
                   />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Legend />

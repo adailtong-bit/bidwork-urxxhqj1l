@@ -11,41 +11,43 @@ import {
 import { Coins, Zap, Trophy, Rocket } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Badge } from '@/components/ui/badge'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function CreditsStore() {
   const { user, buyCredits } = useAuthStore()
   const { toast } = useToast()
+  const { formatCurrency } = useLanguageStore()
 
-  const handleBuy = (amount: number, price: string) => {
+  const handleBuy = (amount: number, price: number) => {
     buyCredits(amount)
     toast({
       title: 'Compra realizada com sucesso!',
-      description: `Você adquiriu ${amount} créditos por ${price}.`,
+      description: `Você adquiriu ${amount} créditos por ${formatCurrency(price)}.`,
     })
   }
 
   const creditPackages = [
-    { amount: 50, price: 'R$ 29,90', label: 'Iniciante', bonus: 0 },
-    { amount: 100, price: 'R$ 49,90', label: 'Popular', bonus: 10 },
-    { amount: 500, price: 'R$ 199,90', label: 'Profissional', bonus: 75 },
+    { amount: 50, price: 29.9, label: 'Iniciante', bonus: 0 },
+    { amount: 100, price: 49.9, label: 'Popular', bonus: 10 },
+    { amount: 500, price: 199.9, label: 'Profissional', bonus: 75 },
   ]
 
   const boostPackages = [
     {
       title: 'Destaque de Job (24h)',
-      price: 'R$ 19,90',
+      price: 19.9,
       description: 'Seu job no topo das buscas por 24 horas na sua região.',
       icon: Zap,
     },
     {
       title: 'Super Destaque (7 dias)',
-      price: 'R$ 49,90',
+      price: 49.9,
       description: 'Visibilidade máxima na categoria e região por uma semana.',
       icon: Trophy,
     },
     {
       title: 'Impulsionar Perfil',
-      price: 'R$ 29,90',
+      price: 29.9,
       description: 'Apareça como sugestão para contratantes por 3 dias.',
       icon: Rocket,
     },
@@ -97,7 +99,7 @@ export default function CreditsStore() {
                   <div className="text-4xl font-bold mb-2">{pkg.amount}</div>
                   <div className="text-sm text-muted-foreground">Créditos</div>
                   <div className="mt-4 text-2xl font-bold text-primary">
-                    {pkg.price}
+                    {formatCurrency(pkg.price)}
                   </div>
                 </CardContent>
                 <CardFooter>
@@ -128,7 +130,9 @@ export default function CreditsStore() {
                   <CardDescription>{boost.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{boost.price}</div>
+                  <div className="text-2xl font-bold">
+                    {formatCurrency(boost.price)}
+                  </div>
                 </CardContent>
                 <CardFooter>
                   <Button

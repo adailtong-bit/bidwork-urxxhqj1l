@@ -28,12 +28,12 @@ import {
   FileSpreadsheet,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function AccountingExport() {
   const { toast } = useToast()
+  const { formatDate } = useLanguageStore()
   const [dateRange, setDateRange] = useState<
     { from: Date; to: Date } | undefined
   >()
@@ -126,16 +126,11 @@ export default function AccountingExport() {
                       {dateRange?.from ? (
                         dateRange.to ? (
                           <>
-                            {format(dateRange.from, 'LLL dd, y', {
-                              locale: ptBR,
-                            })}{' '}
-                            -{' '}
-                            {format(dateRange.to, 'LLL dd, y', {
-                              locale: ptBR,
-                            })}
+                            {formatDate(dateRange.from, 'LLL dd, y')} -{' '}
+                            {formatDate(dateRange.to, 'LLL dd, y')}
                           </>
                         ) : (
-                          format(dateRange.from, 'LLL dd, y', { locale: ptBR })
+                          formatDate(dateRange.from, 'LLL dd, y')
                         )
                       ) : (
                         <span>Selecione o período</span>

@@ -13,10 +13,12 @@ import { Badge } from '@/components/ui/badge'
 import { Checkbox } from '@/components/ui/checkbox'
 import { FileText, CheckCircle2, DollarSign } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function TeamInvoicing() {
   const { projects, generateInvoice } = useProjectStore()
   const { toast } = useToast()
+  const { formatCurrency } = useLanguageStore()
 
   // Mock logged in team member ID (Contractor/Worker)
   // In real app, derived from auth
@@ -128,7 +130,7 @@ export default function TeamInvoicing() {
                       {task.name}
                     </label>
                     <p className="text-sm text-muted-foreground">
-                      Projeo: {task.projectName}
+                      Projeto: {task.projectName}
                     </p>
                   </div>
                   <div className="text-right">
@@ -139,7 +141,7 @@ export default function TeamInvoicing() {
                       Concluído
                     </Badge>
                     <p className="font-bold text-lg">
-                      R$ {task.taskPrice?.toLocaleString('pt-BR') || '0,00'}
+                      {formatCurrency(task.taskPrice || 0)}
                     </p>
                   </div>
                 </div>
@@ -154,7 +156,7 @@ export default function TeamInvoicing() {
             </span>
             <span className="text-2xl font-bold flex items-center">
               <DollarSign className="h-5 w-5 text-primary" />
-              {totalSelected.toLocaleString('pt-BR')}
+              {formatCurrency(totalSelected)}
             </span>
           </div>
           <Button

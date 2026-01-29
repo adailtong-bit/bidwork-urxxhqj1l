@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { translations, Language } from '@/lib/translations'
-import { ptBR, enUS } from 'date-fns/locale'
+import { ptBR, enUS, es } from 'date-fns/locale'
 import { format } from 'date-fns'
 
 interface LanguageState {
@@ -32,8 +32,9 @@ export const useLanguageStore = create<LanguageState>()(
       },
       formatCurrency: (value) => {
         const lang = get().currentLanguage
-        const locale = lang === 'pt' ? 'pt-BR' : 'en-US'
-        const currency = lang === 'pt' ? 'BRL' : 'USD'
+        const locale =
+          lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US'
+        const currency = lang === 'pt' ? 'BRL' : lang === 'es' ? 'USD' : 'USD' // Using USD for ES/EN as default for international/latam context
         return new Intl.NumberFormat(locale, {
           style: 'currency',
           currency,
@@ -45,7 +46,9 @@ export const useLanguageStore = create<LanguageState>()(
       },
       getDateLocale: () => {
         const lang = get().currentLanguage
-        return lang === 'pt' ? ptBR : enUS
+        if (lang === 'pt') return ptBR
+        if (lang === 'es') return es
+        return enUS
       },
     }),
     {

@@ -31,12 +31,14 @@ import { Building2, Users, FileText, Star, Plus, UserCheck } from 'lucide-react'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { TeamMemberModal } from '@/components/partner/TeamMemberModal'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function PartnerDashboard() {
   const { user } = useAuthStore()
   const { projects, generateInvoice, addPartnerTeamMember } = useProjectStore()
   const { contractors } = useContractorStore()
   const { toast } = useToast()
+  const { formatCurrency } = useLanguageStore()
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false)
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false)
@@ -151,7 +153,7 @@ export default function PartnerDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {activePartner?.agreedPrice.toLocaleString('pt-BR') || '0,00'}
+              {formatCurrency(activePartner?.agreedPrice || 0)}
             </div>
           </CardContent>
         </Card>
@@ -216,7 +218,7 @@ export default function PartnerDashboard() {
             <CardContent>
               {activePartner?.team.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                  Nenhum membro registrado. Adicione manualmente ou busque no
+                  Nenhum miembro registrado. Adicione manualmente ou busque no
                   banco de talentos.
                 </div>
               ) : (
@@ -276,8 +278,7 @@ export default function PartnerDashboard() {
                       <div>
                         <p className="font-medium">{sub.name}</p>
                         <p className="text-sm text-muted-foreground">
-                          Valor: R${' '}
-                          {sub.taskPrice?.toLocaleString('pt-BR') || '0,00'}
+                          Valor: {formatCurrency(sub.taskPrice || 0)}
                         </p>
                       </div>
                       <div>
@@ -306,7 +307,7 @@ export default function PartnerDashboard() {
                   .flatMap((p) => p.stages.flatMap((s) => s.subStages))
                   .filter((sub) => sub.status === 'completed').length === 0 && (
                   <div className="text-center text-muted-foreground py-8">
-                    Nenhuma atividade concluída disponível para faturamento.
+                    Nenhuma actividad concluída disponible para facturación.
                   </div>
                 )}
               </div>

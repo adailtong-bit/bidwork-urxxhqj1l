@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
 } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import {
@@ -26,12 +25,12 @@ import {
   ArrowRight,
   PieChart,
 } from 'lucide-react'
-import { format, differenceInDays } from 'date-fns'
+import { differenceInDays } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function ConstructionDashboard() {
   const { projects } = useProjectStore()
-  const { t } = useLanguageStore()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
 
   const activeProjects = projects.filter((p) => p.status === 'in_progress')
   const completedProjects = projects.filter((p) => p.status === 'completed')
@@ -118,12 +117,11 @@ export default function ConstructionDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {totalBudget.toLocaleString('pt-BR')}
+              {formatCurrency(totalBudget)}
             </div>
             <div className="text-xs text-muted-foreground flex justify-between mt-1">
               <span>
-                {t('construction.executed')}: R${' '}
-                {totalSpent.toLocaleString('pt-BR')}
+                {t('construction.executed')}: {formatCurrency(totalSpent)}
               </span>
               <span>
                 {totalBudget > 0
@@ -190,12 +188,8 @@ export default function ConstructionDashboard() {
                   >
                     {d.timeVariance > 0 ? `+${d.timeVariance}` : d.timeVariance}
                   </TableCell>
-                  <TableCell>
-                    R$ {d.plannedMat.toLocaleString('pt-BR')}
-                  </TableCell>
-                  <TableCell>
-                    R$ {d.actualMat.toLocaleString('pt-BR')}
-                  </TableCell>
+                  <TableCell>{formatCurrency(d.plannedMat)}</TableCell>
+                  <TableCell>{formatCurrency(d.actualMat)}</TableCell>
                   <TableCell
                     className={
                       d.matVariance > 0
@@ -204,7 +198,7 @@ export default function ConstructionDashboard() {
                     }
                   >
                     {d.matVariance > 0
-                      ? `+${d.matVariance.toLocaleString('pt-BR')}`
+                      ? `+${formatCurrency(d.matVariance)}`
                       : d.matVariance}
                   </TableCell>
                 </TableRow>
@@ -281,7 +275,7 @@ export default function ConstructionDashboard() {
                       {t('construction.start')}
                     </span>
                     <span className="font-medium">
-                      {format(project.startDate, 'dd/MM/yyyy')}
+                      {formatDate(project.startDate, 'dd/MM/yyyy')}
                     </span>
                   </div>
                   <div>

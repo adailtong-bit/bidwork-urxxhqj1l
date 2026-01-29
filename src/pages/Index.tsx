@@ -46,6 +46,12 @@ export default function Index() {
     { name: t('cat.personal'), icon: User, query: 'personal' },
   ]
 
+  const getCurrentLanguageLabel = () => {
+    if (currentLanguage === 'pt') return 'Português'
+    if (currentLanguage === 'es') return 'Español'
+    return 'English'
+  }
+
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* Navigation Header */}
@@ -75,19 +81,24 @@ export default function Index() {
                 <Button variant="ghost" size="sm" className="gap-2">
                   <Globe className="h-4 w-4" />
                   <span className="hidden md:inline-block">
-                    {currentLanguage === 'pt' ? 'Português' : 'English'}
+                    {getCurrentLanguageLabel()}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem onClick={() => setLanguage('pt')}>
                   <span className={currentLanguage === 'pt' ? 'font-bold' : ''}>
-                    Português (BR)
+                    {t('language.pt')}
                   </span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setLanguage('en')}>
                   <span className={currentLanguage === 'en' ? 'font-bold' : ''}>
-                    English (US)
+                    {t('language.en')}
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage('es')}>
+                  <span className={currentLanguage === 'es' ? 'font-bold' : ''}>
+                    {t('language.es')}
                   </span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

@@ -73,12 +73,17 @@ export function MainHeader() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem onClick={() => setLanguage('pt')}>
               <span className={currentLanguage === 'pt' ? 'font-bold' : ''}>
-                Português (BR)
+                {t('language.pt')}
               </span>
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => setLanguage('en')}>
               <span className={currentLanguage === 'en' ? 'font-bold' : ''}>
-                English (US)
+                {t('language.en')}
+              </span>
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setLanguage('es')}>
+              <span className={currentLanguage === 'es' ? 'font-bold' : ''}>
+                {t('language.es')}
               </span>
             </DropdownMenuItem>
           </DropdownMenuContent>

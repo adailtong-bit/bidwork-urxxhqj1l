@@ -11,10 +11,12 @@ import {
 import { Check, Zap, Crown, Shield } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function SubscriptionPlans() {
   const { user, upgradeSubscription } = useAuthStore()
   const { toast } = useToast()
+  const { formatCurrency } = useLanguageStore()
 
   const handleSubscribe = (tier: 'pro' | 'business') => {
     upgradeSubscription(tier)
@@ -28,7 +30,7 @@ export default function SubscriptionPlans() {
     {
       id: 'free',
       name: 'Gratuito',
-      price: 'R$ 0',
+      price: 0,
       description: 'Para quem está começando',
       features: [
         'Acesso a jobs básicos',
@@ -42,7 +44,7 @@ export default function SubscriptionPlans() {
     {
       id: 'pro',
       name: 'Profissional',
-      price: 'R$ 49,90/mês',
+      price: 49.9,
       description: 'Para freelancers ativos',
       features: [
         'Destaque Regional em buscas',
@@ -58,7 +60,7 @@ export default function SubscriptionPlans() {
     {
       id: 'business',
       name: 'Business',
-      price: 'R$ 149,90/mês',
+      price: 149.9,
       description: 'Para agências e alta demanda',
       features: [
         'Destaque Nacional em buscas',
@@ -118,8 +120,10 @@ export default function SubscriptionPlans() {
                 <CardTitle className="text-2xl">{plan.name}</CardTitle>
               </div>
               <div className="mt-4">
-                <span className="text-4xl font-bold">{plan.price}</span>
-                {plan.price !== 'R$ 0' && (
+                <span className="text-4xl font-bold">
+                  {formatCurrency(plan.price)}
+                </span>
+                {plan.price !== 0 && (
                   <span className="text-muted-foreground">/mês</span>
                 )}
               </div>

@@ -33,11 +33,13 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { CurrencyInput } from '@/components/CurrencyInput'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function NewProject() {
   const navigate = useNavigate()
   const { addProject } = useProjectStore()
   const { toast } = useToast()
+  const { formatDate } = useLanguageStore()
 
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -270,7 +272,7 @@ export default function NewProject() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.startDate ? (
-                        format(formData.startDate, 'PPP', { locale: ptBR })
+                        formatDate(formData.startDate, 'PPP')
                       ) : (
                         <span>Selecione</span>
                       )}
@@ -301,7 +303,7 @@ export default function NewProject() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {formData.endDate ? (
-                        format(formData.endDate, 'PPP', { locale: ptBR })
+                        formatDate(formData.endDate, 'PPP')
                       ) : (
                         <span>Selecione</span>
                       )}

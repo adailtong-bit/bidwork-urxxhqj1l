@@ -41,9 +41,7 @@ import {
   Lock,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import { Link, Navigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import {
   Dialog,
   DialogContent,
@@ -54,12 +52,14 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function FinanceDashboard() {
   const { user } = useAuthStore()
   const { getTransactionsByUser, schedulePayment, getScheduledPayments } =
     usePaymentStore()
   const { toast } = useToast()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
 
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [scheduleData, setScheduleData] = useState({
@@ -116,13 +116,13 @@ export default function FinanceDashboard() {
 
   // Mock Cash Flow Data
   const cashFlowData = [
-    { month: 'Jan', entrada: 4000, saida: 2400 },
-    { month: 'Fev', entrada: 3000, saida: 1398 },
-    { month: 'Mar', entrada: 2000, saida: 9800 },
-    { month: 'Abr', entrada: 2780, saida: 3908 },
-    { month: 'Mai', entrada: 1890, saida: 4800 },
-    { month: 'Jun', entrada: 2390, saida: 3800 },
-    { month: 'Jul (Proj)', entrada: 3490, saida: 4300 },
+    { month: t('dashboard.months.jan'), entrada: 4000, saida: 2400 },
+    { month: t('dashboard.months.feb'), entrada: 3000, saida: 1398 },
+    { month: t('dashboard.months.mar'), entrada: 2000, saida: 9800 },
+    { month: t('dashboard.months.apr'), entrada: 2780, saida: 3908 },
+    { month: t('dashboard.months.may'), entrada: 1890, saida: 4800 },
+    { month: t('dashboard.months.jun'), entrada: 2390, saida: 3800 },
+    { month: t('dashboard.months.jul'), entrada: 3490, saida: 4300 },
   ]
 
   const chartConfig = {
@@ -187,9 +187,8 @@ export default function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R${' '}
-              {(user.role === 'executor' ? totalEarnings : totalSpent).toFixed(
-                2,
+              {formatCurrency(
+                user.role === 'executor' ? totalEarnings : totalSpent,
               )}
             </div>
             <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
@@ -207,7 +206,7 @@ export default function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R$ {pendingAmount.toFixed(2)}
+              {formatCurrency(pendingAmount)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
               Liberação após conclusão
@@ -221,12 +220,11 @@ export default function FinanceDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              R${' '}
-              {transactions.length > 0
-                ? ((totalEarnings + totalSpent) / transactions.length).toFixed(
-                    2,
-                  )
-                : '0.00'}
+              {formatCurrency(
+                transactions.length > 0
+                  ? (totalEarnings + totalSpent) / transactions.length
+                  : 0,
+              )}
             </div>
             <p className="text-xs text-muted-foreground mt-1">Por transação</p>
           </CardContent>
@@ -269,7 +267,7 @@ export default function FinanceDashboard() {
                         fontSize={12}
                         tickLine={false}
                         axisLine={false}
-                        tickFormatter={(value) => `R$${value}`}
+                        tickFormatter={(value) => formatCurrency(value)}
                       />
                       <Tooltip content={<ChartTooltipContent />} />
                       <Bar
@@ -305,12 +303,12 @@ export default function FinanceDashboard() {
                       transactions.slice(0, 5).map((tx) => (
                         <TableRow key={tx.id}>
                           <TableCell>
-                            {format(tx.date, 'dd/MM/yy', { locale: ptBR })}
+                            {formatDate(tx.date, 'dd/MM/yy')}
                           </TableCell>
                           <TableCell className="font-medium">
                             {tx.jobTitle}
                           </TableCell>
-                          <TableCell>R$ {tx.amount.toFixed(2)}</TableCell>
+                          <TableCell>{formatCurrency(tx.amount)}</TableCell>
                           <TableCell>
                             {tx.status === 'completed' && (
                               <Badge
@@ -386,7 +384,7 @@ export default function FinanceDashboard() {
                     <YAxis
                       tickLine={false}
                       axisLine={false}
-                      tickFormatter={(value) => `R$${value}`}
+                      tickFormatter={(value) => formatCurrency(value)}
                     />
                     <Tooltip
                       content={<ChartTooltipContent indicator="dot" />}
@@ -498,13 +496,13 @@ export default function FinanceDashboard() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           {tx.scheduledDate
-                            ? format(tx.scheduledDate, 'dd/MM/yyyy')
+                            ? formatDate(tx.scheduledDate, 'dd/MM/yyyy')
                             : '-'}
                         </div>
                       </TableCell>
                       <TableCell>{tx.jobTitle}</TableCell>
                       <TableCell>{tx.receiverName}</TableCell>
-                      <TableCell>R$ {tx.amount.toFixed(2)}</TableCell>
+                      <TableCell>{formatCurrency(tx.amount)}</TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"

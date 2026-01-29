@@ -25,7 +25,6 @@ import {
   HardHat,
   CheckCircle2,
 } from 'lucide-react'
-import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 import {
   Dialog,
@@ -43,7 +42,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const { getProject } = useProjectStore()
   const { toast } = useToast()
-  const { t } = useLanguageStore()
+  const { t, formatDate } = useLanguageStore()
 
   const csvInputRef = useRef<HTMLInputElement>(null)
   const project = getProject(id!)
@@ -100,8 +99,8 @@ export default function ProjectDetail() {
           </span>
           <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
             <CalendarIcon className="h-3 w-3" />{' '}
-            {format(project.startDate, 'dd/MM/yyyy')} -{' '}
-            {format(project.endDate, 'dd/MM/yyyy')}
+            {formatDate(project.startDate, 'dd/MM/yyyy')} -{' '}
+            {formatDate(project.endDate, 'dd/MM/yyyy')}
           </span>
         </div>
 
@@ -190,7 +189,7 @@ export default function ProjectDetail() {
                           {stage.status}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {format(stage.startDate, 'dd/MM')}
+                          {formatDate(stage.startDate, 'dd/MM')}
                         </span>
                       </div>
                       <CardTitle className="text-lg leading-tight mt-2">
@@ -345,7 +344,7 @@ export default function ProjectDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
-                  Nenhum parceiro registrado neste projeto.
+                  Nenhum parceiro registrado neste proyecto.
                 </div>
               )}
             </CardContent>
