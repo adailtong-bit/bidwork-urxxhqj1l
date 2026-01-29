@@ -76,6 +76,10 @@ export default function ConstructionDashboard() {
           },
         ]
 
+  const getStatusLabel = (status: string) => {
+    return t(`status.${status}`)
+  }
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -147,7 +151,7 @@ export default function ConstructionDashboard() {
           <CardContent>
             <div className="text-2xl font-bold">1</div>
             <p className="text-xs text-muted-foreground">
-              Fase de acabamento atrasada em Residencial Alpha
+              {t('construction.alert_example')}
             </p>
           </CardContent>
         </Card>
@@ -165,21 +169,27 @@ export default function ConstructionDashboard() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Projeto</TableHead>
-                <TableHead>Tempo Planejado</TableHead>
-                <TableHead>Tempo Real</TableHead>
-                <TableHead>Desvio (Dias)</TableHead>
-                <TableHead>Material Planejado</TableHead>
-                <TableHead>Material Real</TableHead>
-                <TableHead>Desvio (R$)</TableHead>
+                <TableHead>{t('construction.table.project')}</TableHead>
+                <TableHead>{t('construction.table.planned_time')}</TableHead>
+                <TableHead>{t('construction.table.actual_time')}</TableHead>
+                <TableHead>{t('construction.table.variance_days')}</TableHead>
+                <TableHead>
+                  {t('construction.table.planned_material')}
+                </TableHead>
+                <TableHead>{t('construction.table.actual_material')}</TableHead>
+                <TableHead>{t('construction.table.variance_cost')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {analyticsData.map((d, i) => (
                 <TableRow key={i}>
                   <TableCell className="font-medium">{d.name}</TableCell>
-                  <TableCell>{d.plannedDays} dias</TableCell>
-                  <TableCell>{d.actualDays} dias</TableCell>
+                  <TableCell>
+                    {d.plannedDays} {t('construction.days')}
+                  </TableCell>
+                  <TableCell>
+                    {d.actualDays} {t('construction.days')}
+                  </TableCell>
                   <TableCell
                     className={
                       d.timeVariance > 0
@@ -233,13 +243,7 @@ export default function ConstructionDashboard() {
                           : 'bg-gray-50 text-gray-700 border-gray-200'
                     }`}
                   >
-                    {project.status === 'in_progress'
-                      ? 'Em Andamento'
-                      : project.status === 'completed'
-                        ? 'Concluído'
-                        : project.status === 'planning'
-                          ? 'Planejamento'
-                          : 'Pausado'}
+                    {getStatusLabel(project.status)}
                   </span>
                 </div>
                 <CardDescription className="line-clamp-2 min-h-[40px]">

@@ -198,13 +198,15 @@ export default function Settings() {
   }
 
   const handleLanguageChange = (val: string) => {
-    setLanguage(val as 'pt' | 'en')
+    setLanguage(val as 'pt' | 'en' | 'es')
     toast({
       title: t('success'),
       description:
         val === 'pt'
           ? 'Idioma alterado para Português'
-          : 'Language changed to English',
+          : val === 'es'
+            ? 'Idioma cambiado a Español'
+            : 'Language changed to English',
     })
   }
 
@@ -478,6 +480,7 @@ export default function Settings() {
                   <SelectContent>
                     <SelectItem value="pt">{t('language.pt')}</SelectItem>
                     <SelectItem value="en">{t('language.en')}</SelectItem>
+                    <SelectItem value="es">{t('language.es')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

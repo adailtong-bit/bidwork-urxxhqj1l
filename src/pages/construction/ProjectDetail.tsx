@@ -82,7 +82,7 @@ export default function ProjectDetail() {
           <Badge
             variant={project.status === 'in_progress' ? 'default' : 'secondary'}
           >
-            {project.status === 'in_progress' ? 'Em Andamento' : project.status}
+            {t(`status.${project.status}`)}
           </Badge>
         </div>
 
@@ -186,7 +186,7 @@ export default function ProjectDetail() {
                               : ''
                           }
                         >
-                          {stage.status}
+                          {t(`status.${stage.status}`)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {formatDate(stage.startDate, 'dd/MM')}

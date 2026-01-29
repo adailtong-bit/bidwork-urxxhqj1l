@@ -17,21 +17,15 @@ import {
   Map,
   HardHat,
   ArrowRight,
-  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AdSection } from '@/components/AdSection'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
+import { LanguageSelector } from '@/components/LanguageSelector'
 
 export default function Index() {
-  const { t, currentLanguage, setLanguage } = useLanguageStore()
+  const { t } = useLanguageStore()
 
   const categories = [
     { name: t('cat.domestic'), icon: Home, query: 'domestic' },
@@ -45,12 +39,6 @@ export default function Index() {
     { name: t('cat.auto'), icon: Car, query: 'auto' },
     { name: t('cat.personal'), icon: User, query: 'personal' },
   ]
-
-  const getCurrentLanguageLabel = () => {
-    if (currentLanguage === 'pt') return 'Português'
-    if (currentLanguage === 'es') return 'Español'
-    return 'English'
-  }
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -76,33 +64,7 @@ export default function Index() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="gap-2">
-                  <Globe className="h-4 w-4" />
-                  <span className="hidden md:inline-block">
-                    {getCurrentLanguageLabel()}
-                  </span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setLanguage('pt')}>
-                  <span className={currentLanguage === 'pt' ? 'font-bold' : ''}>
-                    {t('language.pt')}
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('en')}>
-                  <span className={currentLanguage === 'en' ? 'font-bold' : ''}>
-                    {t('language.en')}
-                  </span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setLanguage('es')}>
-                  <span className={currentLanguage === 'es' ? 'font-bold' : ''}>
-                    {t('language.es')}
-                  </span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <LanguageSelector />
 
             <div className="flex items-center gap-2">
               <Button variant="ghost" asChild>

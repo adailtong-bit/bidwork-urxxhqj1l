@@ -41,6 +41,7 @@ import {
 import { format, isBefore, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function EquipmentManager() {
   const {
@@ -52,6 +53,7 @@ export default function EquipmentManager() {
   } = useEquipmentStore()
   const { projects } = useProjectStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -105,6 +107,23 @@ export default function EquipmentManager() {
       })
       setIsAssignOpen(false)
     }
+  }
+
+  const getTypeLabel = (type: string) => {
+    // Map internal type to translation key
+    const key = `eq.${type.toLowerCase()}`
+    // Fallback to type if no translation found (e.g. if type is custom)
+    // But since type is a select, we can control it.
+    // For now, assuming type matches keys: Pesado -> heavy, Leve -> light
+    // Actually the state has capitalized names 'Pesado'.
+    // Let's map manually
+    const mapping: Record<string, string> = {
+      Pesado: 'heavy',
+      Leve: 'light',
+      Veículo: 'vehicle',
+      Estrutura: 'structure',
+    }
+    return t(`eq.${mapping[type] || 'other'}`)
   }
 
   return (
@@ -166,10 +185,12 @@ export default function EquipmentManager() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Pesado">Pesado</SelectItem>
-                    <SelectItem value="Leve">Leve</SelectItem>
-                    <SelectItem value="Veículo">Veículo</SelectItem>
-                    <SelectItem value="Estrutura">Estrutura</SelectItem>
+                    <SelectItem value="Pesado">{t('eq.heavy')}</SelectItem>
+                    <SelectItem value="Leve">{t('eq.light')}</SelectItem>
+                    <SelectItem value="Veículo">{t('eq.vehicle')}</SelectItem>
+                    <SelectItem value="Estrutura">
+                      {t('eq.structure')}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -211,9 +232,11 @@ export default function EquipmentManager() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos</SelectItem>
-            <SelectItem value="available">Disponível</SelectItem>
-            <SelectItem value="in_use">Em Uso</SelectItem>
-            <SelectItem value="maintenance">Manutenção</SelectItem>
+            <SelectItem value="available">{t('status.available')}</SelectItem>
+            <SelectItem value="in_use">{t('status.in_use')}</SelectItem>
+            <SelectItem value="maintenance">
+              {t('status.maintenance')}
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -223,7 +246,7 @@ export default function EquipmentManager() {
           <Card key={eq.id} className="flex flex-col">
             <CardHeader>
               <div className="flex justify-between items-start">
-                <Badge variant="outline">{eq.type}</Badge>
+                <Badge variant="outline">{getTypeLabel(eq.type)}</Badge>
                 <Badge
                   className={
                     eq.status === 'available'
@@ -233,11 +256,7 @@ export default function EquipmentManager() {
                         : 'bg-red-100 text-red-700 hover:bg-red-100'
                   }
                 >
-                  {eq.status === 'available'
-                    ? 'Disponível'
-                    : eq.status === 'in_use'
-                      ? 'Em Uso'
-                      : 'Manutenção'}
+                  {t(`status.${eq.status}`)}
                 </Badge>
               </div>
               <CardTitle className="mt-2 flex items-center gap-2">

@@ -1,11 +1,17 @@
 import { Outlet } from 'react-router-dom'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { LanguageSelector } from '@/components/LanguageSelector'
 
 export default function AuthLayout() {
   const { t } = useLanguageStore()
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full relative">
+      {/* Language Selector fixed at top-right of the viewport for easy access */}
+      <div className="absolute top-4 right-4 z-50">
+        <LanguageSelector />
+      </div>
+
       {/* Left side - Decorative */}
       <div className="hidden lg:flex w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-indigo-900 opacity-90 z-10" />

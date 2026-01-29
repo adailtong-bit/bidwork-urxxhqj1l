@@ -1,4 +1,4 @@
-import { Bell, Search, CheckCircle2, Globe } from 'lucide-react'
+import { Bell, Search, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { SidebarTrigger } from '@/components/ui/sidebar'
@@ -14,12 +14,13 @@ import {
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { LanguageSelector } from '@/components/LanguageSelector'
 
 export function MainHeader() {
   const location = useLocation()
   const { user } = useAuthStore()
   const { notifications, getUnreadCount, markAsRead } = useNotificationStore()
-  const { t, currentLanguage, setLanguage } = useLanguageStore()
+  const { t } = useLanguageStore()
 
   const unreadCount = user ? getUnreadCount(user.id) : 0
   const userNotifications = notifications.filter((n) => n.userId === user?.id)
@@ -63,31 +64,7 @@ export function MainHeader() {
           />
         </div>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
-              <Globe className="h-5 w-5" />
-              <span className="sr-only">Language</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => setLanguage('pt')}>
-              <span className={currentLanguage === 'pt' ? 'font-bold' : ''}>
-                {t('language.pt')}
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLanguage('en')}>
-              <span className={currentLanguage === 'en' ? 'font-bold' : ''}>
-                {t('language.en')}
-              </span>
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setLanguage('es')}>
-              <span className={currentLanguage === 'es' ? 'font-bold' : ''}>
-                {t('language.es')}
-              </span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <LanguageSelector />
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

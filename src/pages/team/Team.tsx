@@ -135,6 +135,11 @@ export default function Team() {
     }
   }
 
+  const getTranslatedRole = (role: string) => {
+    const key = `role.${role.toLowerCase().replace(' ', '_')}`
+    return t(key)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -213,15 +218,15 @@ export default function Team() {
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Admin">
-                          Admin (Acesso Total)
-                        </SelectItem>
+                        <SelectItem value="Admin">{t('role.admin')}</SelectItem>
                         <SelectItem value="Project Manager">
-                          Gerente de Projetos
+                          {t('role.project_manager')}
                         </SelectItem>
-                        <SelectItem value="Accountant">Contador</SelectItem>
+                        <SelectItem value="Accountant">
+                          {t('role.accountant')}
+                        </SelectItem>
                         <SelectItem value="Collaborator">
-                          Colaborador
+                          {t('role.collaborator')}
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -264,7 +269,9 @@ export default function Team() {
             </Avatar>
             <div className="space-y-1 mb-4">
               <h3 className="font-semibold text-lg">{user.name} (Você)</h3>
-              <Badge variant="secondary">{user.teamRole || 'Admin'}</Badge>
+              <Badge variant="secondary">
+                {getTranslatedRole(user.teamRole || 'Admin')}
+              </Badge>
             </div>
             <div className="w-full space-y-3 mt-auto">
               <div className="flex items-center justify-center text-sm text-muted-foreground bg-muted/50 py-1.5 rounded-md gap-2">
@@ -298,7 +305,7 @@ export default function Team() {
                     className="font-normal flex items-center gap-1"
                   >
                     {getRoleIcon(member.role)}
-                    {member.role}
+                    {getTranslatedRole(member.role)}
                   </Badge>
                 </div>
               </div>

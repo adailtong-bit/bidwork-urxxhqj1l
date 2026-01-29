@@ -188,15 +188,7 @@ export default function JobDetail() {
           <div className="flex items-center gap-2">
             <Badge>{job.category}</Badge>
             <Badge variant={job.status === 'open' ? 'secondary' : 'outline'}>
-              {job.status === 'open'
-                ? 'Aberto'
-                : job.status === 'suspended'
-                  ? 'Aguardando Execução'
-                  : job.status === 'in_progress'
-                    ? 'Em Execução'
-                    : job.status === 'completed'
-                      ? 'Finalizado'
-                      : job.status}
+              {t(`status.${job.status}`)}
             </Badge>
           </div>
           <h1 className="text-3xl font-bold">{job.title}</h1>
