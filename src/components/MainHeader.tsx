@@ -29,7 +29,7 @@ export function MainHeader() {
     if (path.includes('/dashboard')) return t('nav.dashboard')
     if (path.includes('/plans/new')) return t('nav.plans')
     if (path.includes('/plans')) return t('nav.plans')
-    if (path.includes('/reports')) return 'Relatórios'
+    if (path.includes('/reports')) return t('header.reports')
     if (path.includes('/team')) return t('nav.team')
     if (path.includes('/settings')) return t('nav.settings')
     if (path.includes('/finance')) return t('nav.finance')
@@ -99,7 +99,7 @@ export function MainHeader() {
             <DropdownMenuSeparator />
             {userNotifications.length === 0 ? (
               <div className="p-4 text-sm text-center text-muted-foreground">
-                Nenhuma notificação nova.
+                {t('header.notifications.empty')}
               </div>
             ) : (
               userNotifications.slice(0, 5).map((notification) => (
@@ -132,7 +132,7 @@ export function MainHeader() {
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem className="text-center justify-center text-xs text-muted-foreground">
-              Ver todas as notificações
+              {t('header.notifications.view_all')}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

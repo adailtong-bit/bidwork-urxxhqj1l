@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { ThumbsUp, ThumbsDown, ExternalLink } from 'lucide-react'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface AdSectionProps {
   segment: 'dashboard' | 'search' | 'profile' | 'home'
@@ -12,6 +13,7 @@ interface AdSectionProps {
 export function AdSection({ segment }: AdSectionProps) {
   const { getAdsBySegment, trackView, trackClick, rateAd } = useAdStore()
   const ads = getAdsBySegment(segment)
+  const { t } = useLanguageStore()
 
   useEffect(() => {
     // Simulate impression tracking
@@ -63,7 +65,7 @@ export function AdSection({ segment }: AdSectionProps) {
             <div className="p-4 flex-1 flex flex-col justify-center relative">
               <div className="flex justify-between items-start mb-1">
                 <Badge variant="secondary" className="text-[10px] opacity-70">
-                  Publicidade
+                  {t('ad.badge')}
                 </Badge>
               </div>
               <h4 className="font-bold text-sm md:text-base group-hover:text-primary transition-colors line-clamp-1">
@@ -71,8 +73,8 @@ export function AdSection({ segment }: AdSectionProps) {
               </h4>
               <p className="text-xs text-muted-foreground mt-1 line-clamp-2 mb-2">
                 {ad.type === 'regional'
-                  ? `Oferta para ${ad.region}`
-                  : `Destaque em ${ad.category}`}
+                  ? t('ad.offer', { region: ad.region || '' })
+                  : t('ad.highlight', { category: ad.category || '' })}
               </p>
 
               <a
@@ -82,7 +84,7 @@ export function AdSection({ segment }: AdSectionProps) {
                 className="text-xs flex items-center gap-1 text-primary hover:underline mt-auto"
                 onClick={() => trackClick(ad.id)}
               >
-                Visitar site <ExternalLink className="h-3 w-3" />
+                {t('ad.visit')} <ExternalLink className="h-3 w-3" />
               </a>
             </div>
           </CardContent>

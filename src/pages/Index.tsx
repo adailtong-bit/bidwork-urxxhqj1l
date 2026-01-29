@@ -17,14 +17,21 @@ import {
   Map,
   HardHat,
   ArrowRight,
+  Globe,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { AdSection } from '@/components/AdSection'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 
 export default function Index() {
-  const { t, currentLanguage } = useLanguageStore()
+  const { t, currentLanguage, setLanguage } = useLanguageStore()
 
   const categories = [
     { name: t('cat.domestic'), icon: Home, query: 'domestic' },
@@ -63,12 +70,29 @@ export default function Index() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-1 text-sm font-medium border rounded-md px-3 py-1.5 bg-muted/20">
-              <span className="text-base">
-                {currentLanguage === 'pt' ? '🇧🇷' : '🇺🇸'}
-              </span>{' '}
-              {currentLanguage === 'pt' ? 'Português' : 'English'}
-            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="gap-2">
+                  <Globe className="h-4 w-4" />
+                  <span className="hidden md:inline-block">
+                    {currentLanguage === 'pt' ? 'Português' : 'English'}
+                  </span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setLanguage('pt')}>
+                  <span className={currentLanguage === 'pt' ? 'font-bold' : ''}>
+                    Português (BR)
+                  </span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setLanguage('en')}>
+                  <span className={currentLanguage === 'en' ? 'font-bold' : ''}>
+                    English (US)
+                  </span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             <div className="flex items-center gap-2">
               <Button variant="ghost" asChild>
                 <Link to="/login">{t('nav.login')}</Link>

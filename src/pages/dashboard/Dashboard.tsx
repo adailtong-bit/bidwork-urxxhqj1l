@@ -50,11 +50,11 @@ export default function Dashboard() {
       ).length
 
   const earningsData = [
-    { month: 'Jan', value: 1200 },
-    { month: 'Fev', value: 1900 },
-    { month: 'Mar', value: 1500 },
-    { month: 'Abr', value: 2200 },
-    { month: 'Mai', value: 2800 },
+    { month: t('dashboard.months.jan'), value: 1200 },
+    { month: t('dashboard.months.feb'), value: 1900 },
+    { month: t('dashboard.months.mar'), value: 1500 },
+    { month: t('dashboard.months.apr'), value: 2200 },
+    { month: t('dashboard.months.may'), value: 2800 },
   ]
 
   const marketInsightsData = [
@@ -84,7 +84,9 @@ export default function Dashboard() {
           </h2>
           <p className="text-muted-foreground">
             {t('dashboard.role_label', {
-              role: isContractor ? 'Contratante' : 'Executor',
+              role: isContractor
+                ? t('auth.register.contractor')
+                : t('auth.register.executor'),
             })}{' '}
             |{' '}
             <span className="font-semibold text-primary capitalize">
@@ -195,7 +197,7 @@ export default function Dashboard() {
             <CardTitle>
               {isContractor
                 ? t('dashboard.chart.spent')
-                : t('dashboard.chart.finance')}
+                : t('dashboard.chart.earnings')}
             </CardTitle>
             <CardDescription>{t('dashboard.chart.desc')}</CardDescription>
           </CardHeader>

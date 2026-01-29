@@ -33,13 +33,12 @@ import {
   AlertOctagon,
   CheckCircle,
   MessageSquare,
-  Percent,
   CalendarDays,
   ExternalLink,
   ImageIcon,
 } from 'lucide-react'
-import { format, addHours } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { addHours } from 'date-fns'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function JobDetail() {
   const { id } = useParams<{ id: string }>()
@@ -48,6 +47,7 @@ export default function JobDetail() {
   const { user, setPendingEvaluation } = useAuthStore()
   const { addNotification } = useNotificationStore()
   const { toast } = useToast()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
 
   const job = getJob(id!)
   const [bidAmount, setBidAmount] = useState('')
@@ -60,8 +60,8 @@ export default function JobDetail() {
     },
   ])
 
-  if (!job) return <div className="p-8">Job não encontrado</div>
-  if (!user) return <div className="p-8">Faça login para ver este job</div>
+  if (!job) return <div className="p-8">{t('job.not_found')}</div>
+  if (!user) return <div className="p-8">{t('job.login_required')}</div>
 
   const isOwner = user.id === job.ownerId
   const hasBidded = job.bids.some((b) => b.executorId === user.id)
@@ -87,7 +87,7 @@ export default function JobDetail() {
         toast({
           variant: 'destructive',
           title: 'Lance inválido',
-          description: `Seu lance deve ser menor que o atual valor de referência: R$ ${lowestBid}`,
+          description: `${t('job.auction_warning')} ${formatCurrency(lowestBid)}`,
         })
         return
       }
@@ -106,7 +106,7 @@ export default function JobDetail() {
     addNotification({
       userId: job.ownerId,
       title: 'Novo Lance Recebido!',
-      message: `Você recebeu um lance de R$ ${amount} no job "${job.title}".`,
+      message: `Você recebeu um lance de ${formatCurrency(amount)} no job "${job.title}".`,
       type: 'info',
       link: `/jobs/${job.id}`,
     })
@@ -122,11 +122,6 @@ export default function JobDetail() {
   const handleAcceptBid = (bidId: string) => {
     // Redirect to checkout flow
     navigate(`/payment/checkout/${job.id}/${bidId}`)
-  }
-
-  const handleHireFixed = () => {
-    // Redirect to checkout flow for fixed jobs (no bid id needed, assumes job budget)
-    navigate(`/payment/checkout/${job.id}/fixed`)
   }
 
   const handleComplete = () => {
@@ -210,22 +205,22 @@ export default function JobDetail() {
               <MapPin className="h-4 w-4" /> {job.location}
             </span>
             <span className="flex items-center gap-1">
-              <Calendar className="h-4 w-4" /> Pub:{' '}
-              {format(job.publicationDate, 'dd/MM/yyyy')}
+              <Calendar className="h-4 w-4" /> {t('job.published')}:{' '}
+              {formatDate(job.publicationDate, 'dd/MM/yyyy')}
             </span>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
           <div className="text-right">
             <div className="text-sm text-muted-foreground">
-              {job.type === 'auction' ? 'Máximo Inicial' : 'Orçamento'}
+              {job.type === 'auction' ? t('job.max_initial') : t('job.budget')}
             </div>
             <div className="text-2xl font-bold text-primary">
-              R$ {job.budget.toLocaleString('pt-BR')}
+              {formatCurrency(job.budget)}
             </div>
             {job.type === 'auction' && job.bids.length > 0 && (
               <div className="text-xs font-semibold text-emerald-600">
-                Melhor oferta atual: R$ {lowestBid.toLocaleString('pt-BR')}
+                {t('job.best_offer')}: {formatCurrency(lowestBid)}
               </div>
             )}
             <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
@@ -234,13 +229,15 @@ export default function JobDetail() {
               ) : (
                 <DollarSign className="h-3 w-3" />
               )}
-              {job.type === 'auction' ? 'Leilão Reverso' : 'Preço Fixo'}
+              {job.type === 'auction'
+                ? t('job.auction_reverse')
+                : t('job.fixed_price')}
             </div>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="mt-2">
-                <CalendarDays className="mr-2 h-4 w-4" /> Agendar
+                <CalendarDays className="mr-2 h-4 w-4" /> {t('job.schedule')}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -271,7 +268,7 @@ export default function JobDetail() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Descrição</CardTitle>
+              <CardTitle>{t('job.description')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="whitespace-pre-line leading-relaxed">
@@ -280,7 +277,7 @@ export default function JobDetail() {
               {job.photos && job.photos.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" /> Fotos
+                    <ImageIcon className="h-4 w-4" /> {t('job.photos')}
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {job.photos.map((photo, i) => (
@@ -300,17 +297,19 @@ export default function JobDetail() {
           {isOwner && job.status === 'open' && (
             <Card>
               <CardHeader>
-                <CardTitle>Propostas ({job.bids.length})</CardTitle>
+                <CardTitle>
+                  {t('job.proposals')} ({job.bids.length})
+                </CardTitle>
                 <CardDescription>
                   {job.type === 'auction'
-                    ? 'Leilão Ativo. Escolha a melhor (e menor) oferta.'
-                    : 'Escolha a melhor oferta.'}
+                    ? t('job.auction_active')
+                    : t('job.choose_best')}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {job.bids.length === 0 ? (
                   <div className="text-center py-6 text-muted-foreground">
-                    Aguardando ofertas...
+                    {t('job.proposals.empty')}
                   </div>
                 ) : (
                   job.bids
@@ -336,18 +335,18 @@ export default function JobDetail() {
                             {bid.description}
                           </p>
                           <div className="text-xs text-muted-foreground">
-                            {format(bid.createdAt, 'dd/MM/yyyy HH:mm')}
+                            {formatDate(bid.createdAt, 'dd/MM/yyyy HH:mm')}
                           </div>
                         </div>
                         <div className="flex flex-col items-end gap-2 min-w-[120px]">
                           <span className="text-xl font-bold text-primary">
-                            R$ {bid.amount}
+                            {formatCurrency(bid.amount)}
                           </span>
                           <Button
                             size="sm"
                             onClick={() => handleAcceptBid(bid.id)}
                           >
-                            Aceitar e Pagar
+                            {t('job.accept_pay')}
                           </Button>
                         </div>
                       </div>
@@ -366,22 +365,22 @@ export default function JobDetail() {
                 <CardHeader className="bg-muted/30">
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" /> Sala de Execução
-                      Segura
+                      <MessageSquare className="h-5 w-5" /> {t('job.chat_room')}
                     </span>
                     {job.status !== 'completed' &&
                       job.status !== 'cancelled' && (
                         <Badge className="bg-indigo-500 hover:bg-indigo-600">
-                          Escrow: R$ {(acceptedBid?.amount || 0).toFixed(2)}
+                          {t('job.escrow')}:{' '}
+                          {formatCurrency(acceptedBid?.amount || 0)}
                         </Badge>
                       )}
                   </CardTitle>
                   <CardDescription className="flex flex-col gap-1">
                     <span>
-                      Status:{' '}
+                      {t('status')}:{' '}
                       {job.status === 'dispute'
-                        ? 'EM DISPUTA'
-                        : 'Execução / Pagamento Retido'}
+                        ? t('job.status.dispute')
+                        : t('job.status.execution')}
                     </span>
                   </CardDescription>
                 </CardHeader>
@@ -435,7 +434,8 @@ export default function JobDetail() {
                       job.status === 'completed' || job.status === 'dispute'
                     }
                   >
-                    <AlertOctagon className="mr-2 h-4 w-4" /> Abrir Disputa
+                    <AlertOctagon className="mr-2 h-4 w-4" />{' '}
+                    {t('job.dispute.open')}
                   </Button>
 
                   {isOwner &&
@@ -445,8 +445,8 @@ export default function JobDetail() {
                         className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto"
                         onClick={handleComplete}
                       >
-                        <CheckCircle className="mr-2 h-4 w-4" /> Finalizar &
-                        Avaliar
+                        <CheckCircle className="mr-2 h-4 w-4" />{' '}
+                        {t('job.complete')}
                       </Button>
                     )}
                   {isExecutor && job.status === 'completed' && (
@@ -454,8 +454,8 @@ export default function JobDetail() {
                       className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto"
                       onClick={handleExecutorEvaluation}
                     >
-                      <CheckCircle className="mr-2 h-4 w-4" /> Avaliar
-                      Contratante
+                      <CheckCircle className="mr-2 h-4 w-4" />{' '}
+                      {t('job.rate_contractor')}
                     </Button>
                   )}
                 </CardFooter>
@@ -467,17 +467,18 @@ export default function JobDetail() {
           {!isOwner && job.status === 'open' && !hasBidded && (
             <Card>
               <CardHeader>
-                <CardTitle>Fazer Oferta</CardTitle>
+                <CardTitle>{t('job.make_offer')}</CardTitle>
                 {job.type === 'auction' && (
                   <CardDescription className="text-amber-600 font-medium">
-                    Leilão Reverso: Seu lance deve ser menor que R${' '}
-                    {lowestBid.toLocaleString('pt-BR')}
+                    {t('job.auction_warning')} {formatCurrency(lowestBid)}
                   </CardDescription>
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Valor (R$)</label>
+                  <label className="text-sm font-medium">
+                    {t('job.value_label')} ({t('dashboard.chart.label.value')})
+                  </label>
                   <Input
                     type="number"
                     placeholder="0.00"
@@ -487,7 +488,9 @@ export default function JobDetail() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Proposta</label>
+                  <label className="text-sm font-medium">
+                    {t('job.proposal_label')}
+                  </label>
                   <Textarea
                     placeholder="Detalhes sobre sua execução..."
                     value={bidDescription}
@@ -495,7 +498,7 @@ export default function JobDetail() {
                   />
                 </div>
                 <Button className="w-full" onClick={handleBid}>
-                  Enviar Lance
+                  {t('job.send_bid')}
                 </Button>
               </CardContent>
             </Card>
@@ -504,14 +507,11 @@ export default function JobDetail() {
           <Card className="bg-blue-50/50 border-blue-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-blue-800 flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4" /> Pagamento Protegido
+                <ShieldAlert className="h-4 w-4" /> {t('job.payment_protected')}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs text-blue-700">
-              <p>
-                O pagamento fica retido (Escrow) e só é liberado após a
-                conclusão e avaliação mútua.
-              </p>
+              <p>{t('job.payment_desc')}</p>
             </CardContent>
           </Card>
         </div>
