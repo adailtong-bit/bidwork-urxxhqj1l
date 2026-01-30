@@ -5,7 +5,7 @@ export interface CostItem {
   description: string
   amount: number
   type: 'estimated' | 'actual'
-  category: 'material' | 'labor'
+  category: 'material' | 'labor' | 'equipment' | 'logistics' | 'other'
   date: Date
   sourceId?: string // Job ID or Order ID
 }
@@ -145,6 +145,7 @@ export interface Project {
   budgetItems: BudgetItem[]
   approvalLogs: ApprovalLog[]
   integrations: Integration[]
+  allocatedCosts?: CostItem[] // For equipment/logistics allocation
 }
 
 interface ProjectState {
@@ -158,6 +159,7 @@ interface ProjectState {
       | 'budgetItems'
       | 'approvalLogs'
       | 'integrations'
+      | 'allocatedCosts'
     >,
   ) => void
   updateProject: (id: string, data: Partial<Project>) => void
@@ -274,6 +276,7 @@ interface ProjectState {
     projectId: string,
     platform: Integration['platform'],
   ) => void
+  addAllocatedCost: (projectId: string, cost: Omit<CostItem, 'id'>) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -414,6 +417,7 @@ const mockProjects: Project[] = [
       { platform: 'asana', connected: true, lastSync: new Date() },
       { platform: 'jira', connected: false },
     ],
+    allocatedCosts: [],
   },
 ]
 
@@ -431,6 +435,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           budgetItems: [],
           approvalLogs: [],
           integrations: [],
+          allocatedCosts: [],
         },
       ],
     })),
@@ -581,6 +586,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             (acc, s) => acc + s.actualMaterial + s.actualLabor,
             0,
           )
+          // Also add to allocated if needed, but for now simple sum
           return { ...p, stages: newStages, totalSpent }
         }
         return p
@@ -980,6 +986,34 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               ...(p.integrations || []),
               { platform, connected: true, lastSync: new Date() },
             ],
+          }
+        }
+        return p
+      }),
+    })),
+  addAllocatedCost: (projectId, cost) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newAllocatedCosts = [
+            ...(p.allocatedCosts || []),
+            { ...cost, id: Math.random().toString(36).substr(2, 9) },
+          ]
+          const totalAllocated = newAllocatedCosts.reduce(
+            (acc, c) => acc + c.amount,
+            0,
+          )
+          // Simplified: totalSpent includes allocated costs in a real app,
+          // here we just append to list and might need to recalc totalSpent depending on business logic.
+          // For now let's assume totalSpent tracks ALL spent.
+          const stagesSpent = (p.stages || []).reduce(
+            (acc, s) => acc + s.actualMaterial + s.actualLabor,
+            0,
+          )
+          return {
+            ...p,
+            allocatedCosts: newAllocatedCosts,
+            totalSpent: stagesSpent + totalAllocated,
           }
         }
         return p

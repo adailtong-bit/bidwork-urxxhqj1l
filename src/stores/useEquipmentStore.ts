@@ -6,6 +6,8 @@ export interface MaintenanceRecord {
   description: string
   cost: number
   technician: string
+  receiptUrl?: string
+  projectId?: string
 }
 
 export interface Equipment {
@@ -20,6 +22,13 @@ export interface Equipment {
   purchaseDate: Date
   nextMaintenance: Date
   maintenanceHistory: MaintenanceRecord[]
+  // New Fields
+  rentalCondition?: string
+  rentalValue?: number
+  rentalStartDate?: Date
+  rentalEndDate?: Date
+  annualDepreciation?: number
+  rentalDocumentUrl?: string
 }
 
 interface EquipmentState {
@@ -37,6 +46,7 @@ interface EquipmentState {
     equipmentId: string,
     record: Omit<MaintenanceRecord, 'id'>,
   ) => void
+  updateEquipment: (id: string, data: Partial<Equipment>) => void
 }
 
 const mockEquipment: Equipment[] = [
@@ -50,8 +60,11 @@ const mockEquipment: Equipment[] = [
     projectId: 'proj-1',
     projectName: 'Residencial Alphaville',
     purchaseDate: new Date('2023-01-15'),
-    nextMaintenance: new Date(Date.now() + 86400000 * 15), // 15 days from now
+    nextMaintenance: new Date(Date.now() + 86400000 * 15),
     maintenanceHistory: [],
+    rentalCondition: 'Nova',
+    rentalValue: 2500,
+    annualDepreciation: 15000,
   },
   {
     id: 'eq-2',
@@ -61,8 +74,9 @@ const mockEquipment: Equipment[] = [
     status: 'available',
     location: 'Depósito Central',
     purchaseDate: new Date('2022-05-20'),
-    nextMaintenance: new Date(Date.now() - 86400000 * 2), // Overdue
+    nextMaintenance: new Date(Date.now() - 86400000 * 2),
     maintenanceHistory: [],
+    annualDepreciation: 500,
   },
   {
     id: 'eq-3',
@@ -74,6 +88,7 @@ const mockEquipment: Equipment[] = [
     purchaseDate: new Date('2023-08-10'),
     nextMaintenance: new Date(Date.now() + 86400000 * 5),
     maintenanceHistory: [],
+    rentalValue: 150,
   },
 ]
 
@@ -132,10 +147,16 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
             ],
             nextMaintenance: new Date(
               new Date().getTime() + 90 * 24 * 60 * 60 * 1000,
-            ), // Schedule next for 90 days
+            ),
           }
         }
         return eq
       }),
+    })),
+  updateEquipment: (id, data) =>
+    set((state) => ({
+      equipment: state.equipment.map((e) =>
+        e.id === id ? { ...e, ...data } : e,
+      ),
     })),
 }))

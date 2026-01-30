@@ -10,6 +10,9 @@ export interface Material {
   supplier: string
   stock: number
   description: string
+  // New
+  supplierWebsite?: string
+  purchasePermissions?: string[] // Roles allowed to buy
 }
 
 export interface Order {
@@ -18,8 +21,10 @@ export interface Order {
   stageId: string
   items: { material: Material; quantity: number }[]
   total: number
+  freightCost?: number
   status: 'pending' | 'delivered' | 'cancelled'
   date: Date
+  arrivalDate?: Date
 }
 
 interface MaterialState {
@@ -28,6 +33,10 @@ interface MaterialState {
   addOrder: (order: Omit<Order, 'id' | 'date'>) => void
   getMaterials: () => Material[]
   getOrdersByProject: (projectId: string) => Order[]
+  updateMaterial: (id: string, data: Partial<Material>) => void
+  importMaterialList: (
+    file: File,
+  ) => Promise<{ success: boolean; count: number }>
 }
 
 const mockMaterials: Material[] = [
@@ -41,6 +50,8 @@ const mockMaterials: Material[] = [
     supplier: 'ConstruMix',
     stock: 500,
     description: 'Cimento Portland composto, ideal para concreto e argamassa.',
+    supplierWebsite: 'https://construmix.com.br',
+    purchasePermissions: ['Project Manager', 'Admin'],
   },
   {
     id: 'm-2',
@@ -105,4 +116,15 @@ export const useMaterialStore = create<MaterialState>((set, get) => ({
   getMaterials: () => get().materials,
   getOrdersByProject: (projectId) =>
     get().orders.filter((o) => o.projectId === projectId),
+  updateMaterial: (id, data) =>
+    set((state) => ({
+      materials: state.materials.map((m) =>
+        m.id === id ? { ...m, ...data } : m,
+      ),
+    })),
+  importMaterialList: async (file) => {
+    // Mock import
+    await new Promise((resolve) => setTimeout(resolve, 1000))
+    return { success: true, count: 5 }
+  },
 }))

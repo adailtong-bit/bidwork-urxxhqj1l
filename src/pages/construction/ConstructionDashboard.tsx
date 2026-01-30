@@ -25,13 +25,27 @@ import {
   AlertCircle,
   ArrowRight,
   PieChart,
+  Lock,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogTrigger,
+} from '@/components/ui/dialog'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ConstructionDashboard() {
   const { projects } = useProjectStore()
+  const { user, activateConstructionSubscription } = useAuthStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
+  const { toast } = useToast()
 
   const activeProjects = projects.filter((p) => p.status === 'in_progress')
   const completedProjects = projects.filter((p) => p.status === 'completed')
@@ -39,10 +53,62 @@ export default function ConstructionDashboard() {
   const totalBudget = projects.reduce((acc, p) => acc + p.totalBudget, 0)
   const totalSpent = projects.reduce((acc, p) => acc + p.totalSpent, 0)
 
+  // Subscription Check
+  const isSubscribed = user?.constructionSubscription?.active
+  // Mock check for "Hiring Required" overlay logic
+  // If user is PJ contractor, they usually have it. If not, we show blocked state.
+  // For demo, we use the `constructionSubscription` field.
+
+  if (!isSubscribed) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
+        <div className="bg-muted p-6 rounded-full">
+          <Lock className="h-16 w-16 text-muted-foreground" />
+        </div>
+        <div className="max-w-md space-y-2">
+          <h1 className="text-3xl font-bold">
+            {t('construction.subscription.required')}
+          </h1>
+          <p className="text-muted-foreground">
+            {t('construction.subscription.desc')}
+          </p>
+        </div>
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle>Plano Construtora</CardTitle>
+            <CardDescription>
+              Gestão completa de obras e equipes.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-2 text-left">
+            <div className="flex justify-between text-sm">
+              <span>Projetos Ativos:</span>
+              <span className="font-bold">Até 10</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span>Preço Base:</span>
+              <span className="font-bold">{formatCurrency(500)}/mês</span>
+            </div>
+          </CardContent>
+          <CardFooter>
+            <Button
+              className="w-full"
+              onClick={() => {
+                activateConstructionSubscription()
+                toast({ title: 'Assinatura Ativada com Sucesso!' })
+              }}
+            >
+              Ativar Agora
+            </Button>
+          </CardFooter>
+        </Card>
+      </div>
+    )
+  }
+
   // Calculate variances for completed projects
   const finishedProjectStats = completedProjects.map((p) => {
     const plannedDays = differenceInDays(p.endDate, p.startDate)
-    // Mock actual end date if not present (using last stage actualEndDate or just endDate)
     const actualEnd = p.stages[p.stages.length - 1]?.actualEndDate || p.endDate
     const actualDays = differenceInDays(actualEnd, p.startDate)
 
@@ -60,7 +126,6 @@ export default function ConstructionDashboard() {
     }
   })
 
-  // For active projects (mock data for visualization if none completed)
   const analyticsData =
     finishedProjectStats.length > 0
       ? finishedProjectStats
@@ -150,12 +215,88 @@ export default function ConstructionDashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">1</div>
-            <p className="text-xs text-muted-foreground">
-              {t('construction.alert_example')}
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs text-muted-foreground truncate max-w-[150px]">
+                {t('construction.alert_example')}
+              </p>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button
+                    variant="link"
+                    size="sm"
+                    className="h-auto p-0 text-xs"
+                  >
+                    Ver detalhes
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Detalhes do Alerta</DialogTitle>
+                    <DialogDescription>
+                      O projeto Residencial Alpha está com atraso na fase de
+                      acabamento devido à falta de material cerâmico.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="bg-muted p-4 rounded-md text-sm">
+                    <p>
+                      <strong>Impacto:</strong> +5 dias no cronograma
+                    </p>
+                    <p>
+                      <strong>Responsável:</strong> Eng. Carlos
+                    </p>
+                  </div>
+                  <DialogFooter>
+                    <Button variant="outline">Notificar Equipe</Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      {/* Pricing / Finance Info for Owner/Franchisee */}
+      {user.constructionSubscription && (
+        <Card className="bg-blue-50/50 border-blue-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-blue-800">
+              Resumo da Assinatura e Custos
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <span className="text-muted-foreground block">Plano (Base):</span>
+              <span className="font-semibold">
+                {formatCurrency(user.constructionSubscription.basePrice)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">
+                Adicional Franquia:
+              </span>
+              <span className="font-semibold">
+                {formatCurrency(user.constructionSubscription.franchiseeMarkup)}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">Total Fatura:</span>
+              <span className="font-bold text-blue-700">
+                {formatCurrency(
+                  user.constructionSubscription.basePrice +
+                    user.constructionSubscription.franchiseeMarkup,
+                )}
+              </span>
+            </div>
+            <div>
+              <span className="text-muted-foreground block">Uso:</span>
+              <span className="font-semibold">
+                {activeProjects.length} /{' '}
+                {user.constructionSubscription.projectLimit} Projetos
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card className="bg-slate-50 border-slate-200">
         <CardHeader>

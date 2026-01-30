@@ -24,10 +24,10 @@ import {
   Users,
   HardHat,
   CheckCircle2,
-  PieChart,
-  DollarSign,
-  FileCheck,
   Link2,
+  TrendingDown,
+  TrendingUp,
+  DollarSign,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -50,7 +50,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const { getProject } = useProjectStore()
   const { toast } = useToast()
-  const { t, formatDate } = useLanguageStore()
+  const { t, formatDate, formatCurrency } = useLanguageStore()
 
   const csvInputRef = useRef<HTMLInputElement>(null)
   const project = getProject(id!)
@@ -72,6 +72,11 @@ export default function ProjectDetail() {
     })
     setIsImportOpen(false)
   }
+
+  // Finance Inline Calculations
+  const allocated =
+    project.allocatedCosts?.reduce((acc, c) => acc + c.amount, 0) || 0
+  const realTotalSpent = project.totalSpent + allocated
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10">
@@ -130,20 +135,29 @@ export default function ProjectDetail() {
       </div>
 
       <Tabs defaultValue="stages" className="w-full flex flex-col items-center">
-        <TabsList className="grid w-full max-w-3xl grid-cols-3 md:grid-cols-6 mb-8 h-auto">
-          <TabsTrigger value="stages">{t('proj.detail.schedule')}</TabsTrigger>
-          <TabsTrigger value="budget">{t('proj.budget.title')}</TabsTrigger>
-          <TabsTrigger value="partners">
-            {t('proj.detail.partners')}
-          </TabsTrigger>
-          <TabsTrigger value="approvals">
-            {t('proj.approvals.title')}
-          </TabsTrigger>
-          <TabsTrigger value="reports">{t('proj.reports.title')}</TabsTrigger>
-          <TabsTrigger value="financial">
-            {t('proj.detail.finance')}
-          </TabsTrigger>
-        </TabsList>
+        {/* Responsive Horizontal Scroll Tabs */}
+        <div className="w-full overflow-x-auto pb-2 -mb-2">
+          <TabsList className="w-full max-w-3xl flex-nowrap justify-start md:justify-center min-w-[600px] mb-8 h-auto p-1">
+            <TabsTrigger value="stages" className="flex-1">
+              {t('proj.detail.schedule')}
+            </TabsTrigger>
+            <TabsTrigger value="budget" className="flex-1">
+              {t('proj.budget.title')}
+            </TabsTrigger>
+            <TabsTrigger value="partners" className="flex-1">
+              {t('proj.detail.partners')}
+            </TabsTrigger>
+            <TabsTrigger value="approvals" className="flex-1">
+              {t('proj.approvals.title')}
+            </TabsTrigger>
+            <TabsTrigger value="reports" className="flex-1">
+              {t('proj.reports.title')}
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex-1">
+              {t('proj.detail.finance')}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent
           value="stages"
@@ -386,24 +400,104 @@ export default function ProjectDetail() {
           <ProjectApprovalWorkflow projectId={project.id} />
         </TabsContent>
 
+        {/* Inline Financial Tab */}
         <TabsContent value="financial" className="w-full animate-fade-in">
-          <Card className="max-w-4xl mx-auto">
-            <CardHeader>
-              <CardTitle>{t('proj.finance.title')}</CardTitle>
-              <CardDescription>{t('proj.finance.desc')}</CardDescription>
-            </CardHeader>
-            <CardContent className="text-center py-12">
-              <div className="inline-flex items-center justify-center p-4 bg-blue-50 rounded-full mb-4">
-                <FileSpreadsheet className="h-8 w-8 text-blue-500" />
-              </div>
-              <h3 className="text-lg font-medium mb-2">
-                {t('proj.finance.module')}
-              </h3>
-              <p className="text-muted-foreground max-w-md mx-auto">
-                {t('proj.finance.link')}
-              </p>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            <Card className="max-w-4xl mx-auto border-t-4 border-t-primary">
+              <CardHeader>
+                <CardTitle>{t('proj.finance.title')}</CardTitle>
+                <CardDescription>
+                  Resumo financeiro direto e custos alocados.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+                  <div className="bg-green-50 p-4 rounded-lg border border-green-100">
+                    <p className="text-sm text-green-800 font-medium">
+                      {t('proj.finance.inflow')}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <TrendingUp className="h-5 w-5 text-green-600" />
+                      <span className="text-2xl font-bold text-green-700">
+                        {formatCurrency(project.totalBudget)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Orçamento Aprovado
+                    </p>
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                    <p className="text-sm text-red-800 font-medium">
+                      {t('proj.finance.outflow')}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <TrendingDown className="h-5 w-5 text-red-600" />
+                      <span className="text-2xl font-bold text-red-700">
+                        {formatCurrency(realTotalSpent)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Custos + Alocados
+                    </p>
+                  </div>
+                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                    <p className="text-sm text-blue-800 font-medium">
+                      {t('proj.finance.balance')}
+                    </p>
+                    <div className="flex items-center gap-2 mt-2">
+                      <DollarSign className="h-5 w-5 text-blue-600" />
+                      <span className="text-2xl font-bold text-blue-700">
+                        {formatCurrency(project.totalBudget - realTotalSpent)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Disponível
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-lg">Custos Alocados</h3>
+                  <div className="border rounded-md">
+                    {project.allocatedCosts &&
+                    project.allocatedCosts.length > 0 ? (
+                      <table className="w-full text-sm text-left">
+                        <thead className="bg-muted/50 border-b">
+                          <tr>
+                            <th className="p-3 font-medium">Descrição</th>
+                            <th className="p-3 font-medium">Categoria</th>
+                            <th className="p-3 font-medium text-right">
+                              Valor
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {project.allocatedCosts.map((cost) => (
+                            <tr
+                              key={cost.id}
+                              className="border-b last:border-0"
+                            >
+                              <td className="p-3">{cost.description}</td>
+                              <td className="p-3 capitalize">
+                                {cost.category}
+                              </td>
+                              <td className="p-3 text-right">
+                                {formatCurrency(cost.amount)}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <div className="p-8 text-center text-muted-foreground italic">
+                        Nenhum custo extra alocado (Logística/Maquinário).
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
 

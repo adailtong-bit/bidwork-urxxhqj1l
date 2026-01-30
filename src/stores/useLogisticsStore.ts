@@ -9,6 +9,7 @@ export interface Route {
   status: 'planned' | 'in_transit' | 'completed'
   cost: number
   vehicle: string
+  projectId?: string // New
 }
 
 interface LogisticsState {
@@ -27,6 +28,7 @@ const mockRoutes: Route[] = [
     status: 'in_transit',
     cost: 150.0,
     vehicle: 'Caminhão Toco',
+    projectId: 'proj-1',
   },
 ]
 

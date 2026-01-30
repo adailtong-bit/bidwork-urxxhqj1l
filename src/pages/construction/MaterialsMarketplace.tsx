@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useMaterialStore, Material } from '@/stores/useMaterialStore'
 import { useProjectStore } from '@/stores/useProjectStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -19,8 +20,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ShoppingCart, Search, Plus, Minus, ArrowLeft } from 'lucide-react'
+import {
+  ShoppingCart,
+  Search,
+  Plus,
+  Minus,
+  ArrowLeft,
+  ExternalLink,
+  Upload,
+  Lock,
+} from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function MaterialsMarketplace() {
   const [searchParams] = useSearchParams()
@@ -28,15 +39,18 @@ export default function MaterialsMarketplace() {
   const stageId = searchParams.get('stageId')
 
   const navigate = useNavigate()
-  const { materials, addOrder } = useMaterialStore()
+  const { materials, addOrder, importMaterialList } = useMaterialStore()
   const { updateStageActuals } = useProjectStore()
+  const { user } = useAuthStore()
   const { toast } = useToast()
+  const { formatCurrency } = useLanguageStore()
 
   const [cart, setCart] = useState<{ material: Material; quantity: number }[]>(
     [],
   )
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const filteredMaterials = materials.filter((m) => {
     const matchesSearch = m.name
@@ -47,7 +61,26 @@ export default function MaterialsMarketplace() {
     return matchesSearch && matchesCategory
   })
 
+  // Purchase Permissions Check
+  const canPurchase = (material: Material) => {
+    if (!material.purchasePermissions) return true
+    if (!user) return false
+    // If Admin/Owner, always yes (simplified)
+    if (user.role === 'admin' || user.teamRole === 'Admin') return true
+    // Check if user role matches permission
+    return material.purchasePermissions.includes(user.teamRole || '')
+  }
+
   const addToCart = (material: Material) => {
+    if (!canPurchase(material)) {
+      toast({
+        variant: 'destructive',
+        title: 'Permissão Negada',
+        description: 'Seu nível de acesso não permite comprar este item.',
+      })
+      return
+    }
+
     setCart((prev) => {
       const existing = prev.find((i) => i.material.id === material.id)
       if (existing) {
@@ -98,22 +131,37 @@ export default function MaterialsMarketplace() {
       items: cart,
       total: cartTotal,
       status: 'pending',
+      freightCost: 150, // Mock freight calculation
     })
 
-    // Update Project Actuals
+    // Data Integration: Update Project Actuals
+    // Updating Financial and Accounting happens via this store action in real app
     updateStageActuals(projectId, stageId, 'material', cartTotal)
 
     toast({
       title: 'Pedido Realizado!',
       description:
-        'Os materiais foram solicitados e o custo vinculado à etapa.',
+        'Os materiais foram solicitados, estoque atualizado e custos alocados.',
     })
     navigate(`/construction/projects/${projectId}`)
   }
 
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const result = await importMaterialList(e.target.files[0])
+      if (result.success) {
+        toast({
+          title: 'Importação Concluída',
+          description: `${result.count} itens identificados e preparados.`,
+        })
+        // In a real app, populate cart here based on import
+      }
+    }
+  }
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div className="flex items-center gap-4">
           {projectId && (
             <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
@@ -131,10 +179,10 @@ export default function MaterialsMarketplace() {
         </div>
 
         {/* Cart Summary */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
           <div className="text-right hidden md:block">
             <p className="text-sm text-muted-foreground">Total Carrinho</p>
-            <p className="font-bold text-lg">R$ {cartTotal.toFixed(2)}</p>
+            <p className="font-bold text-lg">{formatCurrency(cartTotal)}</p>
           </div>
           <Button
             onClick={handleCheckout}
@@ -172,68 +220,117 @@ export default function MaterialsMarketplace() {
             <SelectItem value="Acabamento">Acabamento</SelectItem>
           </SelectContent>
         </Select>
+        <Button
+          variant="outline"
+          onClick={() => fileInputRef.current?.click()}
+          title="Importar lista de materiais"
+        >
+          <Upload className="mr-2 h-4 w-4" /> Importar Lista
+        </Button>
+        <input
+          type="file"
+          ref={fileInputRef}
+          className="hidden"
+          onChange={handleImport}
+          accept=".csv,.xlsx"
+        />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {filteredMaterials.map((material) => (
-          <Card key={material.id} className="flex flex-col">
-            <div className="aspect-square relative bg-muted">
-              <img
-                src={material.imageUrl}
-                alt={material.name}
-                className="object-cover w-full h-full"
-              />
-              <Badge className="absolute top-2 right-2">
-                {material.category}
-              </Badge>
-            </div>
-            <CardHeader className="p-4 pb-0">
-              <CardTitle className="text-base line-clamp-2 min-h-[40px]">
-                {material.name}
-              </CardTitle>
-              <p className="text-xs text-muted-foreground">
-                {material.supplier}
-              </p>
-            </CardHeader>
-            <CardContent className="p-4 pt-2 flex-1">
-              <div className="text-xl font-bold">
-                R$ {material.price.toFixed(2)}{' '}
-                <span className="text-sm font-normal text-muted-foreground">
-                  / {material.unit}
-                </span>
+        {filteredMaterials.map((material) => {
+          const allowed = canPurchase(material)
+          return (
+            <Card
+              key={material.id}
+              className={`flex flex-col ${!allowed ? 'opacity-70' : ''}`}
+            >
+              <div className="aspect-square relative bg-muted">
+                <img
+                  src={material.imageUrl}
+                  alt={material.name}
+                  className="object-cover w-full h-full"
+                />
+                <Badge className="absolute top-2 right-2">
+                  {material.category}
+                </Badge>
+                {!allowed && (
+                  <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
+                    <Badge variant="destructive" className="flex gap-1">
+                      <Lock className="h-3 w-3" /> Restrito
+                    </Badge>
+                  </div>
+                )}
               </div>
-            </CardContent>
-            <CardFooter className="p-4 pt-0">
-              {cart.find((i) => i.material.id === material.id) ? (
-                <div className="flex items-center justify-between w-full bg-muted/50 rounded-md p-1">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => updateQuantity(material.id, -1)}
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <span className="font-semibold">
-                    {cart.find((i) => i.material.id === material.id)?.quantity}
-                  </span>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8"
-                    onClick={() => updateQuantity(material.id, 1)}
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
+              <CardHeader className="p-4 pb-0">
+                <CardTitle className="text-base line-clamp-2 min-h-[40px]">
+                  {material.name}
+                </CardTitle>
+                <div className="flex items-center justify-between mt-1">
+                  <p className="text-xs text-muted-foreground">
+                    {material.supplier}
+                  </p>
+                  {material.supplierWebsite && (
+                    <a
+                      href={material.supplierWebsite}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
+                    >
+                      Site <ExternalLink className="h-2 w-2" />
+                    </a>
+                  )}
                 </div>
-              ) : (
-                <Button className="w-full" onClick={() => addToCart(material)}>
-                  Adicionar
-                </Button>
-              )}
-            </CardFooter>
-          </Card>
-        ))}
+              </CardHeader>
+              <CardContent className="p-4 pt-2 flex-1">
+                <div className="text-xl font-bold">
+                  {formatCurrency(material.price)}{' '}
+                  <span className="text-sm font-normal text-muted-foreground">
+                    / {material.unit}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2 line-clamp-2">
+                  {material.description}
+                </p>
+              </CardContent>
+              <CardFooter className="p-4 pt-0">
+                {cart.find((i) => i.material.id === material.id) ? (
+                  <div className="flex items-center justify-between w-full bg-muted/50 rounded-md p-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => updateQuantity(material.id, -1)}
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <span className="font-semibold">
+                      {
+                        cart.find((i) => i.material.id === material.id)
+                          ?.quantity
+                      }
+                    </span>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8"
+                      onClick={() => updateQuantity(material.id, 1)}
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full"
+                    onClick={() => addToCart(material)}
+                    disabled={!allowed}
+                  >
+                    Adicionar
+                  </Button>
+                )}
+              </CardFooter>
+            </Card>
+          )
+        })}
       </div>
     </div>
   )

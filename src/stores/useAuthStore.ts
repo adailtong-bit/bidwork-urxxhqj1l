@@ -43,6 +43,14 @@ export interface Address {
   country: 'BR' | 'US'
 }
 
+export interface ConstructionSubscription {
+  active: boolean
+  basePrice: number
+  franchiseeMarkup: number
+  projectLimit: number
+  activeProjects: number
+}
+
 export interface User {
   id: string
   name: string
@@ -74,6 +82,7 @@ export interface User {
   }
   isPremium: boolean
   subscriptionTier: 'free' | 'pro' | 'business'
+  constructionSubscription?: ConstructionSubscription
   credits: number
   isVerified: boolean
   kycStatus: 'none' | 'pending' | 'verified' | 'rejected'
@@ -115,6 +124,7 @@ interface AuthState {
   setPendingEvaluation: (evaluation: User['pendingEvaluation']) => void
   buyCredits: (amount: number) => void
   upgradeSubscription: (tier: 'pro' | 'business') => void
+  activateConstructionSubscription: () => void
   submitKYC: (file: File) => Promise<void>
   addTeamMember: (
     member: Omit<TeamMember, 'id' | 'avatar' | 'status' | 'performance'>,
@@ -139,6 +149,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     let badges: Badge[] = []
     let taxId = '000.000.000-00'
     let phone = '(11) 99999-9999'
+    let constructionSubscription: ConstructionSubscription | undefined =
+      undefined
 
     if (email.includes('executor')) {
       role = 'executor'
@@ -174,6 +186,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       role = 'contractor'
       entityType = 'pj'
       teamRole = 'Admin'
+      constructionSubscription = {
+        active: true,
+        basePrice: 500,
+        franchiseeMarkup: 50,
+        projectLimit: 10,
+        activeProjects: 3,
+      }
       teamMembers = [
         {
           id: 't1',
@@ -203,6 +222,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       role = 'contractor' // Part of a contractor company
       entityType = 'pj'
       teamRole = 'Accountant' // RBAC Key
+      constructionSubscription = {
+        active: true,
+        basePrice: 500,
+        franchiseeMarkup: 50,
+        projectLimit: 10,
+        activeProjects: 3,
+      }
     }
     // Project Manager Team Member Logic
     else if (email === 'manager.pj@bidwork.app') {
@@ -210,6 +236,13 @@ export const useAuthStore = create<AuthState>((set) => ({
       role = 'contractor'
       entityType = 'pj'
       teamRole = 'Project Manager' // RBAC Key
+      constructionSubscription = {
+        active: true,
+        basePrice: 500,
+        franchiseeMarkup: 50,
+        projectLimit: 10,
+        activeProjects: 3,
+      }
     } else if (email === 'executor.pj@bidwork.app') {
       name = 'Soluções Rápidas Ltda'
       companyName = 'Soluções Rápidas Ltda'
@@ -254,6 +287,14 @@ export const useAuthStore = create<AuthState>((set) => ({
       taxId = '321.654.987-11'
       role = 'contractor'
       entityType = 'pf'
+      // Simulation: PF user usually doesn't have construction sub by default, but let's say they can buy
+      constructionSubscription = {
+        active: false,
+        basePrice: 200,
+        franchiseeMarkup: 20,
+        projectLimit: 2,
+        activeProjects: 0,
+      }
     } else if (email === 'admin@bidwork.app') {
       name = 'Administrador do Sistema'
       role = 'admin'
@@ -278,6 +319,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         location: 'São Paulo - SP',
         isPremium: entityType === 'pj',
         subscriptionTier: entityType === 'pj' ? 'business' : 'free',
+        constructionSubscription,
         credits: 100,
         isVerified: true,
         kycStatus: 'verified',
@@ -376,6 +418,21 @@ export const useAuthStore = create<AuthState>((set) => ({
     set((state) => ({
       user: state.user
         ? { ...state.user, subscriptionTier: tier, isPremium: true }
+        : null,
+    })),
+  activateConstructionSubscription: () =>
+    set((state) => ({
+      user: state.user
+        ? {
+            ...state.user,
+            constructionSubscription: {
+              active: true,
+              basePrice: 500,
+              franchiseeMarkup: 50,
+              projectLimit: 10,
+              activeProjects: 0,
+            },
+          }
         : null,
     })),
   submitKYC: async (file) => {

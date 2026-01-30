@@ -46,6 +46,7 @@ import NewProject from '@/pages/construction/NewProject'
 import PartnerDashboard from '@/pages/partner/PartnerDashboard'
 import Resources from '@/pages/construction/Resources'
 import TeamInvoicing from '@/pages/construction/TeamInvoicing'
+import ConstructionDocuments from '@/pages/construction/ConstructionDocuments'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
@@ -179,6 +180,10 @@ const App = () => {
               <Route
                 path="/construction/invoicing"
                 element={<TeamInvoicing />}
+              />
+              <Route
+                path="/construction/documents"
+                element={<ConstructionDocuments />}
               />
 
               {/* Training & Gamification Routes */}

@@ -25,6 +25,7 @@ import {
   Route,
   ClipboardList,
   Medal,
+  FileText,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -124,6 +125,11 @@ export function MainSidebar() {
       title: t('sidebar.equipment'),
       url: '/construction/equipment',
       icon: Truck,
+    },
+    {
+      title: t('sidebar.construction_docs'),
+      url: '/construction/documents',
+      icon: FileText,
     },
   ]
 

@@ -37,9 +37,10 @@ import {
   Plus,
   Calendar as CalendarIcon,
   MapPin,
+  FileText,
+  DollarSign,
 } from 'lucide-react'
 import { format, isBefore, addDays } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
@@ -53,7 +54,7 @@ export default function EquipmentManager() {
   } = useEquipmentStore()
   const { projects } = useProjectStore()
   const { toast } = useToast()
-  const { t } = useLanguageStore()
+  const { t, formatCurrency } = useLanguageStore()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -67,6 +68,11 @@ export default function EquipmentManager() {
     serialNumber: '',
     purchaseDate: new Date(),
     location: 'Pátio Central',
+    rentalCondition: '',
+    rentalValue: 0,
+    annualDepreciation: 0,
+    rentalStartDate: '',
+    rentalEndDate: '',
   })
   const [assignData, setAssignData] = useState({ projectId: '' })
 
@@ -91,6 +97,15 @@ export default function EquipmentManager() {
       purchaseDate: newItem.purchaseDate,
       nextMaintenance: addDays(new Date(), 90),
       location: newItem.location,
+      rentalCondition: newItem.rentalCondition,
+      rentalValue: Number(newItem.rentalValue),
+      annualDepreciation: Number(newItem.annualDepreciation),
+      rentalStartDate: newItem.rentalStartDate
+        ? new Date(newItem.rentalStartDate)
+        : undefined,
+      rentalEndDate: newItem.rentalEndDate
+        ? new Date(newItem.rentalEndDate)
+        : undefined,
     })
     setIsAddOpen(false)
     toast({ title: 'Equipamento cadastrado' })
@@ -110,13 +125,6 @@ export default function EquipmentManager() {
   }
 
   const getTypeLabel = (type: string) => {
-    // Map internal type to translation key
-    const key = `eq.${type.toLowerCase()}`
-    // Fallback to type if no translation found (e.g. if type is custom)
-    // But since type is a select, we can control it.
-    // For now, assuming type matches keys: Pesado -> heavy, Leve -> light
-    // Actually the state has capitalized names 'Pesado'.
-    // Let's map manually
     const mapping: Record<string, string> = {
       Pesado: 'heavy',
       Leve: 'light',
@@ -143,56 +151,143 @@ export default function EquipmentManager() {
               <Plus className="mr-2 h-4 w-4" /> Novo Equipamento
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Cadastrar Equipamento</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label>Nome/Modelo</Label>
-                <Input
-                  value={newItem.name}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, name: e.target.value })
-                  }
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Nome/Modelo</Label>
+                  <Input
+                    value={newItem.name}
+                    onChange={(e) =>
+                      setNewItem({ ...newItem, name: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Número de Série</Label>
+                  <Input
+                    value={newItem.serialNumber}
+                    onChange={(e) =>
+                      setNewItem({ ...newItem, serialNumber: e.target.value })
+                    }
+                  />
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Número de Série</Label>
-                <Input
-                  value={newItem.serialNumber}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, serialNumber: e.target.value })
-                  }
-                />
+              <div className="grid md:grid-cols-2 gap-4">
+                <div className="grid gap-2">
+                  <Label>Localização Inicial</Label>
+                  <Input
+                    value={newItem.location}
+                    onChange={(e) =>
+                      setNewItem({ ...newItem, location: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>Tipo</Label>
+                  <Select
+                    value={newItem.type}
+                    onValueChange={(val) =>
+                      setNewItem({ ...newItem, type: val })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pesado">{t('eq.heavy')}</SelectItem>
+                      <SelectItem value="Leve">{t('eq.light')}</SelectItem>
+                      <SelectItem value="Veículo">{t('eq.vehicle')}</SelectItem>
+                      <SelectItem value="Estrutura">
+                        {t('eq.structure')}
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="grid gap-2">
-                <Label>Localização Inicial</Label>
-                <Input
-                  value={newItem.location}
-                  onChange={(e) =>
-                    setNewItem({ ...newItem, location: e.target.value })
-                  }
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Tipo</Label>
-                <Select
-                  value={newItem.type}
-                  onValueChange={(val) => setNewItem({ ...newItem, type: val })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Pesado">{t('eq.heavy')}</SelectItem>
-                    <SelectItem value="Leve">{t('eq.light')}</SelectItem>
-                    <SelectItem value="Veículo">{t('eq.vehicle')}</SelectItem>
-                    <SelectItem value="Estrutura">
-                      {t('eq.structure')}
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+
+              <div className="border-t pt-4">
+                <Label className="text-base font-semibold mb-2 block">
+                  Dados Financeiros / Locação
+                </Label>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
+                    <Label>{t('eq.rental.condition')}</Label>
+                    <Input
+                      placeholder="Ex: Alugado, Próprio"
+                      value={newItem.rentalCondition}
+                      onChange={(e) =>
+                        setNewItem({
+                          ...newItem,
+                          rentalCondition: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>{t('eq.rental.value')} (Mensal)</Label>
+                    <Input
+                      type="number"
+                      value={newItem.rentalValue}
+                      onChange={(e) =>
+                        setNewItem({
+                          ...newItem,
+                          rentalValue: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>{t('eq.depreciation')} (Anual)</Label>
+                    <Input
+                      type="number"
+                      value={newItem.annualDepreciation}
+                      onChange={(e) =>
+                        setNewItem({
+                          ...newItem,
+                          annualDepreciation: Number(e.target.value),
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Upload Contrato (Mock)</Label>
+                    <Button variant="outline" size="sm" className="w-full">
+                      <FileText className="mr-2 h-4 w-4" /> Selecionar Arquivo
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4 mt-2">
+                  <div className="grid gap-2">
+                    <Label>{t('eq.rental.start')}</Label>
+                    <Input
+                      type="date"
+                      value={newItem.rentalStartDate}
+                      onChange={(e) =>
+                        setNewItem({
+                          ...newItem,
+                          rentalStartDate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>{t('eq.rental.end')}</Label>
+                    <Input
+                      type="date"
+                      value={newItem.rentalEndDate}
+                      onChange={(e) =>
+                        setNewItem({
+                          ...newItem,
+                          rentalEndDate: e.target.value,
+                        })
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <DialogFooter>
@@ -282,6 +377,12 @@ export default function EquipmentManager() {
                   Projeto: <strong>{eq.projectName}</strong>
                 </div>
               )}
+              {eq.rentalValue ? (
+                <div className="text-xs flex items-center gap-1 text-muted-foreground">
+                  <DollarSign className="h-3 w-3" />
+                  Aluguel: {formatCurrency(eq.rentalValue)}/mês
+                </div>
+              ) : null}
               <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-2">
                 <CalendarIcon className="h-4 w-4" />
                 Próx. Manutenção: {format(eq.nextMaintenance, 'dd/MM/yyyy')}
