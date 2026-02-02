@@ -69,9 +69,6 @@ export function MainSidebar() {
   const canAccessConstruction =
     !hasTeamRole || ['Admin', 'Project Manager'].includes(user?.teamRole || '')
 
-  // Construction Company Flag (Needs PJ + Contractor)
-  const isConstrutora = isPJ && isContractor
-
   const commonItems = [
     {
       title: isPartner
@@ -296,7 +293,7 @@ export function MainSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isConstrutora && canAccessConstruction && (
+        {isContractor && canAccessConstruction && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-orange-600 font-semibold">
               {t('sidebar.group.construction')}

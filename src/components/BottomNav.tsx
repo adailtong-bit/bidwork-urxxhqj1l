@@ -1,5 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, MessageSquare, PlusCircle, List, User } from 'lucide-react'
+import {
+  Home,
+  MessageSquare,
+  PlusCircle,
+  List,
+  User,
+  HardHat,
+} from 'lucide-react'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { cn } from '@/lib/utils'
 
@@ -19,12 +26,17 @@ export function BottomNav() {
       highlight: true,
     },
     { label: t('nav.listings'), icon: List, path: '/my-jobs' },
+    {
+      label: t('nav.construction'),
+      icon: HardHat,
+      path: '/construction/dashboard',
+    },
     { label: t('nav.account'), icon: User, path: '/dashboard' },
   ]
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t pb-safe pt-1 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-      <div className="flex justify-around items-end h-16 max-w-md mx-auto">
+      <div className="flex justify-around items-end h-16 max-w-lg mx-auto">
         {navItems.map((item) => (
           <Link
             key={item.path}
