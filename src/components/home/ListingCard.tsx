@@ -28,10 +28,8 @@ export function ListingCard({ image, title, price, location }: ListingProps) {
           onError={() => {
             if (!hasError) {
               setHasError(true)
-              // Fallback to a reliable abstract placeholder
-              setImgSrc(
-                'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=400&h=400',
-              )
+              // Fallback to a reliable abstract placeholder instead of Unsplash
+              setImgSrc('https://img.usecurling.com/p/400/400?q=product')
             }
           }}
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"

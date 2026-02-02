@@ -1,9 +1,23 @@
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Link } from 'react-router-dom'
 
 export function PromoBanner() {
   const { t } = useLanguageStore()
+  // Use a reliable image URL instead of the broken Unsplash link
+  const [imgSrc, setImgSrc] = useState(
+    'https://img.usecurling.com/p/300/300?q=dog%20training',
+  )
+  const [hasError, setHasError] = useState(false)
+
+  const handleImageError = () => {
+    if (!hasError) {
+      setHasError(true)
+      // Fallback to a generic service image if the main one fails
+      setImgSrc('https://img.usecurling.com/p/300/300?q=service')
+    }
+  }
 
   return (
     <div className="mx-4 my-4 bg-white rounded-xl shadow-sm border overflow-hidden relative">
@@ -21,9 +35,10 @@ export function PromoBanner() {
         </div>
         <div className="w-full md:w-1/3 flex justify-center">
           <img
-            src="https://images.unsplash.com/photo-1581578731117-104f2a412727?auto=format&fit=crop&w=300&h=300"
+            src={imgSrc}
             alt="Service Pro Illustration"
             className="h-32 object-contain"
+            onError={handleImageError}
           />
         </div>
       </div>

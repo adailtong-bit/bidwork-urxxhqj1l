@@ -11,48 +11,42 @@ const mockListings = [
     id: 1,
     title: '2016 Hyundai Veloster',
     price: 5850,
-    image:
-      'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?auto=format&fit=crop&w=400&h=400',
+    image: 'https://img.usecurling.com/p/400/400?q=car',
     location: 'Kissimmee, FL',
   },
   {
     id: 2,
     title: 'Pokémon Cards Rare',
     price: 30,
-    image:
-      'https://images.unsplash.com/photo-1613771404784-3a5686aa2be3?auto=format&fit=crop&w=400&h=400',
+    image: 'https://img.usecurling.com/p/400/400?q=pokemon%20cards',
     location: 'Orlando, FL',
   },
   {
     id: 3,
     title: 'Sofa Sectional Grey',
     price: 450,
-    image:
-      'https://images.unsplash.com/photo-1555041469-a586c61ea9bc?auto=format&fit=crop&w=400&h=400',
+    image: 'https://img.usecurling.com/p/400/400?q=sofa',
     location: 'Winter Park, FL',
   },
   {
     id: 4,
     title: 'iPhone 13 Pro Max',
     price: 600,
-    image:
-      'https://images.unsplash.com/photo-1632661674596-df8be070a5c5?auto=format&fit=crop&w=400&h=400',
+    image: 'https://img.usecurling.com/p/400/400?q=iphone',
     location: 'Kissimmee, FL',
   },
   {
     id: 5,
     title: 'Mountain Bike',
     price: 120,
-    image:
-      'https://images.unsplash.com/photo-1576435728678-be95e39e83d3?auto=format&fit=crop&w=400&h=400',
+    image: 'https://img.usecurling.com/p/400/400?q=bike',
     location: 'Sanford, FL',
   },
   {
     id: 6,
     title: 'Gaming PC Setup',
     price: 1200,
-    image:
-      'https://images.unsplash.com/photo-1587202372775-e229f172b9d7?auto=format&fit=crop&w=400&h=400',
+    image: 'https://img.usecurling.com/p/400/400?q=gaming%20pc',
     location: 'Orlando, FL',
   },
 ]
