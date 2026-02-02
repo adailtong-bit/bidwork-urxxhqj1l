@@ -25,11 +25,12 @@ export function ListingCard({ image, title, price, location }: ListingProps) {
         <img
           src={imgSrc}
           alt={title}
+          crossOrigin="anonymous"
           onError={() => {
             if (!hasError) {
               setHasError(true)
-              // Fallback to a reliable abstract placeholder instead of Unsplash
-              setImgSrc('https://img.usecurling.com/p/400/400?q=product')
+              // Fallback to a reliable abstract placeholder
+              setImgSrc('https://img.usecurling.com/p/400/400?q=package')
             }
           }}
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"

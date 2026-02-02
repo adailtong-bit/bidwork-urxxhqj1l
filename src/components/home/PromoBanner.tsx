@@ -37,6 +37,7 @@ export function PromoBanner() {
           <img
             src={imgSrc}
             alt="Service Pro Illustration"
+            crossOrigin="anonymous"
             className="h-32 object-contain"
             onError={handleImageError}
           />
