@@ -1,5 +1,6 @@
 import { Card } from '@/components/ui/card'
 import { Link } from 'react-router-dom'
+import { SafeImage } from '@/components/SafeImage'
 
 interface ServiceCardProps {
   title: string
@@ -12,7 +13,7 @@ export function ServiceCard({ title, image, link = '#' }: ServiceCardProps) {
     <Link to={link}>
       <Card className="relative overflow-hidden aspect-[4/3] rounded-lg border-none group cursor-pointer">
         <div className="absolute inset-0">
-          <img
+          <SafeImage
             src={image}
             alt={title}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"

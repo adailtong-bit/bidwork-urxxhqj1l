@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { SafeImage } from '@/components/SafeImage'
 
 interface ListingProps {
   image: string
@@ -11,28 +11,14 @@ interface ListingProps {
 
 export function ListingCard({ image, title, price, location }: ListingProps) {
   const { formatCurrency } = useLanguageStore()
-  const [imgSrc, setImgSrc] = useState(image)
-  const [hasError, setHasError] = useState(false)
-
-  useEffect(() => {
-    setImgSrc(image)
-    setHasError(false)
-  }, [image])
 
   return (
     <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
       <div className="aspect-square relative overflow-hidden bg-muted">
-        <img
-          src={imgSrc}
+        <SafeImage
+          src={image}
           alt={title}
-          crossOrigin="anonymous"
-          onError={() => {
-            if (!hasError) {
-              setHasError(true)
-              // Fallback to a reliable abstract placeholder
-              setImgSrc('https://img.usecurling.com/p/400/400?q=package')
-            }
-          }}
+          fallbackSrc="https://img.usecurling.com/p/400/400?q=package"
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
         />
       </div>

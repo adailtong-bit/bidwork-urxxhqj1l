@@ -5,7 +5,7 @@ import { ListingCard } from '@/components/home/ListingCard'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 
-// Mock Data
+// Mock Data - Updated with reliable SafeImage compatible queries
 const mockListings = [
   {
     id: 1,
@@ -18,7 +18,7 @@ const mockListings = [
     id: 2,
     title: 'Pokémon Cards Rare',
     price: 30,
-    image: 'https://img.usecurling.com/p/400/400?q=pokemon%20cards',
+    image: 'https://img.usecurling.com/p/400/400?q=toys',
     location: 'Orlando, FL',
   },
   {
@@ -32,21 +32,21 @@ const mockListings = [
     id: 4,
     title: 'iPhone 13 Pro Max',
     price: 600,
-    image: 'https://img.usecurling.com/p/400/400?q=iphone',
+    image: 'https://img.usecurling.com/p/400/400?q=smartphone',
     location: 'Kissimmee, FL',
   },
   {
     id: 5,
     title: 'Mountain Bike',
     price: 120,
-    image: 'https://img.usecurling.com/p/400/400?q=bike',
+    image: 'https://img.usecurling.com/p/400/400?q=bicycle',
     location: 'Sanford, FL',
   },
   {
     id: 6,
     title: 'Gaming PC Setup',
     price: 1200,
-    image: 'https://img.usecurling.com/p/400/400?q=gaming%20pc',
+    image: 'https://img.usecurling.com/p/400/400?q=computer',
     location: 'Orlando, FL',
   },
 ]
