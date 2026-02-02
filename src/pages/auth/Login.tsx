@@ -20,12 +20,11 @@ import {
 import { TestProfileSwitcher } from '@/components/TestProfileSwitcher'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
-const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
-})
-
-type LoginForm = z.infer<typeof loginSchema>
+const createLoginSchema = (t: any) =>
+  z.object({
+    email: z.string().email(t('val.email')),
+    password: z.string().min(6, t('val.required')),
+  })
 
 export default function Login() {
   const { login, isLoading } = useAuthStore()
@@ -33,27 +32,27 @@ export default function Login() {
   const { toast } = useToast()
   const { t } = useLanguageStore()
 
-  const form = useForm<LoginForm>({
-    resolver: zodResolver(loginSchema),
+  const form = useForm({
+    resolver: zodResolver(createLoginSchema(t)),
     defaultValues: {
       email: '',
       password: '',
     },
   })
 
-  async function onSubmit(data: LoginForm) {
+  async function onSubmit(data: any) {
     try {
       await login(data.email, data.password)
       toast({
-        title: t('auth.login.welcome_toast'),
-        description: t('auth.login.success_toast'),
+        title: t('success'),
+        description: t('dashboard.welcome', { name: 'User' }),
       })
       navigate('/dashboard')
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('auth.login.error_toast'),
-        description: t('auth.login.error_desc'),
+        title: t('error'),
+        description: 'Login failed',
       })
     }
   }
@@ -61,10 +60,10 @@ export default function Login() {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {t('auth.login.title')}
-        </h1>
-        <p className="text-muted-foreground">{t('auth.login.subtitle')}</p>
+        <h1 className="text-3xl font-bold tracking-tight">{t('nav.login')}</h1>
+        <p className="text-muted-foreground">
+          {t('nav.start')} - {t('app.title')}
+        </p>
       </div>
 
       <Form {...form}>
@@ -74,12 +73,9 @@ export default function Login() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('auth.register.email')}</FormLabel>
+                <FormLabel>{t('settings.form.email')}</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder={t('auth.login.email_placeholder')}
-                    {...field}
-                  />
+                  <Input placeholder="seu@email.com" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -91,12 +87,12 @@ export default function Login() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel>{t('auth.login.password_label')}</FormLabel>
+                  <FormLabel>Password</FormLabel>
                   <Link
                     to="/forgot-password"
                     className="text-sm font-medium text-primary hover:underline"
                   >
-                    {t('auth.login.forgot_password')}
+                    {t('auth.forgot.title')}
                   </Link>
                 </div>
                 <FormControl>
@@ -113,13 +109,13 @@ export default function Login() {
               htmlFor="remember"
               className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
             >
-              {t('auth.login.remember_me')}
+              Remember me
             </Label>
           </div>
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t('auth.login.submit')}
+            {t('nav.login')}
           </Button>
         </form>
       </Form>
@@ -130,7 +126,7 @@ export default function Login() {
         </div>
         <div className="relative flex justify-center text-xs uppercase">
           <span className="bg-background px-2 text-muted-foreground">
-            {t('auth.login.continue_with')}
+            Or continue with
           </span>
         </div>
       </div>
@@ -146,12 +142,12 @@ export default function Login() {
       </Button>
 
       <div className="text-center text-sm">
-        {t('auth.login.no_account')}{' '}
+        {t('general.none')} account?{' '}
         <Link
           to="/register"
           className="font-semibold text-primary hover:underline"
         >
-          {t('auth.login.register_link')}
+          {t('nav.start')}
         </Link>
       </div>
 

@@ -49,33 +49,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 
-// Dynamic schema based on user type and country
-const createProfileSchema = (entityType: 'pf' | 'pj', country: CountryCode) => {
-  const { phone, zip, taxId } = getCountryValidation(country)
-
-  return z.object({
-    name: z
-      .string()
-      .min(2, 'Nome/Razão Social deve ter no mínimo 2 caracteres'),
-    companyName:
-      entityType === 'pj'
-        ? z.string().min(2, 'Nome da Empresa é obrigatório')
-        : z.string().optional(),
-    phone: phone,
-    taxId: taxId,
-    // Address
-    street: z.string().min(3, 'Rua é obrigatória'),
-    number: z.string().min(1, 'Número é obrigatório'),
-    complement: z.string().optional(),
-    neighborhood: z.string().min(2, 'Bairro é obrigatório'),
-    city: z.string().min(2, 'Cidade é obrigatória'),
-    state: z.string().min(2, 'Estado é obrigatório'),
-    zipCode: zip,
-  })
-}
-
-type ProfileFormValues = z.infer<ReturnType<typeof createProfileSchema>>
-
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
   const { toast } = useToast()
@@ -85,7 +58,32 @@ export default function Settings() {
   const entityType = user?.entityType || 'pf'
   const country = user?.address?.country || 'BR'
 
-  const form = useForm<ProfileFormValues>({
+  const createProfileSchema = (
+    entityType: 'pf' | 'pj',
+    country: CountryCode,
+  ) => {
+    const { phone, zip, taxId } = getCountryValidation(country)
+
+    return z.object({
+      name: z.string().min(2, t('val.required')),
+      companyName:
+        entityType === 'pj'
+          ? z.string().min(2, t('val.required'))
+          : z.string().optional(),
+      phone: phone,
+      taxId: taxId,
+      // Address
+      street: z.string().min(3, t('val.required')),
+      number: z.string().min(1, t('val.required')),
+      complement: z.string().optional(),
+      neighborhood: z.string().min(2, t('val.required')),
+      city: z.string().min(2, t('val.required')),
+      state: z.string().min(2, t('val.required')),
+      zipCode: zip,
+    })
+  }
+
+  const form = useForm({
     resolver: zodResolver(createProfileSchema(entityType, country)),
     defaultValues: {
       name: user?.name || '',
@@ -140,7 +138,7 @@ export default function Settings() {
 
   if (!user) return null
 
-  const onSubmit = (data: ProfileFormValues) => {
+  const onSubmit = (data: any) => {
     updateSettings({
       name: data.name,
       companyName: data.companyName,
@@ -160,7 +158,7 @@ export default function Settings() {
     setIsEditing(false)
     toast({
       title: t('success'),
-      description: 'Perfil atualizado com sucesso.',
+      description: t('success'),
     })
   }
 
@@ -171,7 +169,7 @@ export default function Settings() {
     })
     toast({
       title: t('success'),
-      description: 'Configurações adicionais salvas.',
+      description: t('success'),
     })
   }
 
@@ -183,14 +181,14 @@ export default function Settings() {
     try {
       await submitKYC(file)
       toast({
-        title: 'Documento Enviado',
-        description: 'Sua identidade foi verificada com sucesso!',
+        title: t('settings.doc_sent'),
+        description: t('settings.doc_sent_desc'),
       })
     } catch (error) {
       toast({
         variant: 'destructive',
         title: t('error'),
-        description: 'Tente novamente.',
+        description: t('error'),
       })
     } finally {
       setIsUploadingKYC(false)
@@ -201,12 +199,7 @@ export default function Settings() {
     setLanguage(val as 'pt' | 'en' | 'es')
     toast({
       title: t('success'),
-      description:
-        val === 'pt'
-          ? 'Idioma alterado para Português'
-          : val === 'es'
-            ? 'Idioma cambiado a Español'
-            : 'Language changed to English',
+      description: t('settings.lang_changed', { lang: val.toUpperCase() }),
     })
   }
 
@@ -456,7 +449,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Language Settings - Restored Feature */}
+        {/* Language Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">

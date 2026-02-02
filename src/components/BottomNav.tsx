@@ -1,67 +1,90 @@
 import { Link, useLocation } from 'react-router-dom'
-import {
-  Home,
-  MessageSquare,
-  PlusCircle,
-  List,
-  User,
-  HardHat,
-} from 'lucide-react'
-import { useLanguageStore } from '@/stores/useLanguageStore'
+import { Home, Search, PlusCircle, Briefcase, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export function BottomNav() {
-  const { t } = useLanguageStore()
   const location = useLocation()
+  const { user } = useAuthStore()
+  const { t } = useLanguageStore()
+
+  const isContractor = user?.role === 'contractor'
 
   const isActive = (path: string) => location.pathname === path
 
-  const navItems = [
-    { label: t('nav.home'), icon: Home, path: '/' },
-    { label: t('nav.inbox'), icon: MessageSquare, path: '/messages' },
-    {
-      label: t('nav.post'),
-      icon: PlusCircle,
-      path: '/post-job',
-      highlight: true,
-    },
-    { label: t('nav.listings'), icon: List, path: '/my-jobs' },
-    {
-      label: t('nav.construction'),
-      icon: HardHat,
-      path: '/construction/dashboard',
-    },
-    { label: t('nav.account'), icon: User, path: '/dashboard' },
-  ]
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t pb-safe pt-1 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
-      <div className="flex justify-around items-end h-16 max-w-lg mx-auto">
-        {navItems.map((item) => (
+    <div className="fixed bottom-0 left-0 right-0 border-t bg-background z-50 pb-safe md:hidden">
+      <div className="flex justify-around items-center h-16">
+        <Link
+          to="/dashboard"
+          className={cn(
+            'flex flex-col items-center justify-center w-full h-full space-y-1',
+            isActive('/dashboard') ? 'text-primary' : 'text-muted-foreground',
+          )}
+        >
+          <Home className="h-5 w-5" />
+          <span className="text-[10px] font-medium">{t('nav.home')}</span>
+        </Link>
+
+        {isContractor ? (
           <Link
-            key={item.path}
-            to={item.path}
+            to="/my-jobs"
             className={cn(
-              'flex flex-col items-center justify-center w-full h-full pb-2 pt-1 transition-colors duration-200',
-              isActive(item.path)
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground',
+              'flex flex-col items-center justify-center w-full h-full space-y-1',
+              isActive('/my-jobs') ? 'text-primary' : 'text-muted-foreground',
             )}
           >
-            <item.icon
-              className={cn(
-                'mb-1 transition-all',
-                item.highlight ? 'h-7 w-7' : 'h-6 w-6',
-                isActive(item.path) ? 'scale-110' : 'scale-100',
-              )}
-              strokeWidth={isActive(item.path) ? 2.5 : 2}
-            />
-            <span className="text-[10px] font-medium leading-none">
-              {item.label}
+            <Briefcase className="h-5 w-5" />
+            <span className="text-[10px] font-medium">{t('nav.projects')}</span>
+          </Link>
+        ) : (
+          <Link
+            to="/find-jobs"
+            className={cn(
+              'flex flex-col items-center justify-center w-full h-full space-y-1',
+              isActive('/find-jobs') ? 'text-primary' : 'text-muted-foreground',
+            )}
+          >
+            <Search className="h-5 w-5" />
+            <span className="text-[10px] font-medium">
+              {t('nav.find_jobs')}
             </span>
           </Link>
-        ))}
+        )}
+
+        <Link
+          to="/post-job"
+          className="flex flex-col items-center justify-center w-full h-full space-y-1 -mt-6"
+        >
+          <div className="bg-primary text-primary-foreground rounded-full p-3 shadow-lg">
+            <PlusCircle className="h-6 w-6" />
+          </div>
+          <span className="text-[10px] font-medium">{t('nav.post')}</span>
+        </Link>
+
+        <Link
+          to="/messages"
+          className={cn(
+            'flex flex-col items-center justify-center w-full h-full space-y-1',
+            isActive('/messages') ? 'text-primary' : 'text-muted-foreground',
+          )}
+        >
+          <Briefcase className="h-5 w-5" />
+          <span className="text-[10px] font-medium">{t('nav.inbox')}</span>
+        </Link>
+
+        <Link
+          to="/settings"
+          className={cn(
+            'flex flex-col items-center justify-center w-full h-full space-y-1',
+            isActive('/settings') ? 'text-primary' : 'text-muted-foreground',
+          )}
+        >
+          <User className="h-5 w-5" />
+          <span className="text-[10px] font-medium">{t('nav.account')}</span>
+        </Link>
       </div>
-    </nav>
+    </div>
   )
 }

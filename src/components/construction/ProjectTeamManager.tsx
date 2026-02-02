@@ -215,7 +215,7 @@ export function ProjectTeamManager({
             <div className="text-center py-10 border-2 border-dashed rounded-lg bg-muted/20">
               <Briefcase className="mx-auto h-8 w-8 text-muted-foreground mb-2" />
               <p className="text-sm text-muted-foreground">
-                Nenhuma empresa parceira.
+                {t('team.no_partner')}
               </p>
             </div>
           ) : (
@@ -258,7 +258,9 @@ export function ProjectTeamManager({
                                   variant="secondary"
                                   className="text-[10px] px-1 py-0 h-4"
                                 >
-                                  {member.role}
+                                  {t(
+                                    `role.${member.role.toLowerCase().replace(' ', '_')}`,
+                                  ) || member.role}
                                 </Badge>
                                 <span className="text-[10px] text-muted-foreground">
                                   {member.phone}
@@ -284,7 +286,7 @@ export function ProjectTeamManager({
                       ))
                     ) : (
                       <div className="text-sm text-muted-foreground italic pl-2">
-                        Nenhum membro na equipe desta empresa.
+                        {t('team.no_team_partner')}
                       </div>
                     )}
                   </div>
@@ -314,13 +316,12 @@ export function ProjectTeamManager({
                 htmlFor="filter-pj"
                 className="text-sm font-normal cursor-pointer flex items-center gap-1"
               >
-                <Filter className="h-3 w-3" /> Mostrar apenas vinculados à
-                empresa
+                <Filter className="h-3 w-3" /> {t('team.filter_linked')}
               </Label>
             </div>
 
             <div className="grid gap-2">
-              <Label>Contratado</Label>
+              <Label>{t('team.contractor_label')}</Label>
               <Select
                 onValueChange={(val) => {
                   setSelectedContractorId(val)
@@ -329,7 +330,7 @@ export function ProjectTeamManager({
                 }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione o profissional..." />
+                  <SelectValue placeholder={t('team.select_pro')} />
                 </SelectTrigger>
                 <SelectContent>
                   {filteredContractors.length > 0 ? (
@@ -340,7 +341,7 @@ export function ProjectTeamManager({
                     ))
                   ) : (
                     <div className="p-2 text-xs text-center text-muted-foreground">
-                      Nenhum contratado encontrado.
+                      {t('team.no_contractor')}
                     </div>
                   )}
                 </SelectContent>
@@ -351,14 +352,16 @@ export function ProjectTeamManager({
               <Label>{t('team.role')}</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a função..." />
+                  <SelectValue placeholder={t('team.select_role')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="Engineer">Engenheiro</SelectItem>
-                  <SelectItem value="Electrician">Eletricista</SelectItem>
-                  <SelectItem value="Tiler">Azulejista</SelectItem>
-                  <SelectItem value="Roofer">Telhadista</SelectItem>
-                  <SelectItem value="Other">Outro</SelectItem>
+                  <SelectItem value="Engineer">{t('role.engineer')}</SelectItem>
+                  <SelectItem value="Electrician">
+                    {t('role.electrician')}
+                  </SelectItem>
+                  <SelectItem value="Tiler">{t('role.tiler')}</SelectItem>
+                  <SelectItem value="Roofer">{t('role.roofer')}</SelectItem>
+                  <SelectItem value="Other">{t('role.other')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -391,12 +394,13 @@ export function ProjectTeamManager({
             <Label>{t('team.substitute')}</Label>
             <Select onValueChange={setSubstituteId} value={substituteId}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
+                <SelectValue placeholder={t('general.select')} />
               </SelectTrigger>
               <SelectContent>
                 {availableSubstitutes.map((sub) => (
                   <SelectItem key={sub.id} value={sub.id}>
-                    {sub.name} - {sub.role}
+                    {sub.name} -{' '}
+                    {t(`role.${sub.role.toLowerCase()}`) || sub.role}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -413,7 +417,7 @@ export function ProjectTeamManager({
               onClick={handleConfirmReallocation}
               disabled={!substituteId}
             >
-              {t('confirm')} & {t('team.remove')}
+              {t('confirm')} & {t('remove')}
             </Button>
           </DialogFooter>
         </DialogContent>

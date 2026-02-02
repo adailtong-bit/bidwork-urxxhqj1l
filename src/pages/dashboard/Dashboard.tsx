@@ -84,9 +84,7 @@ export default function Dashboard() {
           </h2>
           <p className="text-muted-foreground">
             {t('dashboard.role_label', {
-              role: isContractor
-                ? t('auth.register.contractor')
-                : t('auth.register.executor'),
+              role: isContractor ? t('role.contractor') : t('role.executor'),
             })}{' '}
             |{' '}
             <span className="font-semibold text-primary capitalize">
@@ -115,7 +113,6 @@ export default function Dashboard() {
 
       <AINotifications />
 
-      {/* Targeted Ads - Dashboard Segment */}
       <AdSection segment="dashboard" />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">

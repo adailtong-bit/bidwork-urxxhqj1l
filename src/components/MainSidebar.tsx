@@ -428,8 +428,14 @@ export function MainSidebar() {
                     <span className="font-semibold truncate">{user?.name}</span>
                     <span className="text-xs text-muted-foreground truncate capitalize">
                       {user?.teamRole
-                        ? `${user.teamRole} (${user.role})`
-                        : user?.role}
+                        ? `${t(`role.${user.teamRole.toLowerCase().replace(' ', '_')}`)}`
+                        : user?.role === 'admin'
+                          ? t('role.admin')
+                          : user?.role === 'partner'
+                            ? t('role.partner')
+                            : user?.role === 'executor'
+                              ? t('role.executor')
+                              : t('role.contractor')}
                     </span>
                   </div>
                   <ChevronUp className="ml-auto" />

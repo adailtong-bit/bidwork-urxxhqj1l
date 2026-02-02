@@ -214,7 +214,7 @@ export function ProjectScheduleTable({
           <TableRow className="bg-muted/50">
             <TableHead className="w-[300px]">{t('proj.stage.tasks')}</TableHead>
             <TableHead>{t('construction.start')}</TableHead>
-            <TableHead>Fim</TableHead>
+            <TableHead>{t('sched.end')}</TableHead>
             <TableHead className="w-[180px]">
               {t('proj.task.progress')}
             </TableHead>
@@ -261,7 +261,7 @@ export function ProjectScheduleTable({
                   </div>
                 </TableCell>
                 <TableCell>
-                  <Badge variant="outline">{stage.status}</Badge>
+                  <Badge variant="outline">{t(`status.${stage.status}`)}</Badge>
                 </TableCell>
                 <TableCell>
                   <DropdownMenu>
@@ -277,7 +277,7 @@ export function ProjectScheduleTable({
                         }
                       >
                         <Plus className="mr-2 h-4 w-4" />
-                        {t('add')} Atividade
+                        {t('sched.add_activity')}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -357,7 +357,7 @@ export function ProjectScheduleTable({
                           )}
                           onClick={() => handleToggleStatus(stage.id, sub.id)}
                         >
-                          {sub.status}
+                          {t(`status.${sub.status}`)}
                         </Badge>
                       </TableCell>
                       <TableCell>
@@ -380,8 +380,8 @@ export function ProjectScheduleTable({
                                 })
                               }
                             >
-                              <UserPlus className="mr-2 h-4 w-4" /> Alocar
-                              Equipe
+                              <UserPlus className="mr-2 h-4 w-4" />{' '}
+                              {t('sched.allocate_labor')}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() =>
@@ -465,12 +465,14 @@ export function ProjectScheduleTable({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              {deleteStep === 1 ? 'Excluir Atividade?' : 'Confirmação Final'}
+              {deleteStep === 1
+                ? t('sched.delete_title')
+                : t('sched.delete_confirm_title')}
             </AlertDialogTitle>
             <AlertDialogDescription>
               {deleteStep === 1
-                ? 'Esta ação removerá a atividade do cronograma. Clique em continuar para prosseguir.'
-                : 'Tem certeza absoluta? Esta ação não pode ser desfeita e todos os dados vinculados serão perdidos.'}
+                ? t('sched.delete_desc')
+                : t('sched.delete_confirm_desc')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -491,37 +493,37 @@ export function ProjectScheduleTable({
       <Dialog open={!!assignData} onOpenChange={() => setAssignData(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Alocar Mão de Obra</DialogTitle>
+            <DialogTitle>{t('sched.allocate_labor')}</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
-              <Label>Membro da Equipe (Filtrado)</Label>
+              <Label>{t('sched.team_member')}</Label>
               <Select onValueChange={setSelectedMember}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione um profissional..." />
+                  <SelectValue placeholder={t('team.select_pro')} />
                 </SelectTrigger>
                 <SelectContent>
                   {teamMembersToSelect.map((member) => (
                     <SelectItem key={member.id} value={member.id}>
-                      {member.name} ({member.partnerName} - {member.role})
+                      {member.name} ({member.partnerName} -{' '}
+                      {t(`role.${member.role.toLowerCase()}`) || member.role})
                     </SelectItem>
                   ))}
                   {teamMembersToSelect.length === 0 && (
                     <div className="p-2 text-xs text-center text-muted-foreground">
-                      Nenhum membro disponível. Adicione membros na Equipe
-                      Técnica.
+                      {t('sched.no_member')}
                     </div>
                   )}
                 </SelectContent>
               </Select>
               {isPartnerView && (
                 <p className="text-xs text-muted-foreground">
-                  Apenas membros da sua equipe são exibidos.
+                  {t('sched.partner_only')}
                 </p>
               )}
             </div>
             <div className="grid gap-2">
-              <Label>Preço da Tarefa (R$)</Label>
+              <Label>{t('sched.task_price')} (R$)</Label>
               <div className="relative">
                 <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input

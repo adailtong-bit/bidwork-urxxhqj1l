@@ -23,19 +23,12 @@ import {
   Phone,
   Users,
   HardHat,
-  CheckCircle2,
   Link2,
   TrendingDown,
   TrendingUp,
   DollarSign,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { PartnerEditModal } from '@/components/partner/PartnerEditModal'
 import { ProjectTeamManager } from '@/components/construction/ProjectTeamManager'
@@ -45,6 +38,12 @@ import { ProjectApprovalWorkflow } from '@/components/construction/ProjectApprov
 import { ExternalIntegrationDialog } from '@/components/construction/ExternalIntegrationDialog'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Progress } from '@/components/ui/progress'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -165,7 +164,9 @@ export default function ProjectDetail() {
         >
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4 bg-card p-4 rounded-lg border shadow-sm">
             <div className="flex items-center gap-2">
-              <span className="text-sm font-medium mr-2">Visualização:</span>
+              <span className="text-sm font-medium mr-2">
+                {t('proj.view_label')}
+              </span>
               <div className="flex bg-muted p-1 rounded-md">
                 <Button
                   variant={viewMode === 'cards' ? 'secondary' : 'ghost'}
@@ -279,6 +280,7 @@ export default function ProjectDetail() {
           <ProjectBudget projectId={project.id} />
         </TabsContent>
 
+        {/* Partners Tab */}
         <TabsContent value="partners" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
@@ -366,7 +368,9 @@ export default function ProjectDetail() {
                                     variant="secondary"
                                     className="text-[10px]"
                                   >
-                                    {m.role}
+                                    {t(
+                                      `role.${m.role.toLowerCase().replace(' ', '_')}`,
+                                    ) || m.role}
                                   </Badge>
                                 </li>
                               ))}
@@ -383,7 +387,7 @@ export default function ProjectDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
-                  Nenhum parceiro registrado neste proyecto.
+                  Nenhum parceiro registrado neste projeto.
                 </div>
               )}
             </CardContent>
@@ -464,10 +468,14 @@ export default function ProjectDetail() {
                       <table className="w-full text-sm text-left">
                         <thead className="bg-muted/50 border-b">
                           <tr>
-                            <th className="p-3 font-medium">Descrição</th>
-                            <th className="p-3 font-medium">Categoria</th>
+                            <th className="p-3 font-medium">
+                              {t('finance.description')}
+                            </th>
+                            <th className="p-3 font-medium">
+                              {t('market.category')}
+                            </th>
                             <th className="p-3 font-medium text-right">
-                              Valor
+                              {t('dashboard.chart.label.value')}
                             </th>
                           </tr>
                         </thead>
@@ -512,9 +520,9 @@ export default function ProjectDetail() {
             onClick={() => csvInputRef.current?.click()}
           >
             <Upload className="h-10 w-10 mx-auto mb-3 text-muted-foreground" />
-            <p className="font-medium">Clique para selecionar arquivo .CSV</p>
+            <p className="font-medium">{t('proj.import.drag_drop')}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              Suporta Project ou Excel
+              {t('proj.import.formats')}
             </p>
             <input
               type="file"

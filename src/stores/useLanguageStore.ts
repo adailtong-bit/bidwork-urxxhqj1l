@@ -34,7 +34,7 @@ export const useLanguageStore = create<LanguageState>()(
         const lang = get().currentLanguage
         const locale =
           lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US'
-        const currency = lang === 'pt' ? 'BRL' : lang === 'es' ? 'USD' : 'USD' // Using USD for ES/EN as default for international/latam context
+        const currency = lang === 'pt' ? 'BRL' : 'USD'
         return new Intl.NumberFormat(locale, {
           style: 'currency',
           currency,

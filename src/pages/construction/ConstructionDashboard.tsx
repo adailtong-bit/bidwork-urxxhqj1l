@@ -104,7 +104,6 @@ export default function ConstructionDashboard() {
     )
   }
 
-  // Calculate variances for completed projects
   const finishedProjectStats = completedProjects.map((p) => {
     const plannedDays = differenceInDays(p.endDate, p.startDate)
     const actualEnd = p.stages[p.stages.length - 1]?.actualEndDate || p.endDate
@@ -138,10 +137,6 @@ export default function ConstructionDashboard() {
             matVariance: 5000,
           },
         ]
-
-  const getStatusLabel = (status: string) => {
-    return t(`status.${status}`)
-  }
 
   return (
     <div className="space-y-8">
@@ -256,7 +251,6 @@ export default function ConstructionDashboard() {
         </Card>
       </div>
 
-      {/* Pricing / Finance Info for Owner/Franchisee */}
       {user?.constructionSubscription && (
         <Card className="bg-blue-50/50 border-blue-100">
           <CardHeader className="pb-2">
@@ -391,7 +385,7 @@ export default function ConstructionDashboard() {
                           : 'bg-gray-50 text-gray-700 border-gray-200'
                     }`}
                   >
-                    {getStatusLabel(project.status)}
+                    {t(`status.${project.status}`)}
                   </span>
                 </div>
                 <CardDescription className="line-clamp-2 min-h-[40px]">

@@ -33,12 +33,12 @@ import {
   ImageIcon,
 } from 'lucide-react'
 import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 import { AdSection } from '@/components/AdSection'
 
 export default function FindJobs() {
   const { jobs } = useJobStore()
-  const { user } = useAuthStore()
+  const { t, formatCurrency, getDateLocale } = useLanguageStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
@@ -112,10 +112,10 @@ export default function FindJobs() {
       <AdSection segment="search" />
 
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Encontrar Jobs</h1>
-        <p className="text-muted-foreground">
-          Oportunidades filtradas para você.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('dashboard.find_jobs')}
+        </h1>
+        <p className="text-muted-foreground">{t('market.desc')}</p>
       </div>
 
       <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg border">
@@ -123,7 +123,7 @@ export default function FindJobs() {
           <div className="flex-1 relative w-full">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por título, descrição ou cidade..."
+              placeholder={t('find.search_placeholder')}
               className="pl-9 bg-background w-full"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -143,7 +143,7 @@ export default function FindJobs() {
               <Sparkles
                 className={`h-4 w-4 ${isSmartSort ? 'text-purple-500 fill-purple-100' : 'text-muted-foreground'}`}
               />
-              Relevância IA
+              {t('find.smart_sort')}
             </Label>
           </div>
         </div>
@@ -154,7 +154,7 @@ export default function FindJobs() {
               <SelectValue placeholder="Estado / Região" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todo Brasil</SelectItem>
+              <SelectItem value="all">{t('find.filter.region.all')}</SelectItem>
               {regions.map((r) => (
                 <SelectItem key={r} value={r}>
                   {r}
@@ -168,11 +168,17 @@ export default function FindJobs() {
               <SelectValue placeholder="Categoria" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todas Categorias</SelectItem>
-              <SelectItem value="TI e Programação">TI e Programação</SelectItem>
-              <SelectItem value="Reformas">Reformas</SelectItem>
-              <SelectItem value="Design">Design</SelectItem>
-              <SelectItem value="Marketing">Marketing</SelectItem>
+              <SelectItem value="all">
+                {t('find.filter.category.all')}
+              </SelectItem>
+              <SelectItem value="TI e Programação">
+                {t('category.ti')}
+              </SelectItem>
+              <SelectItem value="Reformas">{t('category.reform')}</SelectItem>
+              <SelectItem value="Design">{t('category.design')}</SelectItem>
+              <SelectItem value="Marketing">
+                {t('category.marketing')}
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -181,9 +187,11 @@ export default function FindJobs() {
               <SelectValue placeholder="Tipo" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos Tipos</SelectItem>
-              <SelectItem value="fixed">Preço Fixo</SelectItem>
-              <SelectItem value="auction">Leilão</SelectItem>
+              <SelectItem value="all">{t('find.filter.type.all')}</SelectItem>
+              <SelectItem value="fixed">{t('job.fixed_price')}</SelectItem>
+              <SelectItem value="auction">
+                {t('job.auction_reverse')}
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -192,10 +200,10 @@ export default function FindJobs() {
               <SelectValue placeholder="Data" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Qualquer data</SelectItem>
-              <SelectItem value="24h">Últimas 24h</SelectItem>
-              <SelectItem value="7d">Última semana</SelectItem>
-              <SelectItem value="30d">Último mês</SelectItem>
+              <SelectItem value="all">{t('find.filter.date.all')}</SelectItem>
+              <SelectItem value="24h">{t('find.filter.date.24h')}</SelectItem>
+              <SelectItem value="7d">{t('find.filter.date.7d')}</SelectItem>
+              <SelectItem value="30d">{t('find.filter.date.30d')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -229,7 +237,8 @@ export default function FindJobs() {
                       variant="secondary"
                       className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
                     >
-                      <Zap className="h-3 w-3 fill-current" /> Super Destaque
+                      <Zap className="h-3 w-3 fill-current" />{' '}
+                      {t('ad.highlight')}
                     </Badge>
                   )}
                 </div>
@@ -237,7 +246,7 @@ export default function FindJobs() {
                   <Calendar className="h-3 w-3" />
                   {formatDistanceToNow(job.createdAt, {
                     addSuffix: true,
-                    locale: ptBR,
+                    locale: getDateLocale(),
                   })}
                 </span>
               </div>
@@ -256,7 +265,7 @@ export default function FindJobs() {
                 </div>
                 {job.photos && job.photos.length > 0 && (
                   <div className="flex items-center gap-1 text-xs">
-                    <ImageIcon className="h-3 w-3" /> {job.photos.length} fotos
+                    <ImageIcon className="h-3 w-3" /> {job.photos.length}
                   </div>
                 )}
               </div>
@@ -266,24 +275,24 @@ export default function FindJobs() {
                     variant="secondary"
                     className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 flex gap-1"
                   >
-                    <Gavel className="h-3 w-3" /> Leilão
+                    <Gavel className="h-3 w-3" /> {t('job.auction_reverse')}
                   </Badge>
                 ) : (
                   <Badge
                     variant="secondary"
                     className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 flex gap-1"
                   >
-                    <Tag className="h-3 w-3" /> Fixo
+                    <Tag className="h-3 w-3" /> {t('job.fixed_price')}
                   </Badge>
                 )}
                 <span className="font-bold text-lg">
-                  R$ {job.budget.toLocaleString('pt-BR')}
+                  {formatCurrency(job.budget)}
                 </span>
               </div>
             </CardContent>
             <CardFooter className="border-t pt-4">
               <Button className="w-full" asChild>
-                <Link to={`/jobs/${job.id}`}>Ver Detalhes</Link>
+                <Link to={`/jobs/${job.id}`}>{t('view')}</Link>
               </Button>
             </CardFooter>
           </Card>
@@ -291,7 +300,7 @@ export default function FindJobs() {
         {filteredJobs.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
             <Filter className="h-10 w-10 mb-4 opacity-20" />
-            <p>Nenhum job encontrado com os filtros atuais.</p>
+            <p>{t('job.not_found')}</p>
           </div>
         )}
       </div>

@@ -15,16 +15,18 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-
-const forgotPasswordSchema = z.object({
-  email: z.string().email('Email inválido'),
-})
-
-type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function ForgotPassword() {
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
+  const { t } = useLanguageStore()
+
+  const forgotPasswordSchema = z.object({
+    email: z.string().email(t('val.email')),
+  })
+
+  type ForgotPasswordForm = z.infer<typeof forgotPasswordSchema>
 
   const form = useForm<ForgotPasswordForm>({
     resolver: zodResolver(forgotPasswordSchema),
@@ -39,8 +41,8 @@ export default function ForgotPassword() {
     await new Promise((resolve) => setTimeout(resolve, 1500))
     setIsLoading(false)
     toast({
-      title: 'Email enviado',
-      description: 'Verifique sua caixa de entrada para redefinir sua senha.',
+      title: t('auth.forgot.sent'),
+      description: t('auth.forgot.sent_desc'),
     })
   }
 
@@ -51,14 +53,14 @@ export default function ForgotPassword() {
         className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar para Login
+        {t('auth.forgot.back')}
       </Link>
 
       <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Recuperar Senha</h1>
-        <p className="text-muted-foreground">
-          Digite seu email e enviaremos um link de recuperação
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('auth.forgot.title')}
+        </h1>
+        <p className="text-muted-foreground">{t('auth.forgot.desc')}</p>
       </div>
 
       <Form {...form}>
@@ -68,7 +70,7 @@ export default function ForgotPassword() {
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>{t('settings.form.email')}</FormLabel>
                 <FormControl>
                   <Input placeholder="seu@email.com" {...field} />
                 </FormControl>
@@ -79,7 +81,7 @@ export default function ForgotPassword() {
 
           <Button type="submit" className="w-full" disabled={isLoading}>
             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Enviar Link
+            {t('auth.forgot.send')}
           </Button>
         </form>
       </Form>
