@@ -21,9 +21,9 @@ export function PromoBanner() {
         </div>
         <div className="w-full md:w-1/3 flex justify-center">
           <img
-            src="https://img.usecurling.com/p/300/300?q=painter%20illustration&shape=outline&color=green"
+            src="https://images.unsplash.com/photo-1581578731117-104f2a412727?auto=format&fit=crop&w=300&h=300"
             alt="Service Pro Illustration"
-            className="h-32 object-contain mix-blend-multiply"
+            className="h-32 object-contain"
           />
         </div>
       </div>
