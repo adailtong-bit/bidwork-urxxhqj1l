@@ -40,7 +40,7 @@ import {
   FileText,
   DollarSign,
 } from 'lucide-react'
-import { format, isBefore, addDays } from 'date-fns'
+import { isBefore, addDays } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
@@ -54,7 +54,7 @@ export default function EquipmentManager() {
   } = useEquipmentStore()
   const { projects } = useProjectStore()
   const { toast } = useToast()
-  const { t, formatCurrency } = useLanguageStore()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -108,7 +108,7 @@ export default function EquipmentManager() {
         : undefined,
     })
     setIsAddOpen(false)
-    toast({ title: 'Equipamento cadastrado' })
+    toast({ title: t('success') })
   }
 
   const handleAssign = () => {
@@ -117,8 +117,8 @@ export default function EquipmentManager() {
     if (project) {
       assignToProject(selectedEq, project.id, project.name, project.location)
       toast({
-        title: 'Equipamento alocado',
-        description: `Enviado para ${project.name} (${project.location})`,
+        title: t('success'),
+        description: t('eq.allocate.desc'),
       })
       setIsAssignOpen(false)
     }
@@ -139,26 +139,24 @@ export default function EquipmentManager() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Gestão de Frota e Equipamentos
+            {t('eq.manager.title')}
           </h1>
-          <p className="text-muted-foreground">
-            Controle de inventário, alocação e manutenção.
-          </p>
+          <p className="text-muted-foreground">{t('eq.manager.desc')}</p>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> Novo Equipamento
+              <Plus className="mr-2 h-4 w-4" /> {t('eq.new')}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Cadastrar Equipamento</DialogTitle>
+              <DialogTitle>{t('eq.register.title')}</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Nome/Modelo</Label>
+                  <Label>{t('eq.field.name')}</Label>
                   <Input
                     value={newItem.name}
                     onChange={(e) =>
@@ -167,7 +165,7 @@ export default function EquipmentManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Número de Série</Label>
+                  <Label>{t('eq.field.serial')}</Label>
                   <Input
                     value={newItem.serialNumber}
                     onChange={(e) =>
@@ -178,7 +176,7 @@ export default function EquipmentManager() {
               </div>
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="grid gap-2">
-                  <Label>Localização Inicial</Label>
+                  <Label>{t('eq.field.location')}</Label>
                   <Input
                     value={newItem.location}
                     onChange={(e) =>
@@ -187,7 +185,7 @@ export default function EquipmentManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Tipo</Label>
+                  <Label>{t('eq.field.type')}</Label>
                   <Select
                     value={newItem.type}
                     onValueChange={(val) =>
@@ -211,7 +209,7 @@ export default function EquipmentManager() {
 
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-2 block">
-                  Dados Financeiros / Locação
+                  {t('eq.finance.title')}
                 </Label>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
@@ -228,7 +226,7 @@ export default function EquipmentManager() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>{t('eq.rental.value')} (Mensal)</Label>
+                    <Label>{t('eq.rental.value')}</Label>
                     <Input
                       type="number"
                       value={newItem.rentalValue}
@@ -241,7 +239,7 @@ export default function EquipmentManager() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>{t('eq.depreciation')} (Anual)</Label>
+                    <Label>{t('eq.depreciation')}</Label>
                     <Input
                       type="number"
                       value={newItem.annualDepreciation}
@@ -254,9 +252,10 @@ export default function EquipmentManager() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Upload Contrato (Mock)</Label>
+                    <Label>{t('eq.upload.contract')}</Label>
                     <Button variant="outline" size="sm" className="w-full">
-                      <FileText className="mr-2 h-4 w-4" /> Selecionar Arquivo
+                      <FileText className="mr-2 h-4 w-4" />{' '}
+                      {t('eq.select.file')}
                     </Button>
                   </div>
                 </div>
@@ -291,7 +290,7 @@ export default function EquipmentManager() {
               </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleAdd}>Salvar</Button>
+              <Button onClick={handleAdd}>{t('save')}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -301,11 +300,10 @@ export default function EquipmentManager() {
         <Card className="border-l-4 border-l-yellow-500 bg-yellow-50/50">
           <CardHeader className="py-4">
             <CardTitle className="text-base flex items-center gap-2 text-yellow-700">
-              <AlertTriangle className="h-5 w-5" /> Manutenção Necessária
+              <AlertTriangle className="h-5 w-5" /> {t('eq.maintenance.alert')}
             </CardTitle>
             <CardDescription>
-              {maintenanceAlerts.length} equipamentos precisam de atenção em
-              breve.
+              {t('eq.maintenance.desc', { count: maintenanceAlerts.length })}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -315,7 +313,7 @@ export default function EquipmentManager() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar por nome ou série..."
+            placeholder={t('eq.placeholder.search')}
             className="pl-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -323,10 +321,10 @@ export default function EquipmentManager() {
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
           <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t('eq.status.filter')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos</SelectItem>
+            <SelectItem value="all">{t('market.all_categories')}</SelectItem>
             <SelectItem value="available">{t('status.available')}</SelectItem>
             <SelectItem value="in_use">{t('status.in_use')}</SelectItem>
             <SelectItem value="maintenance">
@@ -357,7 +355,9 @@ export default function EquipmentManager() {
               <CardTitle className="mt-2 flex items-center gap-2">
                 <Truck className="h-5 w-5" /> {eq.name}
               </CardTitle>
-              <CardDescription>Série: {eq.serialNumber}</CardDescription>
+              <CardDescription>
+                {t('eq.field.serial')}: {eq.serialNumber}
+              </CardDescription>
             </CardHeader>
             <CardContent className="flex-1 space-y-4">
               <div className="flex items-center gap-2 text-sm">
@@ -374,18 +374,19 @@ export default function EquipmentManager() {
               </div>
               {eq.status === 'in_use' && (
                 <div className="text-xs bg-blue-50 p-2 rounded text-blue-800">
-                  Projeto: <strong>{eq.projectName}</strong>
+                  {t('eq.project')}: <strong>{eq.projectName}</strong>
                 </div>
               )}
               {eq.rentalValue ? (
                 <div className="text-xs flex items-center gap-1 text-muted-foreground">
                   <DollarSign className="h-3 w-3" />
-                  Aluguel: {formatCurrency(eq.rentalValue)}/mês
+                  {t('eq.rental')}: {formatCurrency(eq.rentalValue)}
                 </div>
               ) : null}
               <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-2">
                 <CalendarIcon className="h-4 w-4" />
-                Próx. Manutenção: {format(eq.nextMaintenance, 'dd/MM/yyyy')}
+                {t('eq.next_maintenance')}:{' '}
+                {formatDate(eq.nextMaintenance, 'dd/MM/yyyy')}
                 {isBefore(eq.nextMaintenance, new Date()) && (
                   <AlertTriangle className="h-4 w-4 text-red-500" />
                 )}
@@ -401,7 +402,7 @@ export default function EquipmentManager() {
                     setIsAssignOpen(true)
                   }}
                 >
-                  Alocar
+                  {t('eq.allocate')}
                 </Button>
               ) : eq.status === 'in_use' ? (
                 <Button
@@ -409,10 +410,10 @@ export default function EquipmentManager() {
                   variant="secondary"
                   onClick={() => {
                     returnEquipment(eq.id)
-                    toast({ title: 'Equipamento devolvido ao pátio' })
+                    toast({ title: t('success') })
                   }}
                 >
-                  Devolver
+                  {t('eq.return')}
                 </Button>
               ) : (
                 <Button
@@ -421,10 +422,11 @@ export default function EquipmentManager() {
                   onClick={() => {
                     scheduleMaintenance(eq.id, addDays(new Date(), 90))
                     returnEquipment(eq.id) // Sets to available
-                    toast({ title: 'Manutenção concluída' })
+                    toast({ title: t('success') })
                   }}
                 >
-                  <Wrench className="mr-2 h-4 w-4" /> Concluir Manutenção
+                  <Wrench className="mr-2 h-4 w-4" />{' '}
+                  {t('eq.finish_maintenance')}
                 </Button>
               )}
               {eq.status !== 'maintenance' && (
@@ -440,9 +442,9 @@ export default function EquipmentManager() {
                           : e,
                       ),
                     }))
-                    toast({ title: 'Enviado para manutenção' })
+                    toast({ title: t('success') })
                   }}
-                  title="Enviar para Manutenção"
+                  title={t('eq.send_maintenance')}
                 >
                   <Wrench className="h-4 w-4" />
                 </Button>
@@ -455,16 +457,14 @@ export default function EquipmentManager() {
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Alocar Equipamento</DialogTitle>
-            <DialogDescription>
-              Selecione o projeto de destino para atualizar a localização.
-            </DialogDescription>
+            <DialogTitle>{t('eq.allocate.title')}</DialogTitle>
+            <DialogDescription>{t('eq.allocate.desc')}</DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label>Projeto</Label>
+            <Label>{t('eq.project')}</Label>
             <Select onValueChange={(val) => setAssignData({ projectId: val })}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione..." />
+                <SelectValue placeholder={t('general.select')} />
               </SelectTrigger>
               <SelectContent>
                 {projects
@@ -478,7 +478,7 @@ export default function EquipmentManager() {
             </Select>
           </div>
           <DialogFooter>
-            <Button onClick={handleAssign}>Confirmar Alocação</Button>
+            <Button onClick={handleAssign}>{t('eq.confirm_allocate')}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

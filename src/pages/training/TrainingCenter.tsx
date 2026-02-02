@@ -12,20 +12,22 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
-import { GraduationCap, Clock, CheckCircle2, PlayCircle } from 'lucide-react'
+import { GraduationCap, Clock, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function TrainingCenter() {
   const { user } = useAuthStore()
   const { courses, userCertifications, completeCourse } = useTrainingStore()
   const { toast } = useToast()
+  const { t, formatDate } = useLanguageStore()
 
   const [activeTab, setActiveTab] = useState('courses')
 
   const handleStart = (id: string) => {
     toast({
-      title: 'Inscrição realizada',
-      description: 'Você pode começar o curso agora.',
+      title: t('success'),
+      description: t('training.subscribe'),
     })
   }
 
@@ -33,8 +35,8 @@ export default function TrainingCenter() {
     if (!user) return
     completeCourse(user.id, id)
     toast({
-      title: 'Curso Concluído!',
-      description: 'Seu certificado foi emitido.',
+      title: t('success'),
+      description: t('training.completed'),
     })
   }
 
@@ -45,11 +47,9 @@ export default function TrainingCenter() {
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
-          Centro de Treinamento
+          {t('training.title')}
         </h1>
-        <p className="text-muted-foreground">
-          Cursos e certificações para impulsionar sua carreira.
-        </p>
+        <p className="text-muted-foreground">{t('training.desc')}</p>
       </div>
 
       <Tabs
@@ -58,8 +58,10 @@ export default function TrainingCenter() {
         onValueChange={setActiveTab}
       >
         <TabsList>
-          <TabsTrigger value="courses">Cursos Disponíveis</TabsTrigger>
-          <TabsTrigger value="my-certs">Meus Certificados</TabsTrigger>
+          <TabsTrigger value="courses">{t('training.tab.courses')}</TabsTrigger>
+          <TabsTrigger value="my-certs">
+            {t('training.tab.my_certs')}
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="courses" className="mt-6">
@@ -94,7 +96,7 @@ export default function TrainingCenter() {
                     </span>
                   </div>
                   <div className="text-sm">
-                    Instrutor:{' '}
+                    {t('training.instructor')}:{' '}
                     <span className="font-medium">{course.instructor}</span>
                   </div>
                 </CardContent>
@@ -102,7 +104,7 @@ export default function TrainingCenter() {
                   {isCompleted(course.id) ? (
                     <Button variant="secondary" className="w-full" disabled>
                       <CheckCircle2 className="mr-2 h-4 w-4 text-green-600" />{' '}
-                      Concluído
+                      {t('training.completed')}
                     </Button>
                   ) : (
                     <div className="flex gap-2 w-full">
@@ -110,7 +112,7 @@ export default function TrainingCenter() {
                         className="flex-1"
                         onClick={() => handleStart(course.id)}
                       >
-                        Inscrever-se
+                        {t('training.subscribe')}
                       </Button>
                       <Button
                         variant="outline"
@@ -133,13 +135,13 @@ export default function TrainingCenter() {
             <div className="text-center py-12 bg-muted/20 rounded-lg border-dashed border-2">
               <GraduationCap className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
               <h3 className="text-lg font-semibold">
-                Nenhum certificado ainda
+                {t('training.no_certs')}
               </h3>
               <p className="text-muted-foreground">
-                Complete cursos para ganhar certificações reconhecidas.
+                {t('training.no_certs_desc')}
               </p>
               <Button className="mt-4" onClick={() => setActiveTab('courses')}>
-                Ver Cursos
+                {t('training.view_courses')}
               </Button>
             </div>
           ) : (
@@ -155,10 +157,13 @@ export default function TrainingCenter() {
                   <div className="flex-1">
                     <h4 className="font-bold text-lg">{cert.courseTitle}</h4>
                     <p className="text-sm text-muted-foreground">
-                      Concluído em {cert.date.toLocaleDateString()}
+                      {t('training.completed')}{' '}
+                      {formatDate(cert.date, 'dd/MM/yyyy')}
                     </p>
                   </div>
-                  <Button variant="outline">Baixar PDF</Button>
+                  <Button variant="outline">
+                    {t('training.download_pdf')}
+                  </Button>
                 </Card>
               ))}
             </div>

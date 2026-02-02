@@ -47,11 +47,13 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function InventoryManager() {
   const { items, addItem, updateQuantity, reportShortage } = useInventoryStore()
   const { projects } = useProjectStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const [selectedProject, setSelectedProject] = useState('all')
   const [searchTerm, setSearchTerm] = useState('')
@@ -97,9 +99,8 @@ export default function InventoryManager() {
     ) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description:
-          'Preencha todos os campos e selecione um projeto no filtro principal.',
+        title: t('error'),
+        description: t('val.required'),
       })
       return
     }
@@ -126,16 +127,15 @@ export default function InventoryManager() {
       minStock: '',
       location: '',
     })
-    toast({ title: 'Item adicionado ao estoque' })
+    toast({ title: t('success') })
   }
 
   const handleReportShortage = () => {
     if (!selectedProject || selectedProject === 'all') {
       toast({
         variant: 'destructive',
-        title: 'Selecione um Projeto',
-        description:
-          'O reporte de falta deve ser vinculado a um projeto específico.',
+        title: t('error'),
+        description: t('val.required'),
       })
       return
     }
@@ -149,8 +149,8 @@ export default function InventoryManager() {
     setIsReportOpen(false)
     setShortageReport({ materialName: '', quantity: '', unit: 'un' })
     toast({
-      title: 'Solicitação Enviada',
-      description: 'O setor de compras foi notificado da necessidade.',
+      title: t('success'),
+      description: t('inventory.report.desc'),
     })
   }
 
@@ -162,21 +162,20 @@ export default function InventoryManager() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Gestão de Estoque</h1>
-        <p className="text-muted-foreground">
-          Controle de materiais em canteiro e alertas de reposição.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('inventory.title')}
+        </h1>
+        <p className="text-muted-foreground">{t('inventory.desc')}</p>
       </div>
 
       {lowStockItems.length > 0 && (
         <Card className="border-l-4 border-l-destructive bg-destructive/10">
           <CardHeader className="py-4">
             <CardTitle className="text-base flex items-center gap-2 text-destructive">
-              <AlertCircle className="h-5 w-5" /> Alerta de Estoque Baixo
+              <AlertCircle className="h-5 w-5" /> {t('inventory.low_stock')}
             </CardTitle>
             <CardDescription>
-              {lowStockItems.length} materiais estão abaixo do nível mínimo.
-              Providencie reposição.
+              {t('inventory.low_stock_desc', { count: lowStockItems.length })}
             </CardDescription>
           </CardHeader>
         </Card>
@@ -186,10 +185,10 @@ export default function InventoryManager() {
         <div className="w-full md:w-[300px]">
           <Select value={selectedProject} onValueChange={setSelectedProject}>
             <SelectTrigger>
-              <SelectValue placeholder="Selecione o Projeto" />
+              <SelectValue placeholder={t('inventory.select_project')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos os Projetos</SelectItem>
+              <SelectItem value="all">{t('inventory.all_projects')}</SelectItem>
               {activeProjects.map((p) => (
                 <SelectItem key={p.id} value={p.id}>
                   {p.name}
@@ -201,7 +200,7 @@ export default function InventoryManager() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar material..."
+            placeholder={t('inventory.search_placeholder')}
             className="pl-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -215,19 +214,20 @@ export default function InventoryManager() {
                 variant="secondary"
                 className="border-orange-200 bg-orange-50 hover:bg-orange-100 text-orange-700"
               >
-                <Megaphone className="mr-2 h-4 w-4" /> Relatar Falta
+                <Megaphone className="mr-2 h-4 w-4" />{' '}
+                {t('inventory.report_shortage')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Reportar Necessidade de Compra</DialogTitle>
+                <DialogTitle>{t('inventory.report.title')}</DialogTitle>
                 <DialogDescription>
-                  Solicite materiais urgentes para o projeto selecionado.
+                  {t('inventory.report.desc')}
                 </DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label>Material Necessário</Label>
+                  <Label>{t('inventory.field.material')}</Label>
                   <Input
                     value={shortageReport.materialName}
                     onChange={(e) =>
@@ -240,7 +240,7 @@ export default function InventoryManager() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label>Quantidade</Label>
+                    <Label>{t('inventory.field.quantity')}</Label>
                     <Input
                       type="number"
                       value={shortageReport.quantity}
@@ -253,7 +253,7 @@ export default function InventoryManager() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Unidade</Label>
+                    <Label>{t('inventory.field.unit')}</Label>
                     <Input
                       value={shortageReport.unit}
                       onChange={(e) =>
@@ -268,7 +268,7 @@ export default function InventoryManager() {
               </div>
               <DialogFooter>
                 <Button onClick={handleReportShortage}>
-                  Enviar Solicitação
+                  {t('inventory.send_request')}
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -277,16 +277,16 @@ export default function InventoryManager() {
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
             <DialogTrigger asChild>
               <Button disabled={selectedProject === 'all'}>
-                <Plus className="mr-2 h-4 w-4" /> Novo Item
+                <Plus className="mr-2 h-4 w-4" /> {t('inventory.new_item')}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Adicionar ao Inventário</DialogTitle>
+                <DialogTitle>{t('inventory.add.title')}</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label>Nome do Material</Label>
+                  <Label>{t('inventory.field.name')}</Label>
                   <Input
                     value={newItem.materialName}
                     onChange={(e) =>
@@ -296,7 +296,7 @@ export default function InventoryManager() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="grid gap-2">
-                    <Label>Quantidade Inicial</Label>
+                    <Label>{t('inventory.field.initial_qty')}</Label>
                     <Input
                       type="number"
                       value={newItem.quantity}
@@ -306,7 +306,7 @@ export default function InventoryManager() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Unidade</Label>
+                    <Label>{t('inventory.field.unit')}</Label>
                     <Input
                       placeholder="kg, m³, un"
                       value={newItem.unit}
@@ -317,7 +317,7 @@ export default function InventoryManager() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label>Estoque Mínimo (Alerta)</Label>
+                  <Label>{t('inventory.field.min_stock')}</Label>
                   <Input
                     type="number"
                     value={newItem.minStock}
@@ -327,7 +327,7 @@ export default function InventoryManager() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Localização (Automático)</Label>
+                  <Label>{t('inventory.field.location')}</Label>
                   <Input
                     value={
                       projects.find((p) => p.id === selectedProject)?.name ||
@@ -339,7 +339,9 @@ export default function InventoryManager() {
                 </div>
               </div>
               <DialogFooter>
-                <Button onClick={handleAddItem}>Salvar Item</Button>
+                <Button onClick={handleAddItem}>
+                  {t('inventory.save_item')}
+                </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
@@ -351,11 +353,11 @@ export default function InventoryManager() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Material</TableHead>
-                <TableHead>Local</TableHead>
-                <TableHead>Nível Atual</TableHead>
-                <TableHead>Mínimo</TableHead>
-                <TableHead>Ações</TableHead>
+                <TableHead>{t('inventory.table.material')}</TableHead>
+                <TableHead>{t('inventory.table.local')}</TableHead>
+                <TableHead>{t('inventory.table.current')}</TableHead>
+                <TableHead>{t('inventory.table.min')}</TableHead>
+                <TableHead>{t('actions')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -423,8 +425,7 @@ export default function InventoryManager() {
                     colSpan={5}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    Nenhum item encontrado. Selecione um projeto ou adicione
-                    itens.
+                    {t('inventory.empty')}
                   </TableCell>
                 </TableRow>
               )}

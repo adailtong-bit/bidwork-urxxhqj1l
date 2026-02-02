@@ -43,7 +43,7 @@ export default function MaterialsMarketplace() {
   const { updateStageActuals } = useProjectStore()
   const { user } = useAuthStore()
   const { toast } = useToast()
-  const { formatCurrency } = useLanguageStore()
+  const { t, formatCurrency } = useLanguageStore()
 
   const [cart, setCart] = useState<{ material: Material; quantity: number }[]>(
     [],
@@ -61,13 +61,10 @@ export default function MaterialsMarketplace() {
     return matchesSearch && matchesCategory
   })
 
-  // Purchase Permissions Check
   const canPurchase = (material: Material) => {
     if (!material.purchasePermissions) return true
     if (!user) return false
-    // If Admin/Owner, always yes (simplified)
     if (user.role === 'admin' || user.teamRole === 'Admin') return true
-    // Check if user role matches permission
     return material.purchasePermissions.includes(user.teamRole || '')
   }
 
@@ -75,8 +72,8 @@ export default function MaterialsMarketplace() {
     if (!canPurchase(material)) {
       toast({
         variant: 'destructive',
-        title: 'Permissão Negada',
-        description: 'Seu nível de acesso não permite comprar este item.',
+        title: t('error'),
+        description: 'Permissão negada',
       })
       return
     }
@@ -92,7 +89,7 @@ export default function MaterialsMarketplace() {
       }
       return [...prev, { material, quantity: 1 }]
     })
-    toast({ title: 'Adicionado ao carrinho' })
+    toast({ title: t('success') })
   }
 
   const updateQuantity = (id: string, delta: number) => {
@@ -117,31 +114,26 @@ export default function MaterialsMarketplace() {
     if (!projectId || !stageId) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
-        description:
-          'Projeto não selecionado. Inicie a compra pelo painel do projeto.',
+        title: t('error'),
+        description: t('val.required'),
       })
       return
     }
 
-    // Create Order
     addOrder({
       projectId,
       stageId,
       items: cart,
       total: cartTotal,
       status: 'pending',
-      freightCost: 150, // Mock freight calculation
+      freightCost: 150,
     })
 
-    // Data Integration: Update Project Actuals
-    // Updating Financial and Accounting happens via this store action in real app
     updateStageActuals(projectId, stageId, 'material', cartTotal)
 
     toast({
-      title: 'Pedido Realizado!',
-      description:
-        'Os materiais foram solicitados, estoque atualizado e custos alocados.',
+      title: t('success'),
+      description: t('market.checkout'),
     })
     navigate(`/construction/projects/${projectId}`)
   }
@@ -151,10 +143,9 @@ export default function MaterialsMarketplace() {
       const result = await importMaterialList(e.target.files[0])
       if (result.success) {
         toast({
-          title: 'Importação Concluída',
-          description: `${result.count} itens identificados e preparados.`,
+          title: t('success'),
+          description: `${result.count} itens.`,
         })
-        // In a real app, populate cart here based on import
       }
     }
   }
@@ -170,18 +161,17 @@ export default function MaterialsMarketplace() {
           )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Marketplace de Materiais
+              {t('market.title')}
             </h1>
-            <p className="text-muted-foreground">
-              Compre direto de fornecedores parceiros.
-            </p>
+            <p className="text-muted-foreground">{t('market.desc')}</p>
           </div>
         </div>
 
-        {/* Cart Summary */}
         <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
           <div className="text-right hidden md:block">
-            <p className="text-sm text-muted-foreground">Total Carrinho</p>
+            <p className="text-sm text-muted-foreground">
+              {t('market.cart.total')}
+            </p>
             <p className="font-bold text-lg">{formatCurrency(cartTotal)}</p>
           </div>
           <Button
@@ -189,7 +179,7 @@ export default function MaterialsMarketplace() {
             disabled={cart.length === 0}
             className="relative"
           >
-            <ShoppingCart className="mr-2 h-4 w-4" /> Finalizar Pedido
+            <ShoppingCart className="mr-2 h-4 w-4" /> {t('market.checkout')}
             {cart.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                 {cart.length}
@@ -203,7 +193,7 @@ export default function MaterialsMarketplace() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Buscar materiais..."
+            placeholder={t('market.search')}
             className="pl-9 bg-background"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -211,10 +201,10 @@ export default function MaterialsMarketplace() {
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-[200px] bg-background">
-            <SelectValue placeholder="Categoria" />
+            <SelectValue placeholder={t('market.category')} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas</SelectItem>
+            <SelectItem value="all">{t('market.all_categories')}</SelectItem>
             <SelectItem value="Estrutura">Estrutura</SelectItem>
             <SelectItem value="Alvenaria">Alvenaria</SelectItem>
             <SelectItem value="Acabamento">Acabamento</SelectItem>
@@ -223,9 +213,9 @@ export default function MaterialsMarketplace() {
         <Button
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
-          title="Importar lista de materiais"
+          title={t('market.import_list')}
         >
-          <Upload className="mr-2 h-4 w-4" /> Importar Lista
+          <Upload className="mr-2 h-4 w-4" /> {t('market.import_list')}
         </Button>
         <input
           type="file"
@@ -256,7 +246,7 @@ export default function MaterialsMarketplace() {
                 {!allowed && (
                   <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                     <Badge variant="destructive" className="flex gap-1">
-                      <Lock className="h-3 w-3" /> Restrito
+                      <Lock className="h-3 w-3" /> {t('market.restricted')}
                     </Badge>
                   </div>
                 )}
@@ -276,7 +266,7 @@ export default function MaterialsMarketplace() {
                       rel="noopener noreferrer"
                       className="text-xs text-blue-600 hover:underline flex items-center gap-0.5"
                     >
-                      Site <ExternalLink className="h-2 w-2" />
+                      {t('market.site')} <ExternalLink className="h-2 w-2" />
                     </a>
                   )}
                 </div>
@@ -324,7 +314,7 @@ export default function MaterialsMarketplace() {
                     onClick={() => addToCart(material)}
                     disabled={!allowed}
                   >
-                    Adicionar
+                    {t('market.add')}
                   </Button>
                 )}
               </CardFooter>

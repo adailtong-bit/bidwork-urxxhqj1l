@@ -1,8 +1,20 @@
-// Wrapper component to be used if we need a global context provider or similar
-// For this app structure, we are using AuthLayout and DashboardLayout specific wrappers
-// But router expects a Layout element for the base route if we want one
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
+import { BottomNav } from '@/components/BottomNav'
+import { SearchHeader } from '@/components/SearchHeader'
 
 export default function Layout() {
-  return <Outlet />
+  const location = useLocation()
+  const isAuthPage = ['/login', '/register', '/forgot-password'].includes(
+    location.pathname,
+  )
+
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {!isAuthPage && <SearchHeader />}
+      <div className={!isAuthPage ? 'pb-20' : ''}>
+        <Outlet />
+      </div>
+      {!isAuthPage && <BottomNav />}
+    </div>
+  )
 }

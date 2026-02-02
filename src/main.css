@@ -8,19 +8,17 @@
 
 @layer base {
   :root {
-    /* New Vibrant Palette - Professional & Marketing Focused */
-
-    /* Primary: Vibrant Royal Blue (CTA & Key Branding) */
-    --primary: 221 83% 53%; /* #2563EB - Strong, trustworthy, and energetic */
+    /* Primary: Vibrant Royal Blue (Consistent with existing brand) */
+    --primary: 221 83% 53%; /* #2563EB */
     --primary-foreground: 210 40% 98%;
 
-    /* Accent: Subtle Blue-Gray (Mainly for hover states in Shadcn) */
+    /* Accent: Subtle Blue-Gray */
     --accent: 210 40% 96.1%;
     --accent-foreground: 222 47% 11%;
 
-    /* Backgrounds: Clean & High Contrast */
-    --background: 0 0% 100%; /* Pure White for freshness */
-    --foreground: 222 47% 11%; /* Deep Navy for text legibility */
+    /* Backgrounds */
+    --background: 0 0% 98%; /* Slightly off-white for app feel */
+    --foreground: 222 47% 11%;
 
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
@@ -28,22 +26,18 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Secondary: Soft Cool Gray */
     --secondary: 210 40% 96.1%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted: Neutral */
     --muted: 210 40% 96.1%;
     --muted-foreground: 215 16% 47%;
 
-    /* Destructive: Urgent Red */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    /* Borders & Inputs */
     --border: 214 32% 91%;
     --input: 214 32% 91%;
-    --ring: 221 83% 53%; /* Matches Primary for focus rings */
+    --ring: 221 83% 53%;
 
     --radius: 0.5rem;
 
@@ -57,17 +51,16 @@
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 221 83% 53%;
 
-    /* Chart Colors - Marketing Palette */
-    --chart-1: 221 83% 53%; /* Primary Blue */
-    --chart-2: 160 84% 39%; /* Success Green */
-    --chart-3: 35 92% 50%; /* Marketing Amber */
-    --chart-4: 262 83% 58%; /* Creative Purple */
-    --chart-5: 330 81% 60%; /* Vibrant Pink */
+    /* Chart Colors */
+    --chart-1: 221 83% 53%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 35 92% 50%;
+    --chart-4: 262 83% 58%;
+    --chart-5: 330 81% 60%;
   }
 
   .dark {
-    /* Dark Mode: Deep Navy Background, Bright Blue Primary */
-    --background: 222 47% 11%; /* Deep Navy */
+    --background: 222 47% 11%;
     --foreground: 210 40% 98%;
 
     --card: 222 47% 13%;
@@ -76,7 +69,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%; /* Lighter/Brighter Blue for Dark Mode */
+    --primary: 217 91% 60%;
     --primary-foreground: 222 47% 11%;
 
     --secondary: 217 32% 17%;
@@ -128,7 +121,20 @@
     text-wrap: balance;
   }
 
-  /* KEEP ALL THE ANIMATIONS CLASSES THAT ARE USED BELOW */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Safe area for mobile navigation */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Animation Utilities */
   @keyframes accordion-down {
     from {
       height: 0;

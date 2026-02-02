@@ -33,7 +33,6 @@ import {
   Clock,
   CircleDollarSign,
   Plus,
-  ArrowRight,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { Label } from '@/components/ui/label'
@@ -66,8 +65,8 @@ export default function Logistics() {
     if (!origin || !destination) {
       toast({
         variant: 'destructive',
-        title: 'Dados incompletos',
-        description: 'Informe origem e destino.',
+        title: t('error'),
+        description: t('val.required'),
       })
       return
     }
@@ -107,8 +106,8 @@ export default function Logistics() {
       setDestination('')
       setSelectedProjectId('')
       toast({
-        title: 'Rota Otimizada!',
-        description: `Distância: ${distanceVal}km | Custo Alocado: ${formatCurrency(costVal)}`,
+        title: t('success'),
+        description: `Distância: ${distanceVal}km | Custo: ${formatCurrency(costVal)}`,
       })
     }, 1500)
   }
@@ -118,11 +117,10 @@ export default function Logistics() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Logística & Rotas</h1>
-        <p className="text-muted-foreground">
-          Otimize o transporte de materiais entre fornecedores e canteiros de
-          obra.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('logistics.title')}
+        </h1>
+        <p className="text-muted-foreground">{t('logistics.desc')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -130,24 +128,23 @@ export default function Logistics() {
         <Card className="lg:col-span-1 h-fit">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Navigation className="h-5 w-5 text-primary" /> Nova Rota
+              <Navigation className="h-5 w-5 text-primary" />{' '}
+              {t('logistics.new_route')}
             </CardTitle>
-            <CardDescription>
-              Insira os endereços para calcular a melhor rota.
-            </CardDescription>
+            <CardDescription>{t('logistics.new_route_desc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Projeto (Destino Automático)</Label>
+              <Label>{t('logistics.project_dest')}</Label>
               <Select
                 value={selectedProjectId}
                 onValueChange={setSelectedProjectId}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione a obra..." />
+                  <SelectValue placeholder={t('general.select')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Nenhum (Avulso)</SelectItem>
+                  <SelectItem value="none">{t('general.none')}</SelectItem>
                   {activeProjects.map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.name}
@@ -158,24 +155,24 @@ export default function Logistics() {
             </div>
 
             <div className="space-y-2">
-              <Label>Origem (Fornecedor/Depósito)</Label>
+              <Label>{t('logistics.origin')}</Label>
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Endereço de partida"
+                  placeholder={t('logistics.origin')}
                   value={origin}
                   onChange={(e) => setOrigin(e.target.value)}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Destino (Obra)</Label>
+              <Label>{t('logistics.destination')}</Label>
               <div className="relative">
                 <MapPin className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Endereço de entrega"
+                  placeholder={t('logistics.destination')}
                   value={destination}
                   onChange={(e) => setDestination(e.target.value)}
                   readOnly={!!selectedProjectId && selectedProjectId !== 'none'}
@@ -194,10 +191,10 @@ export default function Logistics() {
               disabled={isCalculating}
             >
               {isCalculating ? (
-                'Calculando...'
+                t('logistics.calculating')
               ) : (
                 <>
-                  <Plus className="mr-2 h-4 w-4" /> Calcular Rota Otimizada
+                  <Plus className="mr-2 h-4 w-4" /> {t('logistics.calc_route')}
                 </>
               )}
             </Button>
@@ -207,7 +204,7 @@ export default function Logistics() {
         {/* Map Placeholder */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Visualização de Mapa</CardTitle>
+            <CardTitle>{t('logistics.map_view')}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="bg-muted/30 border-2 border-dashed rounded-lg h-[300px] flex items-center justify-center relative overflow-hidden group">
@@ -215,11 +212,10 @@ export default function Logistics() {
               <div className="z-10 text-center space-y-2">
                 <Navigation className="h-10 w-10 mx-auto text-primary" />
                 <p className="font-medium text-muted-foreground">
-                  Preview do Trajeto
+                  {t('logistics.map_preview')}
                 </p>
                 <p className="text-xs text-muted-foreground max-w-sm">
-                  O mapa interativo será renderizado aqui com os pontos de
-                  parada e trânsito em tempo real.
+                  {t('logistics.map_desc')}
                 </p>
               </div>
             </div>
@@ -230,18 +226,18 @@ export default function Logistics() {
       {/* Routes List */}
       <Card>
         <CardHeader>
-          <CardTitle>Entregas e Rotas Ativas</CardTitle>
+          <CardTitle>{t('logistics.active_routes')}</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Origem / Destino</TableHead>
-                <TableHead>Veículo</TableHead>
-                <TableHead>Estimativas</TableHead>
-                <TableHead>Custo</TableHead>
-                <TableHead>Vinculado a</TableHead>
-                <TableHead>Status</TableHead>
+                <TableHead>{t('logistics.table.origin_dest')}</TableHead>
+                <TableHead>{t('logistics.table.vehicle')}</TableHead>
+                <TableHead>{t('logistics.table.estimates')}</TableHead>
+                <TableHead>{t('logistics.table.cost')}</TableHead>
+                <TableHead>{t('logistics.table.linked')}</TableHead>
+                <TableHead>{t('status')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -311,11 +307,7 @@ export default function Logistics() {
                               : 'bg-yellow-100 text-yellow-700 border-yellow-200'
                         }
                       >
-                        {route.status === 'in_transit'
-                          ? 'Em Trânsito'
-                          : route.status === 'completed'
-                            ? 'Entregue'
-                            : 'Planejado'}
+                        {t(`status.${route.status}`)}
                       </Badge>
                     </TableCell>
                   </TableRow>
@@ -327,7 +319,7 @@ export default function Logistics() {
                     colSpan={6}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    Nenhuma rota cadastrada.
+                    {t('logistics.empty')}
                   </TableCell>
                 </TableRow>
               )}

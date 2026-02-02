@@ -55,9 +55,6 @@ export default function ConstructionDashboard() {
 
   // Subscription Check
   const isSubscribed = user?.constructionSubscription?.active
-  // Mock check for "Hiring Required" overlay logic
-  // If user is PJ contractor, they usually have it. If not, we show blocked state.
-  // For demo, we use the `constructionSubscription` field.
 
   if (!isSubscribed) {
     return (
@@ -75,19 +72,20 @@ export default function ConstructionDashboard() {
         </div>
         <Card className="w-full max-w-sm">
           <CardHeader>
-            <CardTitle>Plano Construtora</CardTitle>
-            <CardDescription>
-              Gestão completa de obras e equipes.
-            </CardDescription>
+            <CardTitle>{t('construction.plan.title')}</CardTitle>
+            <CardDescription>{t('construction.plan.desc')}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-2 text-left">
             <div className="flex justify-between text-sm">
-              <span>Projetos Ativos:</span>
+              <span>{t('construction.plan.projects')}</span>
               <span className="font-bold">Até 10</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span>Preço Base:</span>
-              <span className="font-bold">{formatCurrency(500)}/mês</span>
+              <span>{t('construction.plan.base_price')}</span>
+              <span className="font-bold">
+                {formatCurrency(500)}
+                /mês
+              </span>
             </div>
           </CardContent>
           <CardFooter>
@@ -95,10 +93,10 @@ export default function ConstructionDashboard() {
               className="w-full"
               onClick={() => {
                 activateConstructionSubscription()
-                toast({ title: 'Assinatura Ativada com Sucesso!' })
+                toast({ title: t('success') })
               }}
             >
-              Ativar Agora
+              {t('construction.plan.activate')}
             </Button>
           </CardFooter>
         </Card>
@@ -226,27 +224,30 @@ export default function ConstructionDashboard() {
                     size="sm"
                     className="h-auto p-0 text-xs"
                   >
-                    Ver detalhes
+                    {t('view')}
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Detalhes do Alerta</DialogTitle>
+                    <DialogTitle>{t('construction.alert.details')}</DialogTitle>
                     <DialogDescription>
-                      O projeto Residencial Alpha está com atraso na fase de
-                      acabamento devido à falta de material cerâmico.
+                      {t('construction.alert_example')}
                     </DialogDescription>
                   </DialogHeader>
                   <div className="bg-muted p-4 rounded-md text-sm">
                     <p>
-                      <strong>Impacto:</strong> +5 dias no cronograma
+                      <strong>{t('construction.alert.impact')}</strong> +5{' '}
+                      {t('construction.days')}
                     </p>
                     <p>
-                      <strong>Responsável:</strong> Eng. Carlos
+                      <strong>{t('construction.alert.responsible')}</strong>{' '}
+                      Eng. Carlos
                     </p>
                   </div>
                   <DialogFooter>
-                    <Button variant="outline">Notificar Equipe</Button>
+                    <Button variant="outline">
+                      {t('construction.alert.notify')}
+                    </Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -256,30 +257,34 @@ export default function ConstructionDashboard() {
       </div>
 
       {/* Pricing / Finance Info for Owner/Franchisee */}
-      {user.constructionSubscription && (
+      {user?.constructionSubscription && (
         <Card className="bg-blue-50/50 border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-blue-800">
-              Resumo da Assinatura e Custos
+              {t('construction.sub.summary')}
             </CardTitle>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
             <div>
-              <span className="text-muted-foreground block">Plano (Base):</span>
+              <span className="text-muted-foreground block">
+                {t('construction.sub.base')}
+              </span>
               <span className="font-semibold">
                 {formatCurrency(user.constructionSubscription.basePrice)}
               </span>
             </div>
             <div>
               <span className="text-muted-foreground block">
-                Adicional Franquia:
+                {t('construction.sub.franchise')}
               </span>
               <span className="font-semibold">
                 {formatCurrency(user.constructionSubscription.franchiseeMarkup)}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Total Fatura:</span>
+              <span className="text-muted-foreground block">
+                {t('construction.sub.total')}
+              </span>
               <span className="font-bold text-blue-700">
                 {formatCurrency(
                   user.constructionSubscription.basePrice +
@@ -288,10 +293,12 @@ export default function ConstructionDashboard() {
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Uso:</span>
+              <span className="text-muted-foreground block">
+                {t('construction.sub.usage')}
+              </span>
               <span className="font-semibold">
                 {activeProjects.length} /{' '}
-                {user.constructionSubscription.projectLimit} Projetos
+                {user.constructionSubscription.projectLimit} {t('nav.projects')}
               </span>
             </div>
           </CardContent>

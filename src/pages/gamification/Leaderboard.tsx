@@ -1,15 +1,10 @@
 import { useState } from 'react'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs'
-import { Trophy, Medal, Star, Zap, Crown } from 'lucide-react'
+import { Trophy, Crown } from 'lucide-react'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface RankedUser {
   id: string
@@ -70,25 +65,29 @@ const mockRankedUsers: RankedUser[] = [
 ]
 
 export default function Leaderboard() {
+  const { t } = useLanguageStore()
   const [category, setCategory] = useState('general')
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto">
       <div className="flex flex-col gap-2 text-center md:text-left">
         <h1 className="text-3xl font-bold tracking-tight flex items-center justify-center md:justify-start gap-3">
-          <Trophy className="h-8 w-8 text-yellow-500" /> Ranking de Executores
+          <Trophy className="h-8 w-8 text-yellow-500" />{' '}
+          {t('leaderboard.title')}
         </h1>
-        <p className="text-muted-foreground">
-          Reconhecimento para os profissionais que se destacam na plataforma.
-        </p>
+        <p className="text-muted-foreground">{t('leaderboard.desc')}</p>
       </div>
 
       <Tabs defaultValue="general" className="w-full">
         <div className="flex justify-center md:justify-start mb-6">
           <TabsList>
-            <TabsTrigger value="general">Geral</TabsTrigger>
-            <TabsTrigger value="construction">Construção</TabsTrigger>
-            <TabsTrigger value="tech">Tecnologia</TabsTrigger>
+            <TabsTrigger value="general">
+              {t('leaderboard.tab.general')}
+            </TabsTrigger>
+            <TabsTrigger value="construction">
+              {t('leaderboard.tab.construction')}
+            </TabsTrigger>
+            <TabsTrigger value="tech">{t('leaderboard.tab.tech')}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -111,7 +110,7 @@ export default function Leaderboard() {
                   {mockRankedUsers[1].role}
                 </p>
                 <Badge variant="secondary" className="mb-2">
-                  {mockRankedUsers[1].points} pts
+                  {mockRankedUsers[1].points} {t('leaderboard.points')}
                 </Badge>
               </CardContent>
             </Card>
@@ -134,7 +133,7 @@ export default function Leaderboard() {
                   {mockRankedUsers[0].role}
                 </p>
                 <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white mb-2 px-3 py-1 text-base">
-                  {mockRankedUsers[0].points} pts
+                  {mockRankedUsers[0].points} {t('leaderboard.points')}
                 </Badge>
                 <div className="flex gap-1 mt-2">
                   {mockRankedUsers[0].badges.map((b, i) => (
@@ -167,7 +166,7 @@ export default function Leaderboard() {
                   {mockRankedUsers[2].role}
                 </p>
                 <Badge variant="secondary" className="mb-2">
-                  {mockRankedUsers[2].points} pts
+                  {mockRankedUsers[2].points} {t('leaderboard.points')}
                 </Badge>
               </CardContent>
             </Card>
@@ -175,7 +174,7 @@ export default function Leaderboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Classificação Completa</CardTitle>
+              <CardTitle>{t('leaderboard.complete_ranking')}</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -212,7 +211,7 @@ export default function Leaderboard() {
                         ))}
                       </div>
                       <div className="font-bold text-primary">
-                        {user.points} pts
+                        {user.points} {t('leaderboard.points')}
                       </div>
                     </div>
                   </div>
@@ -224,12 +223,12 @@ export default function Leaderboard() {
         {/* Placeholders for other tabs */}
         <TabsContent value="construction">
           <div className="text-center py-10 text-muted-foreground">
-            Ranking de Construção Civil em breve...
+            {t('loading')}
           </div>
         </TabsContent>
         <TabsContent value="tech">
           <div className="text-center py-10 text-muted-foreground">
-            Ranking de Tecnologia em breve...
+            {t('loading')}
           </div>
         </TabsContent>
       </Tabs>

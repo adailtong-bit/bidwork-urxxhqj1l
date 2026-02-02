@@ -7,6 +7,7 @@ import Layout from '@/components/Layout'
 import AuthLayout from '@/layouts/AuthLayout'
 import DashboardLayout from '@/components/DashboardLayout'
 import Index from '@/pages/Index'
+import Services from '@/pages/Services'
 import Login from '@/pages/auth/Login'
 import Register from '@/pages/auth/Register'
 import ForgotPassword from '@/pages/auth/ForgotPassword'
@@ -99,8 +100,12 @@ const App = () => {
         <Sonner />
         <Routes>
           <Route element={<Layout />}>
-            {/* Landing Page */}
+            {/* Public/App-Like Routes */}
             <Route path="/" element={<Index />} />
+            <Route path="/services" element={<Services />} />
+            <Route path="/find-jobs" element={<FindJobs />} />
+            <Route path="/my-jobs" element={<MyJobs />} />
+            <Route path="/jobs/:id" element={<JobDetail />} />
 
             {/* Public Auth Routes */}
             <Route element={<AuthLayout />}>
@@ -141,11 +146,7 @@ const App = () => {
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
 
-              {/* Marketplace Routes */}
               <Route path="/post-job" element={<PostJob />} />
-              <Route path="/find-jobs" element={<FindJobs />} />
-              <Route path="/my-jobs" element={<MyJobs />} />
-              <Route path="/jobs/:id" element={<JobDetail />} />
               <Route path="/disputes/new/:id" element={<Dispute />} />
 
               {/* Construction Management Routes */}
