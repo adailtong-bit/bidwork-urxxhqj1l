@@ -43,7 +43,8 @@ const mockListings = [
     id: 5,
     title: 'Mountain Bike',
     price: 120,
-    image: 'https://img.usecurling.com/p/400/400?q=mountain%20bike',
+    image:
+      'https://images.unsplash.com/photo-1576435728678-be95e39e83d3?auto=format&fit=crop&w=400&h=400',
     location: 'Sanford, FL',
   },
   {

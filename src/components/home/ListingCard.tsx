@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
@@ -10,13 +11,29 @@ interface ListingProps {
 
 export function ListingCard({ image, title, price, location }: ListingProps) {
   const { formatCurrency } = useLanguageStore()
+  const [imgSrc, setImgSrc] = useState(image)
+  const [hasError, setHasError] = useState(false)
+
+  useEffect(() => {
+    setImgSrc(image)
+    setHasError(false)
+  }, [image])
 
   return (
     <Card className="overflow-hidden border-none shadow-sm hover:shadow-md transition-shadow cursor-pointer group">
       <div className="aspect-square relative overflow-hidden bg-muted">
         <img
-          src={image}
+          src={imgSrc}
           alt={title}
+          onError={() => {
+            if (!hasError) {
+              setHasError(true)
+              // Fallback to a reliable abstract placeholder
+              setImgSrc(
+                'https://images.unsplash.com/photo-1557683316-973673baf926?auto=format&fit=crop&w=400&h=400',
+              )
+            }
+          }}
           className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-300"
         />
       </div>
