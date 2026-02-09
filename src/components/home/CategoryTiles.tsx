@@ -4,35 +4,42 @@ import { Card } from '@/components/ui/card'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export function CategoryTiles() {
-  const { t } = useLanguageStore()
+  const { currentLanguage } = useLanguageStore()
+
+  // Simplified manual translation mapping since specific keys might be missing in translations.ts
+  const getLabel = (pt: string, en: string, es: string) => {
+    if (currentLanguage === 'pt') return pt
+    if (currentLanguage === 'es') return es
+    return en
+  }
 
   const tiles = [
     {
-      label: t('cat.forsale'),
+      label: getLabel('À Venda', 'For Sale', 'En Venta'),
       icon: Tag,
       path: '/?tab=sale',
       color: 'text-green-600',
     },
     {
-      label: t('cat.services'),
+      label: getLabel('Serviços', 'Services', 'Servicios'),
       icon: Wrench,
       path: '/services',
       color: 'text-blue-600',
     },
     {
-      label: t('cat.community'),
+      label: getLabel('Comunidade', 'Community', 'Comunidad'),
       icon: Users,
       path: '/?tab=community',
       color: 'text-purple-600',
     },
     {
-      label: t('cat.jobs'),
+      label: getLabel('Vagas', 'Jobs', 'Empleos'),
       icon: Briefcase,
       path: '/find-jobs',
       color: 'text-orange-600',
     },
     {
-      label: t('cat.rentals'),
+      label: getLabel('Aluguéis', 'Rentals', 'Alquileres'),
       icon: Key,
       path: '/?tab=rentals',
       color: 'text-red-600',

@@ -26,6 +26,10 @@ import {
   ClipboardList,
   Medal,
   FileText,
+  Home,
+  Wrench,
+  LogIn,
+  UserPlus,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -68,6 +72,14 @@ export function MainSidebar() {
     !hasTeamRole || ['Admin', 'Accountant'].includes(user?.teamRole || '')
   const canAccessConstruction =
     !hasTeamRole || ['Admin', 'Project Manager'].includes(user?.teamRole || '')
+
+  const publicItems = [
+    { title: t('sidebar.home'), url: '/', icon: Home },
+    { title: t('sidebar.services'), url: '/services', icon: Wrench },
+    { title: t('nav.find_jobs'), url: '/find-jobs', icon: Search },
+    { title: t('sidebar.login'), url: '/login', icon: LogIn },
+    { title: t('sidebar.register'), url: '/register', icon: UserPlus },
+  ]
 
   const commonItems = [
     {
@@ -239,14 +251,19 @@ export function MainSidebar() {
     },
   ]
 
-  let menuItems = [...commonItems]
-  if (isContractor) menuItems = [...menuItems, ...contractorItems]
-  else if (isPartner) menuItems = [...menuItems, ...partnerItems]
-  else menuItems = [...menuItems, ...executorItems]
+  let menuItems: any[] = []
+  if (!user) {
+    menuItems = publicItems
+  } else {
+    menuItems = [...commonItems]
+    if (isContractor) menuItems = [...menuItems, ...contractorItems]
+    else if (isPartner) menuItems = [...menuItems, ...partnerItems]
+    else menuItems = [...menuItems, ...executorItems]
+  }
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="h-14 flex items-center justify-start px-4 border-b border-sidebar-border/50">
+      <SidebarHeader className="h-16 flex items-center justify-start px-4 border-b border-sidebar-border/50">
         <div className="flex items-center gap-2 font-bold text-xl text-primary truncate overflow-hidden">
           <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
             B
@@ -264,11 +281,13 @@ export function MainSidebar() {
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>
-            {isContractor
-              ? t('sidebar.group.contractor')
-              : isPartner
-                ? t('sidebar.group.partner')
-                : t('sidebar.group.executor')}
+            {!user
+              ? t('sidebar.group.public')
+              : isContractor
+                ? t('sidebar.group.contractor')
+                : isPartner
+                  ? t('sidebar.group.partner')
+                  : t('sidebar.group.executor')}
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -278,7 +297,8 @@ export function MainSidebar() {
                     asChild
                     isActive={
                       location.pathname === item.url ||
-                      location.pathname.startsWith(`${item.url}/`)
+                      (item.url !== '/' &&
+                        location.pathname.startsWith(`${item.url}/`))
                     }
                     tooltip={item.title}
                   >
@@ -293,7 +313,7 @@ export function MainSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {isContractor && canAccessConstruction && (
+        {user && isContractor && canAccessConstruction && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-orange-600 font-semibold">
               {t('sidebar.group.construction')}
@@ -322,7 +342,7 @@ export function MainSidebar() {
           </SidebarGroup>
         )}
 
-        {isAdmin && (
+        {user && isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="text-destructive font-bold">
               {t('sidebar.group.admin')}
@@ -348,7 +368,7 @@ export function MainSidebar() {
           </SidebarGroup>
         )}
 
-        {canAccessFinance && (
+        {user && canAccessFinance && (
           <SidebarGroup>
             <SidebarGroupLabel>{t('sidebar.group.finance')}</SidebarGroupLabel>
             <SidebarGroupContent>
@@ -372,27 +392,31 @@ export function MainSidebar() {
           </SidebarGroup>
         )}
 
-        <SidebarGroup>
-          <SidebarGroupLabel>{t('sidebar.group.utilities')}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {utilityItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {user && (
+          <SidebarGroup>
+            <SidebarGroupLabel>
+              {t('sidebar.group.utilities')}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {utilityItems.map((item) => (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={location.pathname === item.url}
+                      tooltip={item.title}
+                    >
+                      <Link to={item.url}>
+                        <item.icon />
+                        <span>{item.title}</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
 
         <SidebarGroup>
           <SidebarGroupLabel>{t('sidebar.group.dev')}</SidebarGroupLabel>
@@ -417,46 +441,50 @@ export function MainSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuButton className="h-12">
-                  <User2 className="shrink-0" />
-                  <div className="flex flex-col gap-0.5 text-left text-sm leading-none">
-                    <span className="font-semibold truncate">{user?.name}</span>
-                    <span className="text-xs text-muted-foreground truncate capitalize">
-                      {user?.teamRole
-                        ? `${t(`role.${user.teamRole.toLowerCase().replace(' ', '_')}`)}`
-                        : user?.role === 'admin'
-                          ? t('role.admin')
-                          : user?.role === 'partner'
-                            ? t('role.partner')
-                            : user?.role === 'executor'
-                              ? t('role.executor')
-                              : t('role.contractor')}
-                    </span>
-                  </div>
-                  <ChevronUp className="ml-auto" />
-                </SidebarMenuButton>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                side="top"
-                className="w-[--radix-popper-anchor-width]"
-              >
-                <DropdownMenuItem
-                  onClick={logout}
-                  className="text-destructive focus:text-destructive cursor-pointer"
+      {user && (
+        <SidebarFooter>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton className="h-12">
+                    <User2 className="shrink-0" />
+                    <div className="flex flex-col gap-0.5 text-left text-sm leading-none">
+                      <span className="font-semibold truncate">
+                        {user?.name}
+                      </span>
+                      <span className="text-xs text-muted-foreground truncate capitalize">
+                        {user?.teamRole
+                          ? `${t(`role.${user.teamRole.toLowerCase().replace(' ', '_')}`)}`
+                          : user?.role === 'admin'
+                            ? t('role.admin')
+                            : user?.role === 'partner'
+                              ? t('role.partner')
+                              : user?.role === 'executor'
+                                ? t('role.executor')
+                                : t('role.contractor')}
+                      </span>
+                    </div>
+                    <ChevronUp className="ml-auto" />
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  side="top"
+                  className="w-[--radix-popper-anchor-width]"
                 >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>{t('sidebar.logout')}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarFooter>
+                  <DropdownMenuItem
+                    onClick={logout}
+                    className="text-destructive focus:text-destructive cursor-pointer"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{t('sidebar.logout')}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarFooter>
+      )}
     </Sidebar>
   )
 }

@@ -1,6 +1,8 @@
 import { Outlet, useLocation } from 'react-router-dom'
 import { BottomNav } from '@/components/BottomNav'
 import { SearchHeader } from '@/components/SearchHeader'
+import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar'
+import { MainSidebar } from '@/components/MainSidebar'
 
 export default function Layout() {
   const location = useLocation()
@@ -8,13 +10,26 @@ export default function Layout() {
     location.pathname,
   )
 
-  return (
-    <div className="min-h-screen bg-background flex flex-col font-sans antialiased">
-      {!isAuthPage && <SearchHeader />}
-      <div className={`flex-1 ${!isAuthPage ? 'pb-20 md:pb-0' : ''}`}>
+  if (isAuthPage) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col font-sans antialiased">
         <Outlet />
       </div>
-      {!isAuthPage && <BottomNav />}
-    </div>
+    )
+  }
+
+  return (
+    <SidebarProvider defaultOpen={false}>
+      <MainSidebar />
+      <SidebarInset className="flex flex-col min-h-screen bg-background font-sans antialiased transition-colors">
+        <SearchHeader />
+        <div className="flex-1 pb-20 md:pb-0">
+          <Outlet />
+        </div>
+        <div className="md:hidden">
+          <BottomNav />
+        </div>
+      </SidebarInset>
+    </SidebarProvider>
   )
 }

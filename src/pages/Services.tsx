@@ -54,12 +54,12 @@ export default function Services() {
   ]
 
   const subCategories = [
-    'All', // Ideally these should also be keys if strict translation is needed
-    'Home Improvement',
-    'Lawn & Garden',
-    'Cleaning',
-    'Tech Support',
-    'Automotive',
+    { id: 'all', label: t('service.subcategory.all') },
+    { id: 'home', label: t('service.subcategory.home_improvement') },
+    { id: 'lawn', label: t('service.subcategory.lawn_garden') },
+    { id: 'cleaning', label: t('service.subcategory.cleaning') },
+    { id: 'tech', label: t('service.subcategory.tech_support') },
+    { id: 'auto', label: t('service.subcategory.automotive') },
   ]
 
   return (
@@ -68,11 +68,11 @@ export default function Services() {
       <div className="flex gap-2 overflow-x-auto px-4 pb-4 scrollbar-hide sticky top-16 bg-background z-30 py-2">
         {subCategories.map((cat, i) => (
           <Badge
-            key={i}
+            key={cat.id}
             variant={i === 0 ? 'default' : 'outline'}
             className="flex-shrink-0 cursor-pointer px-4 py-1.5 text-sm"
           >
-            {cat}
+            {cat.label}
           </Badge>
         ))}
       </div>

@@ -107,7 +107,7 @@ export default function FindJobs() {
     })
 
   return (
-    <div className="space-y-6 container mx-auto max-w-6xl">
+    <div className="space-y-6 container mx-auto max-w-6xl pb-20">
       <AdSection segment="search" />
 
       <div className="flex flex-col gap-2">

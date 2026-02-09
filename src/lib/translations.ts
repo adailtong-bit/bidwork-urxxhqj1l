@@ -66,6 +66,12 @@ export const translations: Translations = {
     'service.tv': 'Instalação de TV',
     'service.junk': 'Remoção de Entulho',
     'service.trimming': 'Jardinagem',
+    'service.subcategory.all': 'Todos',
+    'service.subcategory.home_improvement': 'Melhorias Residenciais',
+    'service.subcategory.lawn_garden': 'Jardim e Gramado',
+    'service.subcategory.cleaning': 'Limpeza',
+    'service.subcategory.tech_support': 'Suporte Técnico',
+    'service.subcategory.automotive': 'Automotivo',
 
     // Roles
     'role.admin': 'Administrador',
@@ -135,6 +141,7 @@ export const translations: Translations = {
     'nav.team': 'Equipe',
     'nav.settings': 'Configurações',
     'nav.finance': 'Finanças',
+    'nav.find_jobs': 'Encontrar Jobs',
     'header.notifications': 'Notificações',
     'header.verified': 'Verificado',
     'header.reports': 'Relatórios',
@@ -150,6 +157,7 @@ export const translations: Translations = {
     'sidebar.group.finance': 'Financeiro',
     'sidebar.group.utilities': 'Utilidades',
     'sidebar.group.dev': 'Desenvolvedor',
+    'sidebar.group.public': 'Navegação',
     'sidebar.dashboard': 'Dashboard',
     'sidebar.partner_dashboard': 'Painel do Parceiro',
     'sidebar.messages': 'Mensagens',
@@ -177,6 +185,10 @@ export const translations: Translations = {
     'sidebar.categories': 'Categorias',
     'sidebar.ads': 'Publicidade',
     'sidebar.testing': 'Testing Hub',
+    'sidebar.home': 'Início',
+    'sidebar.services': 'Serviços',
+    'sidebar.login': 'Entrar',
+    'sidebar.register': 'Cadastrar',
 
     // Construction
     'construction.subscription.required': 'Contratação Necessária',
@@ -392,7 +404,7 @@ export const translations: Translations = {
     'eq.other': 'Outro',
     'eq.finance.title': 'Financeiro & Contrato',
     'eq.rental.condition': 'Condição (Próprio/Alugado)',
-    'eq.rental.value': 'Valor Mensal (R$)',
+    'eq.rental.value': 'Valor Mensual (R$)',
     'eq.depreciation': 'Depreciação Anual (%)',
     'eq.upload.contract': 'Contrato / NF',
     'eq.select.file': 'Selecionar Arquivo',
@@ -745,6 +757,12 @@ export const translations: Translations = {
     'service.tv': 'TV Mounting',
     'service.junk': 'Junk Removal',
     'service.trimming': 'Gardening',
+    'service.subcategory.all': 'All',
+    'service.subcategory.home_improvement': 'Home Improvement',
+    'service.subcategory.lawn_garden': 'Lawn & Garden',
+    'service.subcategory.cleaning': 'Cleaning',
+    'service.subcategory.tech_support': 'Tech Support',
+    'service.subcategory.automotive': 'Automotive',
 
     // Roles
     'role.admin': 'Administrator',
@@ -815,6 +833,7 @@ export const translations: Translations = {
     'nav.team': 'Team',
     'nav.settings': 'Settings',
     'nav.finance': 'Finance',
+    'nav.find_jobs': 'Find Jobs',
     'header.notifications': 'Notifications',
     'header.verified': 'Verified',
     'header.reports': 'Reports',
@@ -830,6 +849,7 @@ export const translations: Translations = {
     'sidebar.group.finance': 'Finance',
     'sidebar.group.utilities': 'Utilities',
     'sidebar.group.dev': 'Developer',
+    'sidebar.group.public': 'Navigation',
     'sidebar.dashboard': 'Dashboard',
     'sidebar.partner_dashboard': 'Partner Dashboard',
     'sidebar.messages': 'Messages',
@@ -857,6 +877,10 @@ export const translations: Translations = {
     'sidebar.categories': 'Categories',
     'sidebar.ads': 'Ads',
     'sidebar.testing': 'Testing Hub',
+    'sidebar.home': 'Home',
+    'sidebar.services': 'Services',
+    'sidebar.login': 'Log in',
+    'sidebar.register': 'Register',
 
     // Construction
     'construction.subscription.required': 'Hiring Required',
@@ -1420,6 +1444,12 @@ export const translations: Translations = {
     'service.tv': 'Instalación de TV',
     'service.junk': 'Retiro de Escombros',
     'service.trimming': 'Jardinería',
+    'service.subcategory.all': 'Todos',
+    'service.subcategory.home_improvement': 'Mejoras del Hogar',
+    'service.subcategory.lawn_garden': 'Césped y Jardín',
+    'service.subcategory.cleaning': 'Limpieza',
+    'service.subcategory.tech_support': 'Soporte Técnico',
+    'service.subcategory.automotive': 'Automotriz',
 
     // Roles
     'role.admin': 'Administrador',
@@ -1490,6 +1520,7 @@ export const translations: Translations = {
     'nav.team': 'Equipo',
     'nav.settings': 'Configuración',
     'nav.finance': 'Finanzas',
+    'nav.find_jobs': 'Buscar Trabajos',
     'header.notifications': 'Notificaciones',
     'header.verified': 'Verificado',
     'header.reports': 'Informes',
@@ -1505,6 +1536,7 @@ export const translations: Translations = {
     'sidebar.group.finance': 'Finanzas',
     'sidebar.group.utilities': 'Utilidades',
     'sidebar.group.dev': 'Desarrollador',
+    'sidebar.group.public': 'Navegación',
     'sidebar.dashboard': 'Panel',
     'sidebar.partner_dashboard': 'Panel del Socio',
     'sidebar.messages': 'Mensajes',
@@ -1532,6 +1564,10 @@ export const translations: Translations = {
     'sidebar.categories': 'Categorías',
     'sidebar.ads': 'Publicidad',
     'sidebar.testing': 'Centro de Pruebas',
+    'sidebar.home': 'Inicio',
+    'sidebar.services': 'Servicios',
+    'sidebar.login': 'Entrar',
+    'sidebar.register': 'Registrar',
 
     // Construction
     'construction.subscription.required': 'Contratación Requerida',
@@ -1664,7 +1700,7 @@ export const translations: Translations = {
 
     // Plans
     'plans.create': 'Crear Plan',
-    'plans.search': 'Buscar planes...',
+    'plans.search': 'Buscar planos...',
     'plans.status.all': 'Todos los Estados',
     'plans.empty': 'Ningún plan encontrado',
     'plans.empty_desc':
@@ -1777,7 +1813,7 @@ export const translations: Translations = {
     'logistics.calculating': 'Calculando...',
     'logistics.calc_route': 'Calcular Ruta',
     'logistics.map_view': 'Vista de Mapa',
-    'logistics.map_preview': 'Mapa Interactivo (Vista Previa)',
+    'logistics.map_preview': 'Mapa Interativo (Vista Previa)',
     'logistics.map_desc': 'Vista en tiempo real de flota y rutas planificadas.',
     'logistics.active_routes': 'Rutas Activas',
     'logistics.table.origin_dest': 'Origen -> Destino',
