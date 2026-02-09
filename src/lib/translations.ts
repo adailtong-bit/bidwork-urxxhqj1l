@@ -35,6 +35,16 @@ export const translations: Translations = {
     'general.manual': 'Manual',
     'val.required': 'Campo obrigatório',
     'val.email': 'Email inválido',
+    'val.title_required': 'O título é obrigatório',
+
+    // Access
+    'access.restricted': 'Acesso Restrito',
+    'access.restricted.desc':
+      'Você não tem permissão para visualizar esta página.',
+
+    // Upload
+    'upload.simulation': 'Simulação de Upload',
+    'upload.success_desc': 'Arquivo processado com sucesso.',
 
     // Auth - Forgot Password
     'auth.forgot.title': 'Recuperar Senha',
@@ -44,6 +54,18 @@ export const translations: Translations = {
     'auth.forgot.sent': 'Email enviado',
     'auth.forgot.sent_desc':
       'Verifique sua caixa de entrada para redefinir sua senha.',
+
+    // Services
+    'services.title': 'Categorias de Serviços',
+    'services.post_btn': 'Publicar Job',
+    'service.ac': 'Ar Condicionado',
+    'service.handyman': 'Marido de Aluguel',
+    'service.painting': 'Pintura',
+    'service.appliance': 'Eletrodomésticos',
+    'service.assembly': 'Montagem',
+    'service.tv': 'Instalação de TV',
+    'service.junk': 'Remoção de Entulho',
+    'service.trimming': 'Jardinagem',
 
     // Roles
     'role.admin': 'Administrador',
@@ -104,6 +126,7 @@ export const translations: Translations = {
     'nav.account': 'Conta',
     'nav.construction': 'Construtora',
     'nav.login': 'Entrar',
+    'nav.register': 'Cadastrar',
     'nav.start': 'Começar',
     'nav.explore': 'Explorar',
     'nav.dashboard': 'Dashboard',
@@ -237,6 +260,12 @@ export const translations: Translations = {
     'proj.finance.inflow': 'Entradas (Aporte)',
     'proj.finance.outflow': 'Saídas (Gastos)',
     'proj.finance.balance': 'Saldo do Projeto',
+    'proj.finance.approved_budget': 'Orçamento Aprovado',
+    'proj.finance.costs_allocated': 'Custos + Alocados',
+    'proj.finance.available': 'Disponível',
+    'proj.finance.allocated_costs': 'Custos Alocados',
+    'proj.finance.no_allocated':
+      'Nenhum custo extra alocado (Logística/Maquinário).',
     'proj.sync.title': 'Integrações Externas',
     'proj.sync.desc': 'Conecte com ferramentas de gestão.',
     'proj.sync.connected': 'Conectado',
@@ -245,6 +274,78 @@ export const translations: Translations = {
     'proj.view_label': 'Visualização:',
     'proj.import.drag_drop': 'Clique para selecionar arquivo .CSV',
     'proj.import.formats': 'Suporta Project ou Excel',
+    'proj.partners.empty': 'Nenhum parceiro registrado neste projeto.',
+    'proj.partner.score': 'Score',
+    'proj.partner.stage': 'Etapa',
+    'proj.partner.contacts': 'Contatos',
+    'proj.partner.no_contacts': 'Nenhum contato cadastrado.',
+    'proj.partner.no_team': 'Nenhuma equipe alocada.',
+    'proj.partner.assigned_activities': 'Suas Atividades Atribuídas',
+    'proj.partner.manage_activities':
+      'Gerencie o progresso e aloque sua equipe nas tarefas abaixo.',
+    'proj.tasks.empty': 'Nenhuma tarefa registrada.',
+
+    // Partner
+    'partner.dashboard.subtitle': 'Gestão de Obras e Equipes',
+    'partner.dashboard.allocated_team': 'Equipe Alocada',
+    'partner.dashboard.receivables': 'Recebíveis',
+    'partner.team.search_pool': 'Buscar no Banco de Talentos',
+    'partner.team.new_member': 'Novo Membro',
+    'partner.team.subtitle': 'Profissionais vinculados à sua empresa.',
+    'partner.team.empty':
+      'Nenhum membro registrado. Adicione manualmente ou busque no banco de talentos.',
+    'partner.team.added': 'Profissional adicionado à equipe',
+    'partner.invoices.title': 'Gestão de Faturas',
+    'partner.invoices.desc': 'Emita cobranças para atividades concluídas.',
+    'partner.invoices.generate': 'Gerar Fatura',
+    'partner.invoices.empty':
+      'Nenhuma atividade concluída disponível para faturamento.',
+    'partner.invoices.sent': 'Fatura Enviada',
+    'partner.invoices.sent_desc':
+      'Solicitação de pagamento enviada ao contratante.',
+    'partner.pool.title': 'Selecionar do Banco de Talentos',
+    'partner.pool.available': 'Profissionais Disponíveis',
+    'partner.pool.desc':
+      'Adicionando este profissional à sua equipe permanente.',
+    'partner.pool.add': 'Adicionar à Equipe',
+
+    // Plans
+    'plans.create': 'Criar Plano',
+    'plans.search': 'Buscar planos...',
+    'plans.status.all': 'Todos os Status',
+    'plans.empty': 'Nenhum plano encontrado',
+    'plans.empty_desc':
+      'Tente ajustar seus filtros ou crie um novo plano para começar.',
+    'plans.list_view_wip':
+      'A visualização em lista está sendo implementada. Use a visualização em grade por enquanto.',
+    'plans.create_new': 'Criar Novo Plano',
+    'plans.edit': 'Editar Plano',
+    'plans.tab.general': 'Informações Gerais',
+    'plans.tab.goals': 'Metas',
+    'plans.tab.team': 'Equipe',
+    'plans.tab.budget': 'Orçamento',
+    'plans.details.title': 'Detalhes do Plano',
+    'plans.details.desc': 'Informações básicas sobre o planejamento.',
+    'plans.field.title': 'Título do Plano',
+    'plans.field.category': 'Categoria',
+    'plans.field.deadline': 'Prazo Final',
+    'plans.field.description': 'Descrição',
+    'plans.goals.title': 'Metas e Objetivos',
+    'plans.goals.desc':
+      'Defina os principais resultados chave (OKRs) para este plano.',
+    'plans.goals.wip': 'Funcionalidade de gestão de metas em desenvolvimento.',
+    'plans.goals.add_mock': 'Adicionar Meta (Mock)',
+    'plans.team.title': 'Equipe Envolvida',
+    'plans.team.desc':
+      'Gerencie quem tem acesso e responsabilidades neste plano.',
+    'plans.team.wip': 'Em breve você poderá convidar membros.',
+    'plans.budget.desc': 'Controle financeiro do projeto.',
+    'plans.budget.total': 'Orçamento Total (R$)',
+    'plans.created': 'Plano criado com sucesso!',
+    'plans.updated': 'Plano atualizado com sucesso!',
+    'plans.save_error': 'Erro ao salvar o plano',
+    'plans.delete_confirm': 'Tem certeza que deseja excluir este plano?',
+    'plans.deleted': 'Plano removido com sucesso.',
 
     // Schedule
     'sched.add_activity': 'Adicionar Atividade',
@@ -522,6 +623,7 @@ export const translations: Translations = {
       'Conclua cursos para ganhar badges no seu perfil.',
     'training.view_courses': 'Ver Cursos',
     'training.download_pdf': 'Baixar Certificado',
+    'training.mock_complete': 'Conclusão Simulada',
 
     // Finance
     'finance.management': 'Gestão Financeira',
@@ -546,6 +648,7 @@ export const translations: Translations = {
     'finance.date_scheduled': 'Data Prevista',
     'finance.empty_transactions': 'Nenhuma transação recente.',
     'finance.empty_scheduled': 'Nenhum pagamento agendado.',
+    'finance.future_payments': 'Pagamentos Futuros',
     'finance.projected_flow': 'Fluxo Projetado',
     'finance.comparative_desc': 'Entradas vs Saídas',
     'finance.schedule_payment': 'Agendar Pagamento',
@@ -553,6 +656,7 @@ export const translations: Translations = {
     'finance.confirm_schedule': 'Confirmar Agendamento',
     'finance.chart.income': 'Entradas',
     'finance.chart.expenses': 'Saídas',
+    'finance.external_provider': 'Fornecedor Externo',
 
     // Ads
     'ad.badge': 'Patrocinado',
@@ -576,6 +680,13 @@ export const translations: Translations = {
     'find.filter.date.30d': 'Último mês',
     'find.smart_sort': 'Relevância IA',
     'find.search_placeholder': 'Buscar por título, descrição ou cidade...',
+
+    // Home
+    'home.listings.title': 'Destaques Recentes',
+    'layout.hero.title': 'Conecte-se com os melhores profissionais',
+    'layout.hero.subtitle':
+      'Junte-se à nossa comunidade e encontre oportunidades incríveis ou o talento certo para seu projeto.',
+    'layout.hero.user_count': '+10k usuários ativos',
   },
   en: {
     // General
@@ -605,6 +716,15 @@ export const translations: Translations = {
     'general.manual': 'Manual',
     'val.required': 'Required field',
     'val.email': 'Invalid email',
+    'val.title_required': 'Title is required',
+
+    // Access
+    'access.restricted': 'Restricted Access',
+    'access.restricted.desc': 'You do not have permission to view this page.',
+
+    // Upload
+    'upload.simulation': 'Upload Simulation',
+    'upload.success_desc': 'File processed successfully.',
 
     // Auth - Forgot Password
     'auth.forgot.title': 'Forgot Password',
@@ -613,6 +733,18 @@ export const translations: Translations = {
     'auth.forgot.send': 'Send Link',
     'auth.forgot.sent': 'Email sent',
     'auth.forgot.sent_desc': 'Check your inbox to reset your password.',
+
+    // Services
+    'services.title': 'Service Categories',
+    'services.post_btn': 'Post Job',
+    'service.ac': 'Air Conditioner',
+    'service.handyman': 'Handyman',
+    'service.painting': 'Painting',
+    'service.appliance': 'Appliances',
+    'service.assembly': 'Assembly',
+    'service.tv': 'TV Mounting',
+    'service.junk': 'Junk Removal',
+    'service.trimming': 'Gardening',
 
     // Roles
     'role.admin': 'Administrator',
@@ -674,6 +806,7 @@ export const translations: Translations = {
     'nav.account': 'Account',
     'nav.construction': 'Construction',
     'nav.login': 'Log in',
+    'nav.register': 'Register',
     'nav.start': 'Start',
     'nav.explore': 'Explore',
     'nav.dashboard': 'Dashboard',
@@ -806,6 +939,12 @@ export const translations: Translations = {
     'proj.finance.inflow': 'Inflow (Funding)',
     'proj.finance.outflow': 'Outflow (Expenses)',
     'proj.finance.balance': 'Project Balance',
+    'proj.finance.approved_budget': 'Approved Budget',
+    'proj.finance.costs_allocated': 'Costs + Allocated',
+    'proj.finance.available': 'Available',
+    'proj.finance.allocated_costs': 'Allocated Costs',
+    'proj.finance.no_allocated':
+      'No extra costs allocated (Logistics/Machinery).',
     'proj.sync.title': 'External Integrations',
     'proj.sync.desc': 'Connect with management tools.',
     'proj.sync.connected': 'Connected',
@@ -814,6 +953,74 @@ export const translations: Translations = {
     'proj.view_label': 'View:',
     'proj.import.drag_drop': 'Click to select .CSV file',
     'proj.import.formats': 'Supports Project or Excel',
+    'proj.partners.empty': 'No partners registered in this project.',
+    'proj.partner.score': 'Score',
+    'proj.partner.stage': 'Stage',
+    'proj.partner.contacts': 'Contacts',
+    'proj.partner.no_contacts': 'No contacts registered.',
+    'proj.partner.no_team': 'No team allocated.',
+    'proj.partner.assigned_activities': 'Your Assigned Activities',
+    'proj.partner.manage_activities':
+      'Manage progress and allocate your team to tasks below.',
+    'proj.tasks.empty': 'No tasks registered.',
+
+    // Partner
+    'partner.dashboard.subtitle': 'Work and Team Management',
+    'partner.dashboard.allocated_team': 'Allocated Team',
+    'partner.dashboard.receivables': 'Receivables',
+    'partner.team.search_pool': 'Search Talent Pool',
+    'partner.team.new_member': 'New Member',
+    'partner.team.subtitle': 'Professionals linked to your company.',
+    'partner.team.empty':
+      'No members registered. Add manually or search in talent pool.',
+    'partner.team.added': 'Professional added to team',
+    'partner.invoices.title': 'Invoice Management',
+    'partner.invoices.desc': 'Issue charges for completed activities.',
+    'partner.invoices.generate': 'Generate Invoice',
+    'partner.invoices.empty': 'No completed activity available for billing.',
+    'partner.invoices.sent': 'Invoice Sent',
+    'partner.invoices.sent_desc': 'Payment request sent to contractor.',
+    'partner.pool.title': 'Select from Talent Pool',
+    'partner.pool.available': 'Available Professionals',
+    'partner.pool.desc': 'Adding this professional to your permanent team.',
+    'partner.pool.add': 'Add to Team',
+
+    // Plans
+    'plans.create': 'Create Plan',
+    'plans.search': 'Search plans...',
+    'plans.status.all': 'All Statuses',
+    'plans.empty': 'No plans found',
+    'plans.empty_desc':
+      'Try adjusting your filters or create a new plan to start.',
+    'plans.list_view_wip':
+      'List view is being implemented. Use grid view for now.',
+    'plans.create_new': 'Create New Plan',
+    'plans.edit': 'Edit Plan',
+    'plans.tab.general': 'General Info',
+    'plans.tab.goals': 'Goals',
+    'plans.tab.team': 'Team',
+    'plans.tab.budget': 'Budget',
+    'plans.details.title': 'Plan Details',
+    'plans.details.desc': 'Basic information about the planning.',
+    'plans.field.title': 'Plan Title',
+    'plans.field.category': 'Category',
+    'plans.field.deadline': 'Deadline',
+    'plans.field.description': 'Description',
+    'plans.goals.title': 'Goals and Objectives',
+    'plans.goals.desc': 'Define key results (OKRs) for this plan.',
+    'plans.goals.wip': 'Goal management feature under development.',
+    'plans.goals.add_mock': 'Add Goal (Mock)',
+    'plans.team.title': 'Team Involved',
+    'plans.team.desc':
+      'Manage who has access and responsibilities in this plan.',
+    'plans.team.wip': 'Soon you will be able to invite members.',
+    'plans.budget.desc': 'Financial control of the project.',
+    'plans.budget.total': 'Total Budget ($)',
+    'plans.created': 'Plan created successfully!',
+    'plans.updated': 'Plan updated successfully!',
+    'plans.save_error': 'Error saving plan',
+    'plans.delete_confirm': 'Are you sure you want to delete this plan?',
+    'plans.deleted': 'Plan removed successfully.',
 
     // Schedule
     'sched.add_activity': 'Add Activity',
@@ -1089,6 +1296,7 @@ export const translations: Translations = {
       'Complete courses to earn badges on your profile.',
     'training.view_courses': 'View Courses',
     'training.download_pdf': 'Download Certificate',
+    'training.mock_complete': 'Mock Complete',
 
     // Finance
     'finance.management': 'Financial Management',
@@ -1113,6 +1321,7 @@ export const translations: Translations = {
     'finance.date_scheduled': 'Scheduled Date',
     'finance.empty_transactions': 'No recent transactions.',
     'finance.empty_scheduled': 'No scheduled payments.',
+    'finance.future_payments': 'Future Payments',
     'finance.projected_flow': 'Projected Flow',
     'finance.comparative_desc': 'Inflow vs Outflow',
     'finance.schedule_payment': 'Schedule Payment',
@@ -1120,6 +1329,7 @@ export const translations: Translations = {
     'finance.confirm_schedule': 'Confirm Schedule',
     'finance.chart.income': 'Income',
     'finance.chart.expenses': 'Expenses',
+    'finance.external_provider': 'External Provider',
 
     // Ads
     'ad.badge': 'Sponsored',
@@ -1143,6 +1353,13 @@ export const translations: Translations = {
     'find.filter.date.30d': 'Last month',
     'find.smart_sort': 'AI Relevance',
     'find.search_placeholder': 'Search by title, description or city...',
+
+    // Home
+    'home.listings.title': 'Recent Highlights',
+    'layout.hero.title': 'Connect with the best professionals',
+    'layout.hero.subtitle':
+      'Join our community and find amazing opportunities or the right talent for your project.',
+    'layout.hero.user_count': '+10k active users',
   },
   es: {
     // General
@@ -1172,6 +1389,15 @@ export const translations: Translations = {
     'general.manual': 'Manual',
     'val.required': 'Campo obligatorio',
     'val.email': 'Email inválido',
+    'val.title_required': 'El título es obligatorio',
+
+    // Access
+    'access.restricted': 'Acceso Restringido',
+    'access.restricted.desc': 'No tienes permiso para ver esta página.',
+
+    // Upload
+    'upload.simulation': 'Simulación de Carga',
+    'upload.success_desc': 'Archivo procesado con éxito.',
 
     // Auth - Forgot Password
     'auth.forgot.title': 'Recuperar Contraseña',
@@ -1182,6 +1408,18 @@ export const translations: Translations = {
     'auth.forgot.sent': 'Email enviado',
     'auth.forgot.sent_desc':
       'Verifique su bandeja de entrada para restablecer su contraseña.',
+
+    // Services
+    'services.title': 'Categorías de Servicios',
+    'services.post_btn': 'Publicar Trabajo',
+    'service.ac': 'Aire Acondicionado',
+    'service.handyman': 'Manitas',
+    'service.painting': 'Pintura',
+    'service.appliance': 'Electrodomésticos',
+    'service.assembly': 'Montaje',
+    'service.tv': 'Instalación de TV',
+    'service.junk': 'Retiro de Escombros',
+    'service.trimming': 'Jardinería',
 
     // Roles
     'role.admin': 'Administrador',
@@ -1243,6 +1481,7 @@ export const translations: Translations = {
     'nav.account': 'Cuenta',
     'nav.construction': 'Constructora',
     'nav.login': 'Entrar',
+    'nav.register': 'Registrar',
     'nav.start': 'Empezar',
     'nav.explore': 'Explorar',
     'nav.dashboard': 'Panel',
@@ -1376,6 +1615,12 @@ export const translations: Translations = {
     'proj.finance.inflow': 'Entradas (Aporte)',
     'proj.finance.outflow': 'Salidas (Gastos)',
     'proj.finance.balance': 'Saldo del Proyecto',
+    'proj.finance.approved_budget': 'Presupuesto Aprobado',
+    'proj.finance.costs_allocated': 'Costos + Asignados',
+    'proj.finance.available': 'Disponible',
+    'proj.finance.allocated_costs': 'Costos Asignados',
+    'proj.finance.no_allocated':
+      'Sin costos extra asignados (Logística/Maquinaria).',
     'proj.sync.title': 'Integraciones Externas',
     'proj.sync.desc': 'Conectar con herramientas de gestión.',
     'proj.sync.connected': 'Conectado',
@@ -1384,6 +1629,75 @@ export const translations: Translations = {
     'proj.view_label': 'Vista:',
     'proj.import.drag_drop': 'Clic para seleccionar archivo .CSV',
     'proj.import.formats': 'Soporta Project o Excel',
+    'proj.partners.empty': 'Ningún socio registrado en este proyecto.',
+    'proj.partner.score': 'Puntaje',
+    'proj.partner.stage': 'Etapa',
+    'proj.partner.contacts': 'Contactos',
+    'proj.partner.no_contacts': 'Ningún contacto registrado.',
+    'proj.partner.no_team': 'Ningún equipo asignado.',
+    'proj.partner.assigned_activities': 'Sus Actividades Asignadas',
+    'proj.partner.manage_activities':
+      'Gestione el progreso y asigne su equipo a las tareas a continuación.',
+    'proj.tasks.empty': 'Ninguna tarea registrada.',
+
+    // Partner
+    'partner.dashboard.subtitle': 'Gestión de Obras y Equipos',
+    'partner.dashboard.allocated_team': 'Equipo Asignado',
+    'partner.dashboard.receivables': 'Cuentas por Cobrar',
+    'partner.team.search_pool': 'Buscar en Banco de Talentos',
+    'partner.team.new_member': 'Nuevo Miembro',
+    'partner.team.subtitle': 'Profesionales vinculados a su empresa.',
+    'partner.team.empty':
+      'Ningún miembro registrado. Agregue manualmente o busque en el banco de talentos.',
+    'partner.team.added': 'Profesional agregado al equipo',
+    'partner.invoices.title': 'Gestión de Facturas',
+    'partner.invoices.desc': 'Emita cobros por actividades completadas.',
+    'partner.invoices.generate': 'Generar Factura',
+    'partner.invoices.empty':
+      'Ninguna actividad completada disponible para facturación.',
+    'partner.invoices.sent': 'Factura Enviada',
+    'partner.invoices.sent_desc': 'Solicitud de pago enviada al contratante.',
+    'partner.pool.title': 'Seleccionar del Banco de Talentos',
+    'partner.pool.available': 'Profesionales Disponibles',
+    'partner.pool.desc': 'Agregando este profesional a su equipo permanente.',
+    'partner.pool.add': 'Agregar al Equipo',
+
+    // Plans
+    'plans.create': 'Crear Plan',
+    'plans.search': 'Buscar planes...',
+    'plans.status.all': 'Todos los Estados',
+    'plans.empty': 'Ningún plan encontrado',
+    'plans.empty_desc':
+      'Intente ajustar sus filtros o cree un nuevo plan para comenzar.',
+    'plans.list_view_wip':
+      'La vista de lista se está implementando. Use la vista de cuadrícula por ahora.',
+    'plans.create_new': 'Crear Nuevo Plan',
+    'plans.edit': 'Editar Plan',
+    'plans.tab.general': 'Información General',
+    'plans.tab.goals': 'Metas',
+    'plans.tab.team': 'Equipo',
+    'plans.tab.budget': 'Presupuesto',
+    'plans.details.title': 'Detalles del Plan',
+    'plans.details.desc': 'Información básica sobre la planificación.',
+    'plans.field.title': 'Título del Plan',
+    'plans.field.category': 'Categoría',
+    'plans.field.deadline': 'Fecha Límite',
+    'plans.field.description': 'Descripción',
+    'plans.goals.title': 'Metas y Objetivos',
+    'plans.goals.desc': 'Defina los resultados clave (OKRs) para este plan.',
+    'plans.goals.wip': 'Funcionalidad de gestión de metas en desarrollo.',
+    'plans.goals.add_mock': 'Agregar Meta (Simulado)',
+    'plans.team.title': 'Equipo Involucrado',
+    'plans.team.desc':
+      'Gestione quién tiene acceso y responsabilidades en este plan.',
+    'plans.team.wip': 'Pronto podrá invitar miembros.',
+    'plans.budget.desc': 'Control financiero del proyecto.',
+    'plans.budget.total': 'Presupuesto Total ($)',
+    'plans.created': '¡Plan creado con éxito!',
+    'plans.updated': '¡Plan actualizado con éxito!',
+    'plans.save_error': 'Error al guardar el plan',
+    'plans.delete_confirm': '¿Está seguro de que desea eliminar este plan?',
+    'plans.deleted': 'Plan eliminado con éxito.',
 
     // Schedule
     'sched.add_activity': 'Agregar Actividad',
@@ -1661,6 +1975,7 @@ export const translations: Translations = {
       'Complete cursos para ganar insignias en su perfil.',
     'training.view_courses': 'Ver Cursos',
     'training.download_pdf': 'Descargar Certificado',
+    'training.mock_complete': 'Conclusión Simulada',
 
     // Finance
     'finance.management': 'Gestión Financiera',
@@ -1685,6 +2000,7 @@ export const translations: Translations = {
     'finance.date_scheduled': 'Fecha Prevista',
     'finance.empty_transactions': 'Ninguna transacción reciente.',
     'finance.empty_scheduled': 'Ningún pago programado.',
+    'finance.future_payments': 'Pagos Futuros',
     'finance.projected_flow': 'Flujo Proyectado',
     'finance.comparative_desc': 'Entradas vs Salidas',
     'finance.schedule_payment': 'Programar Pago',
@@ -1692,6 +2008,7 @@ export const translations: Translations = {
     'finance.confirm_schedule': 'Confirmar Programación',
     'finance.chart.income': 'Entradas',
     'finance.chart.expenses': 'Salidas',
+    'finance.external_provider': 'Proveedor Externo',
 
     // Ads
     'ad.badge': 'Patrocinado',
@@ -1715,5 +2032,12 @@ export const translations: Translations = {
     'find.filter.date.30d': 'Último mes',
     'find.smart_sort': 'Relevancia IA',
     'find.search_placeholder': 'Buscar por título, descripción o ciudad...',
+
+    // Home
+    'home.listings.title': 'Destacados Recientes',
+    'layout.hero.title': 'Conéctate con los mejores profesionales',
+    'layout.hero.subtitle':
+      'Únete a nuestra comunidad y encuentra oportunidades increíbles o el talento adecuado para tu proyecto.',
+    'layout.hero.user_count': '+10k usuarios activos',
   },
 }

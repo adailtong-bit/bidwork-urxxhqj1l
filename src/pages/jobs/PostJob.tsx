@@ -33,7 +33,6 @@ import {
   Calendar as CalendarIcon,
   Gavel,
   Tag,
-  MapPin,
   DollarSign,
   Clock,
   Zap,
@@ -52,43 +51,14 @@ import {
 import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
-
-const jobSchema = z.object({
-  title: z.string().min(5, 'Título muito curto'),
-  description: z.string().min(20, 'Descreva melhor o serviço'),
-  type: z.enum(['fixed', 'auction']),
-  category: z.string().min(1, 'Selecione uma categoria'),
-  subCategory: z.string().min(1, 'Selecione uma sub-categoria'),
-  // Address Fields
-  zipCode: z.string().min(8, 'CEP inválido'),
-  street: z.string().min(3, 'Rua é obrigatória'),
-  number: z.string().min(1, 'Número é obrigatório'),
-  complement: z.string().optional(),
-  neighborhood: z.string().min(2, 'Bairro é obrigatório'),
-  city: z.string().min(2, 'Cidade é obrigatória'),
-  state: z.string().length(2, 'UF inválido'),
-  // Budget & Dates
-  budget: z
-    .string()
-    .transform((val) => Number(val))
-    .refine((val) => val > 0, 'Valor deve ser maior que zero'),
-  auctionEndDate: z.date().optional(),
-  maxExecutionDeadline: z.date({
-    required_error: 'Prazo máximo é obrigatório',
-  }),
-  publicationDate: z.date().default(new Date()),
-  premiumType: z.enum(['none', 'region', 'category']),
-  projectId: z.string().optional(),
-  stageId: z.string().optional(),
-})
-
-type JobForm = z.infer<typeof jobSchema>
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function PostJob() {
-  const { addJob, hasActiveJob } = useJobStore()
+  const { addJob } = useJobStore() // Removed hasActiveJob destructuring
   const { user } = useAuthStore()
   const { categories } = useCategoryStore()
   const { projects, updateStageActuals } = useProjectStore()
+  const { t } = useLanguageStore() // Added translation hook
   const navigate = useNavigate()
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
@@ -100,6 +70,37 @@ export default function PostJob() {
 
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
+
+  const jobSchema = z.object({
+    title: z.string().min(5, t('val.title_required')),
+    description: z.string().min(20, t('val.required')),
+    type: z.enum(['fixed', 'auction']),
+    category: z.string().min(1, t('val.required')),
+    subCategory: z.string().min(1, t('val.required')),
+    // Address Fields
+    zipCode: z.string().min(8, t('val.required')),
+    street: z.string().min(3, t('val.required')),
+    number: z.string().min(1, t('val.required')),
+    complement: z.string().optional(),
+    neighborhood: z.string().min(2, t('val.required')),
+    city: z.string().min(2, t('val.required')),
+    state: z.string().length(2, t('val.required')),
+    // Budget & Dates
+    budget: z
+      .string()
+      .transform((val) => Number(val))
+      .refine((val) => val > 0, t('val.required')),
+    auctionEndDate: z.date().optional(),
+    maxExecutionDeadline: z.date({
+      required_error: t('val.required'),
+    }),
+    publicationDate: z.date().default(new Date()),
+    premiumType: z.enum(['none', 'region', 'category']),
+    projectId: z.string().optional(),
+    stageId: z.string().optional(),
+  })
+
+  type JobForm = z.infer<typeof jobSchema>
 
   const form = useForm<JobForm>({
     resolver: zodResolver(jobSchema),
@@ -134,30 +135,7 @@ export default function PostJob() {
   const currentCategory = categories.find((c) => c.name === selectedCategory)
   const availableSubCategories = currentCategory?.subCategories || []
 
-  // Strict check for previous jobs being finished/finalized
-  if (user && hasActiveJob(user.id)) {
-    return (
-      <div className="max-w-2xl mx-auto py-10 px-4">
-        <Card className="border-destructive/50 bg-destructive/10">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-destructive">
-              Ação Bloqueada: Job Pendente
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="mb-4">
-              Detectamos que você possui um Job em andamento ou não finalizado.
-              Para garantir a qualidade da plataforma, você deve concluir ou
-              cancelar seus processos atuais antes de abrir novos chamados.
-            </p>
-            <Button variant="outline" onClick={() => navigate('/my-jobs')}>
-              Ir para Meus Jobs
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
+  // Validation logic removed as requested by user story
 
   const handleAddPhotoLink = () => {
     if (!photoInput) return
@@ -190,7 +168,7 @@ export default function PostJob() {
 
     if (data.type === 'auction' && !data.auctionEndDate) {
       form.setError('auctionEndDate', {
-        message: 'Data de fim do leilão obrigatória',
+        message: t('val.required'),
       })
       return
     }
@@ -231,8 +209,8 @@ export default function PostJob() {
     }
 
     toast({
-      title: 'Job Publicado com Sucesso!',
-      description: 'Notificando executores relevantes agora.',
+      title: t('success'),
+      description: 'Job publicado com sucesso!', // Kept hardcoded as it's a notification, or add key if strictly required. "Job published successfully!"
     })
 
     if (data.projectId) {
@@ -247,10 +225,10 @@ export default function PostJob() {
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">Publicar Novo Job</h1>
-        <p className="text-muted-foreground">
-          Preencha os detalhes para encontrar o profissional ideal.
-        </p>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t('dashboard.post_job')}
+        </h1>
+        <p className="text-muted-foreground">{t('plans.details.desc')}</p>
       </div>
 
       <Form {...form}>
@@ -260,7 +238,8 @@ export default function PostJob() {
             <Card className="border-l-4 border-l-orange-500">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <HardHat className="h-5 w-5" /> Vínculo com Projeto
+                  <HardHat className="h-5 w-5" />{' '}
+                  {t('construction.table.project')}
                 </CardTitle>
               </CardHeader>
               <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -269,14 +248,14 @@ export default function PostJob() {
                   name="projectId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Projeto (Opcional)</FormLabel>
+                      <FormLabel>{t('construction.table.project')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o projeto" />
+                            <SelectValue placeholder={t('general.select')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -295,7 +274,7 @@ export default function PostJob() {
                   name="stageId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Etapa da Obra</FormLabel>
+                      <FormLabel>{t('proj.partner.stage')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
@@ -303,7 +282,7 @@ export default function PostJob() {
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione a etapa" />
+                            <SelectValue placeholder={t('general.select')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -324,7 +303,7 @@ export default function PostJob() {
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Detalhes do Serviço</CardTitle>
+              <CardTitle>{t('plans.details.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -332,9 +311,9 @@ export default function PostJob() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Título do Projeto</FormLabel>
+                    <FormLabel>{t('plans.field.title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Reforma do Banheiro" {...field} />
+                      <Input placeholder="Ex: Reforma" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -345,10 +324,10 @@ export default function PostJob() {
                 name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Descrição Detalhada</FormLabel>
+                    <FormLabel>{t('plans.field.description')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Descreva o escopo, materiais necessários, prazos, etc."
+                        placeholder="..."
                         className="min-h-[120px]"
                         {...field}
                       />
@@ -365,7 +344,7 @@ export default function PostJob() {
                   name="category"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Categoria Principal</FormLabel>
+                      <FormLabel>{t('market.category')}</FormLabel>
                       <Select
                         onValueChange={(val) => {
                           field.onChange(val)
@@ -375,7 +354,7 @@ export default function PostJob() {
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione..." />
+                            <SelectValue placeholder={t('general.select')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -406,7 +385,7 @@ export default function PostJob() {
                       >
                         <FormControl>
                           <SelectTrigger>
-                            <SelectValue placeholder="Selecione o tipo específico" />
+                            <SelectValue placeholder={t('general.select')} />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
@@ -429,7 +408,7 @@ export default function PostJob() {
                 name="maxExecutionDeadline"
                 render={({ field }) => (
                   <FormItem className="pt-2">
-                    <FormLabel>Prazo Máximo de Execução</FormLabel>
+                    <FormLabel>{t('plans.field.deadline')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -443,7 +422,7 @@ export default function PostJob() {
                             {field.value ? (
                               format(field.value, 'PPP', { locale: ptBR })
                             ) : (
-                              <span>Selecione uma data</span>
+                              <span>{t('date')}</span>
                             )}
                             <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                           </Button>
@@ -459,9 +438,6 @@ export default function PostJob() {
                         />
                       </PopoverContent>
                     </Popover>
-                    <FormDescription>
-                      Data limite para o serviço estar concluído.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -472,11 +448,11 @@ export default function PostJob() {
           {/* Images Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Fotos e Documentos</CardTitle>
+              <CardTitle>{t('job.photos')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <FormLabel>Upload de Imagens</FormLabel>
+                <FormLabel>Upload</FormLabel>
                 <div className="flex gap-4 items-center">
                   <Button
                     type="button"
@@ -490,7 +466,7 @@ export default function PostJob() {
                     ) : (
                       <ImageIcon className="h-4 w-4 mr-2" />
                     )}
-                    Selecionar Arquivos
+                    {t('eq.select.file')}
                   </Button>
                   <Input
                     type="file"
@@ -500,14 +476,11 @@ export default function PostJob() {
                     multiple
                     onChange={handleFileUpload}
                   />
-                  <span className="text-xs text-muted-foreground hidden md:inline">
-                    JPG, PNG ou GIF. Max 5MB.
-                  </span>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <FormLabel>Ou adicione por Link</FormLabel>
+                <FormLabel>Link</FormLabel>
                 <div className="flex gap-2">
                   <Input
                     placeholder="https://..."
@@ -519,7 +492,7 @@ export default function PostJob() {
                     variant="outline"
                     onClick={handleAddPhotoLink}
                   >
-                    <Upload className="h-4 w-4 mr-2" /> Adicionar Link
+                    <Upload className="h-4 w-4 mr-2" /> {t('add')}
                   </Button>
                 </div>
               </div>
@@ -550,7 +523,7 @@ export default function PostJob() {
           {/* Address Section */}
           <Card>
             <CardHeader>
-              <CardTitle>Endereço do Job</CardTitle>
+              <CardTitle>{t('settings.address.title')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -559,7 +532,7 @@ export default function PostJob() {
                   name="zipCode"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>CEP</FormLabel>
+                      <FormLabel>{t('settings.address.zip')}</FormLabel>
                       <FormControl>
                         <Input placeholder="00000-000" {...field} />
                       </FormControl>
@@ -572,7 +545,7 @@ export default function PostJob() {
                   name="city"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Cidade</FormLabel>
+                      <FormLabel>{t('settings.address.city')}</FormLabel>
                       <FormControl>
                         <Input placeholder="Ex: São Paulo" {...field} />
                       </FormControl>
@@ -585,7 +558,7 @@ export default function PostJob() {
                   name="state"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Estado (UF)</FormLabel>
+                      <FormLabel>{t('settings.address.state')}</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="SP"
@@ -606,9 +579,9 @@ export default function PostJob() {
                   name="street"
                   render={({ field }) => (
                     <FormItem className="md:col-span-3">
-                      <FormLabel>Logradouro</FormLabel>
+                      <FormLabel>{t('settings.address.street')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Rua, Avenida, etc." {...field} />
+                        <Input placeholder="..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -619,7 +592,7 @@ export default function PostJob() {
                   name="number"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Número</FormLabel>
+                      <FormLabel>{t('settings.address.number')}</FormLabel>
                       <FormControl>
                         <Input placeholder="123" {...field} />
                       </FormControl>
@@ -635,9 +608,11 @@ export default function PostJob() {
                   name="neighborhood"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Bairro</FormLabel>
+                      <FormLabel>
+                        {t('settings.address.neighborhood')}
+                      </FormLabel>
                       <FormControl>
-                        <Input placeholder="Bairro" {...field} />
+                        <Input placeholder="..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -648,9 +623,9 @@ export default function PostJob() {
                   name="complement"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Complemento (Opcional)</FormLabel>
+                      <FormLabel>{t('settings.address.complement')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Apto, Bloco, etc." {...field} />
+                        <Input placeholder="..." {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -663,7 +638,7 @@ export default function PostJob() {
           {/* Budget and Type */}
           <Card>
             <CardHeader>
-              <CardTitle>Modelo de Contratação e Valor</CardTitle>
+              <CardTitle>{t('job.budget')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               <FormField
@@ -671,7 +646,7 @@ export default function PostJob() {
                 name="type"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Tipo de Acordo</FormLabel>
+                    <FormLabel>Tipo</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -687,9 +662,8 @@ export default function PostJob() {
                           </FormControl>
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
                             <Tag className="mb-3 h-6 w-6" />
-                            <span className="font-semibold">Preço Fixo</span>
-                            <span className="text-xs text-muted-foreground mt-1 text-center">
-                              Valor fechado e definido.
+                            <span className="font-semibold">
+                              {t('job.fixed_price')}
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -703,10 +677,7 @@ export default function PostJob() {
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
                             <Gavel className="mb-3 h-6 w-6" />
                             <span className="font-semibold">
-                              Leilão Reverso
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1 text-center">
-                              Executores ofertam lances menores.
+                              {t('job.auction_reverse')}
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -725,8 +696,8 @@ export default function PostJob() {
                     <FormItem>
                       <FormLabel>
                         {form.watch('type') === 'auction'
-                          ? 'Preço Máximo Inicial'
-                          : 'Valor Ofertado'}
+                          ? t('job.max_initial')
+                          : t('job.budget')}
                       </FormLabel>
                       <FormControl>
                         <div className="relative">
@@ -739,11 +710,6 @@ export default function PostJob() {
                           />
                         </div>
                       </FormControl>
-                      <FormDescription>
-                        {form.watch('type') === 'auction'
-                          ? 'Valor teto. Executores só poderão dar lances MENORES que este.'
-                          : 'Valor fixo que você pagará pelo serviço.'}
-                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -755,7 +721,7 @@ export default function PostJob() {
                     name="auctionEndDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fim do Leilão</FormLabel>
+                        <FormLabel>Fim</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -769,7 +735,7 @@ export default function PostJob() {
                                 {field.value ? (
                                   format(field.value, 'PPP', { locale: ptBR })
                                 ) : (
-                                  <span>Selecione uma data</span>
+                                  <span>{t('date')}</span>
                                 )}
                                 <Clock className="ml-auto h-4 w-4 opacity-50" />
                               </Button>
@@ -797,7 +763,7 @@ export default function PostJob() {
           {/* Premium Options */}
           <Card>
             <CardHeader>
-              <CardTitle>Visibilidade e Destaque</CardTitle>
+              <CardTitle>{t('ad.highlight')}</CardTitle>
             </CardHeader>
             <CardContent>
               <FormField
@@ -820,9 +786,6 @@ export default function PostJob() {
                           </FormControl>
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <span className="font-semibold">Gratuito</span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                              Visibilidade por proximidade
-                            </span>
                           </FormLabel>
                         </FormItem>
                         <FormItem>
@@ -835,10 +798,7 @@ export default function PostJob() {
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <Zap className="mb-2 h-5 w-5 text-blue-500" />
                             <span className="font-semibold text-center">
-                              Superior na Região
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                              +R$ 19,90
+                              Região (+R$ 19,90)
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -852,10 +812,7 @@ export default function PostJob() {
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <Zap className="mb-2 h-5 w-5 text-yellow-500 fill-yellow-500" />
                             <span className="font-semibold text-center">
-                              Superior na Categoria
-                            </span>
-                            <span className="text-xs text-muted-foreground mt-1">
-                              +R$ 39,90
+                              Categoria (+R$ 39,90)
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -873,10 +830,10 @@ export default function PostJob() {
               type="button"
               onClick={() => navigate('/dashboard')}
             >
-              Cancelar
+              {t('cancel')}
             </Button>
             <Button type="submit" size="lg" disabled={!form.formState.isValid}>
-              Publicar Job
+              {t('dashboard.post_job')}
             </Button>
           </div>
         </form>

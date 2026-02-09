@@ -9,9 +9,9 @@ export default function Layout() {
   )
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col font-sans antialiased">
       {!isAuthPage && <SearchHeader />}
-      <div className={!isAuthPage ? 'pb-20' : ''}>
+      <div className={`flex-1 ${!isAuthPage ? 'pb-20 md:pb-0' : ''}`}>
         <Outlet />
       </div>
       {!isAuthPage && <BottomNav />}

@@ -5,7 +5,7 @@ import { ListingCard } from '@/components/home/ListingCard'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 
-// Mock Data - Updated with reliable SafeImage compatible queries
+// Mock Data
 const mockListings = [
   {
     id: 1,
@@ -55,7 +55,7 @@ export default function Index() {
   const { t } = useLanguageStore()
 
   return (
-    <div className="flex flex-col gap-2 pt-2 md:container md:mx-auto md:max-w-4xl">
+    <div className="flex flex-col gap-2 pt-2 md:container md:mx-auto md:max-w-6xl pb-20">
       {/* Navigation Tiles */}
       <CategoryTiles />
 

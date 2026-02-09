@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
-import { useAuthStore } from '@/stores/useAuthStore'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -108,7 +107,7 @@ export default function FindJobs() {
     })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 container mx-auto max-w-6xl">
       <AdSection segment="search" />
 
       <div className="flex flex-col gap-2">
@@ -130,7 +129,7 @@ export default function FindJobs() {
             />
           </div>
 
-          <div className="flex items-center space-x-2 bg-background p-2 rounded-md border shadow-sm">
+          <div className="flex items-center space-x-2 bg-background p-2 rounded-md border shadow-sm shrink-0">
             <Switch
               id="smart-mode"
               checked={isSmartSort}

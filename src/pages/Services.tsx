@@ -54,7 +54,7 @@ export default function Services() {
   ]
 
   const subCategories = [
-    'All',
+    'All', // Ideally these should also be keys if strict translation is needed
     'Home Improvement',
     'Lawn & Garden',
     'Cleaning',
@@ -63,9 +63,9 @@ export default function Services() {
   ]
 
   return (
-    <div className="pt-2 md:container md:mx-auto md:max-w-4xl relative min-h-screen pb-20">
+    <div className="pt-6 md:container md:mx-auto md:max-w-6xl relative min-h-screen pb-20">
       {/* Horizontal Sub-Category Scroll */}
-      <div className="flex gap-2 overflow-x-auto px-4 pb-4 scrollbar-hide sticky top-16 bg-background z-40 py-2">
+      <div className="flex gap-2 overflow-x-auto px-4 pb-4 scrollbar-hide sticky top-16 bg-background z-30 py-2">
         {subCategories.map((cat, i) => (
           <Badge
             key={i}
@@ -77,9 +77,9 @@ export default function Services() {
         ))}
       </div>
 
-      <div className="px-4">
-        <h2 className="text-xl font-bold mb-4">{t('services.title')}</h2>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="px-4 space-y-6">
+        <h2 className="text-2xl font-bold">{t('services.title')}</h2>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
           {categories.map((cat) => (
             <ServiceCard
               key={cat.id}
@@ -92,14 +92,14 @@ export default function Services() {
       </div>
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-24 right-4 z-50">
+      <div className="fixed bottom-24 right-4 z-50 md:bottom-8 md:right-8">
         <Button
           asChild
-          className="rounded-full h-12 px-6 shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-2"
+          className="rounded-full h-14 px-6 shadow-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold flex items-center gap-2"
         >
           <Link to="/post-job">
-            <Plus className="h-5 w-5" />
-            {t('services.post_btn')}
+            <Plus className="h-6 w-6" />
+            <span className="text-base">{t('services.post_btn')}</span>
           </Link>
         </Button>
       </div>
