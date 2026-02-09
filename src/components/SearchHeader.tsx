@@ -25,8 +25,6 @@ export function SearchHeader() {
   const unreadCount = user ? getUnreadCount(user.id) : 0
   const userNotifications = notifications.filter((n) => n.userId === user?.id)
 
-  const isHome = location.pathname === '/' || location.pathname === '/dashboard'
-
   return (
     <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
       <div className="container mx-auto px-4 h-16 flex items-center gap-4">

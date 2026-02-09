@@ -12,7 +12,6 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardContent,
 } from '@/components/ui/card'
 import {
   useProjectStore,
@@ -164,7 +163,8 @@ export function TemplateSelector({
                 onChange={handleFileUpload}
               />
               <Button variant="outline" size="sm" className="mt-4">
-                <FileSpreadsheet className="mr-2 h-4 w-4" /> Importar Arquivo
+                <FileSpreadsheet className="mr-2 h-4 w-4" />{' '}
+                {t('market.import_list')}
               </Button>
             </Card>
           </div>

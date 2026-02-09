@@ -219,7 +219,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                       colSpan={6}
                       className="text-center py-8 text-muted-foreground"
                     >
-                      Nenhum item adicionado ao orçamento.
+                      {t('inventory.empty')}
                     </TableCell>
                   </TableRow>
                 )}

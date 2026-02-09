@@ -28,7 +28,6 @@ import {
   TrendingDown,
   TrendingUp,
   DollarSign,
-  CheckCircle2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -85,7 +84,7 @@ export default function ProjectDetail() {
   const realTotalSpent = project.totalSpent + allocated
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-10">
+    <div className="space-y-8 max-w-6xl mx-auto pb-10 px-4">
       {/* Centered Header */}
       <div className="flex flex-col items-center text-center gap-4 py-4 relative">
         <div className="flex items-center gap-2">
@@ -213,7 +212,7 @@ export default function ProjectDetail() {
               project.constructionItems.length > 0 ? (
                 <ProjectEstimationTable projectId={project.id} />
               ) : (
-                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                <div className="text-center py-16 border-2 border-dashed rounded-lg bg-muted/5">
                   <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground mb-4 opacity-50" />
                   <h3 className="text-lg font-medium mb-2">
                     {t('est.template.select')}
@@ -318,7 +317,9 @@ export default function ProjectDetail() {
                                 className="text-sm flex items-center gap-2 bg-muted/30 p-2 rounded"
                               >
                                 {sub.status === 'completed' ? (
-                                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                                  <div className="h-4 w-4 rounded-full bg-green-500 flex items-center justify-center text-white text-[10px]">
+                                    ✓
+                                  </div>
                                 ) : (
                                   <div className="h-4 w-4 rounded-full border-2 border-muted-foreground/30" />
                                 )}
@@ -336,7 +337,7 @@ export default function ProjectDetail() {
                           </ul>
                         ) : (
                           <p className="text-sm text-muted-foreground italic">
-                            Nenhuma tarefa registrada.
+                            {t('proj.tasks.empty')}
                           </p>
                         )}
                       </div>
@@ -381,13 +382,14 @@ export default function ProjectDetail() {
                           </h3>
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline">
-                              Etapa:{' '}
+                              {t('proj.partner.stage')}:{' '}
                               {project.stages.find(
                                 (s) => s.id === partner.stageId,
                               )?.name || 'Geral'}
                             </Badge>
                             <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">
-                              Score: {partner.performanceScore}
+                              {t('proj.partner.score')}:{' '}
+                              {partner.performanceScore}
                             </Badge>
                           </div>
                         </div>
@@ -403,7 +405,8 @@ export default function ProjectDetail() {
                       <div className="grid md:grid-cols-2 gap-8 border-t pt-6">
                         <div>
                           <h4 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-2">
-                            <Phone className="h-3 w-3" /> Contatos
+                            <Phone className="h-3 w-3" />{' '}
+                            {t('proj.partner.contacts')}
                           </h4>
                           {partner.contacts.length > 0 ? (
                             <ul className="space-y-2">
@@ -421,7 +424,7 @@ export default function ProjectDetail() {
                             </ul>
                           ) : (
                             <p className="text-xs text-muted-foreground italic">
-                              Nenhum contato cadastrado.
+                              {t('proj.partner.no_contacts')}
                             </p>
                           )}
                         </div>
@@ -450,7 +453,7 @@ export default function ProjectDetail() {
                             </ul>
                           ) : (
                             <p className="text-xs text-muted-foreground italic">
-                              Nenhuma equipe alocada.
+                              {t('proj.partner.no_team')}
                             </p>
                           )}
                         </div>
@@ -460,7 +463,7 @@ export default function ProjectDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
-                  Nenhum parceiro registrado neste projeto.
+                  {t('proj.partners.empty')}
                 </div>
               )}
             </CardContent>
@@ -500,7 +503,7 @@ export default function ProjectDetail() {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Orçamento Aprovado
+                      {t('proj.finance.approved_budget')}
                     </p>
                   </div>
                   <div className="bg-red-50 p-4 rounded-lg border border-red-100">
@@ -514,7 +517,7 @@ export default function ProjectDetail() {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Custos + Alocados
+                      {t('proj.finance.costs_allocated')}
                     </p>
                   </div>
                   <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
@@ -528,13 +531,15 @@ export default function ProjectDetail() {
                       </span>
                     </div>
                     <p className="text-xs text-muted-foreground mt-1">
-                      Disponível
+                      {t('proj.finance.available')}
                     </p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">Custos Alocados</h3>
+                  <h3 className="font-semibold text-lg">
+                    {t('proj.finance.allocated_costs')}
+                  </h3>
                   <div className="border rounded-md">
                     {project.allocatedCosts &&
                     project.allocatedCosts.length > 0 ? (
@@ -571,7 +576,7 @@ export default function ProjectDetail() {
                       </table>
                     ) : (
                       <div className="p-8 text-center text-muted-foreground italic">
-                        Nenhum custo extra alocado (Logística/Maquinário).
+                        {t('proj.finance.no_allocated')}
                       </div>
                     )}
                   </div>

@@ -19,11 +19,11 @@ export default function Layout() {
   }
 
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <MainSidebar />
-      <SidebarInset className="flex flex-col min-h-screen bg-background font-sans antialiased transition-colors">
+      <SidebarInset className="flex flex-col min-h-screen bg-background font-sans antialiased transition-all duration-300 ease-in-out">
         <SearchHeader />
-        <div className="flex-1 pb-20 md:pb-0">
+        <div className="flex-1 pb-20 md:pb-0 relative">
           <Outlet />
         </div>
         <div className="md:hidden">

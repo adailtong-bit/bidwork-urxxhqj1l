@@ -9,13 +9,6 @@ import {
 } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { useProjectStore, ConstructionItem } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Trash2, Plus, CalendarIcon } from 'lucide-react'
@@ -75,7 +68,7 @@ export function ProjectEstimationTable({
 
   const handleAddItem = (stage: string) => {
     addConstructionItem(projectId, {
-      name: 'Novo Item',
+      name: t('est.add_item'),
       stage,
       startDate: new Date(),
       endDate: new Date(),
@@ -163,7 +156,7 @@ export function ProjectEstimationTable({
                             {item.startDate ? (
                               formatDate(item.startDate, 'dd/MM/yy')
                             ) : (
-                              <span>Selecione</span>
+                              <span>{t('general.select')}</span>
                             )}
                           </Button>
                         </PopoverTrigger>
@@ -194,7 +187,7 @@ export function ProjectEstimationTable({
                             {item.endDate ? (
                               formatDate(item.endDate, 'dd/MM/yy')
                             ) : (
-                              <span>Selecione</span>
+                              <span>{t('general.select')}</span>
                             )}
                           </Button>
                         </PopoverTrigger>
@@ -256,7 +249,7 @@ export function ProjectEstimationTable({
                     colSpan={6}
                     className="text-center py-4 text-muted-foreground text-xs"
                   >
-                    Nenhum item nesta etapa.
+                    {t('inventory.empty')}
                   </TableCell>
                 </TableRow>
               )}
