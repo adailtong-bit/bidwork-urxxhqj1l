@@ -2,6 +2,7 @@ import { useState, useRef } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { useProjectStore, ProjectPartner } from '@/stores/useProjectStore'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import {
   Card,
   CardContent,
@@ -27,6 +28,7 @@ import {
   TrendingDown,
   TrendingUp,
   DollarSign,
+  CheckCircle2,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -44,10 +46,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
+import { TemplateSelector } from '@/components/construction/TemplateSelector'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
-  const { getProject } = useProjectStore()
+  const { getProject, setProjectSqFt } = useProjectStore()
   const { toast } = useToast()
   const { t, formatDate, formatCurrency } = useLanguageStore()
 
@@ -61,6 +65,9 @@ export default function ProjectDetail() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false)
   const [isSyncOpen, setIsSyncOpen] = useState(false)
+
+  // Estimation State
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
 
   if (!project) return <div className="p-8 text-center">{t('error')}</div>
 
@@ -133,10 +140,16 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      <Tabs defaultValue="stages" className="w-full flex flex-col items-center">
+      <Tabs
+        defaultValue="estimation"
+        className="w-full flex flex-col items-center"
+      >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-3xl flex-nowrap justify-start md:justify-center min-w-[600px] mb-8 h-auto p-1">
+          <TabsList className="w-full max-w-4xl flex-nowrap justify-start md:justify-center min-w-[700px] mb-8 h-auto p-1">
+            <TabsTrigger value="estimation" className="flex-1">
+              {t('est.tab.title')}
+            </TabsTrigger>
             <TabsTrigger value="stages" className="flex-1">
               {t('proj.detail.schedule')}
             </TabsTrigger>
@@ -157,6 +170,66 @@ export default function ProjectDetail() {
             </TabsTrigger>
           </TabsList>
         </div>
+
+        <TabsContent
+          value="estimation"
+          className="w-full animate-fade-in space-y-6"
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <div className="space-y-1">
+                <CardTitle>{t('est.tab.title')}</CardTitle>
+                <CardDescription>
+                  Planejamento e estimativa de custos por etapa ou m².
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 border rounded-md p-1 mr-4">
+                  <span className="text-xs font-medium px-2">
+                    {t('est.project.sqft')}:
+                  </span>
+                  <Input
+                    type="number"
+                    className="h-7 w-20 text-right"
+                    value={project.sqFt || ''}
+                    placeholder="0"
+                    onChange={(e) =>
+                      setProjectSqFt(project.id, parseFloat(e.target.value))
+                    }
+                  />
+                </div>
+                <Button
+                  onClick={() => setIsTemplateSelectorOpen(true)}
+                  variant="outline"
+                  size="sm"
+                >
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />{' '}
+                  {t('est.template.select')}
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {project.constructionItems &&
+              project.constructionItems.length > 0 ? (
+                <ProjectEstimationTable projectId={project.id} />
+              ) : (
+                <div className="text-center py-16 border-2 border-dashed rounded-lg">
+                  <FileSpreadsheet className="mx-auto h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                  <h3 className="text-lg font-medium mb-2">
+                    {t('est.template.select')}
+                  </h3>
+                  <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                    Comece selecionando um modelo padrão ou faça o upload de sua
+                    lista personalizada.
+                  </p>
+                  <Button onClick={() => setIsTemplateSelectorOpen(true)}>
+                    {t('est.template.select')}
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent
           value="stages"
@@ -533,6 +606,13 @@ export default function ProjectDetail() {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Template Selector Dialog */}
+      <TemplateSelector
+        open={isTemplateSelectorOpen}
+        onClose={() => setIsTemplateSelectorOpen(false)}
+        projectId={project.id}
+      />
 
       {/* Edit Partner Modal */}
       {editingPartner && (
