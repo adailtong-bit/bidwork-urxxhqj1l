@@ -39,11 +39,9 @@ import {
   AlertCircle,
   Plus,
   Trash2,
-  DollarSign,
   UserPlus,
   CheckCircle2,
 } from 'lucide-react'
-import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import {
   Select,
@@ -61,6 +59,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { CurrencyInput } from '@/components/CurrencyInput'
 
 interface ProjectScheduleTableProps {
   projectId: string
@@ -77,7 +76,7 @@ export function ProjectScheduleTable({
 }: ProjectScheduleTableProps) {
   const { updateStage, updateSubStage, addSubStage, deleteSubStage } =
     useProjectStore()
-  const { t } = useLanguageStore()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
 
   const [expandedStages, setExpandedStages] = useState<Set<string>>(
     new Set((stages || []).map((s) => s.id)),
@@ -100,7 +99,7 @@ export function ProjectScheduleTable({
     subStageId: string
   } | null>(null)
   const [selectedMember, setSelectedMember] = useState('')
-  const [taskPrice, setTaskPrice] = useState('')
+  const [taskPrice, setTaskPrice] = useState<number>(0)
 
   const toggleExpand = (id: string) => {
     const newSet = new Set(expandedStages)
@@ -191,11 +190,11 @@ export function ProjectScheduleTable({
     if (assignData && selectedMember && taskPrice) {
       updateSubStage(projectId, assignData.stageId, assignData.subStageId, {
         assignedTeamMemberId: selectedMember,
-        taskPrice: Number(taskPrice),
+        taskPrice: taskPrice,
       })
       setAssignData(null)
       setSelectedMember('')
-      setTaskPrice('')
+      setTaskPrice(0)
     }
   }
 
@@ -246,8 +245,8 @@ export function ProjectScheduleTable({
                     </span>
                   </div>
                 </TableCell>
-                <TableCell>{format(stage.startDate, 'dd/MM/yy')}</TableCell>
-                <TableCell>{format(stage.endDate, 'dd/MM/yy')}</TableCell>
+                <TableCell>{formatDate(stage.startDate, 'P')}</TableCell>
+                <TableCell>{formatDate(stage.endDate, 'P')}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-2">
                     <Progress
@@ -307,19 +306,20 @@ export function ProjectScheduleTable({
                                 .flatMap((p) => p.team)
                                 .find((m) => m.id === sub.assignedTeamMemberId)
                                 ?.name || 'Membro da Equipe'}
-                              {sub.taskPrice && ` • R$ ${sub.taskPrice}`}
+                              {sub.taskPrice &&
+                                ` • ${formatCurrency(sub.taskPrice)}`}
                             </span>
                           )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs text-muted-foreground">
-                          {format(sub.startDate, 'dd/MM/yy')}
+                          {formatDate(sub.startDate, 'P')}
                         </span>
                       </TableCell>
                       <TableCell>
                         <span className="text-xs text-muted-foreground">
-                          {format(sub.endDate, 'dd/MM/yy')}
+                          {formatDate(sub.endDate, 'P')}
                         </span>
                       </TableCell>
                       <TableCell>
@@ -523,17 +523,12 @@ export function ProjectScheduleTable({
               )}
             </div>
             <div className="grid gap-2">
-              <Label>{t('sched.task_price')} (R$)</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  className="pl-9"
-                  type="number"
-                  value={taskPrice}
-                  onChange={(e) => setTaskPrice(e.target.value)}
-                  placeholder="0.00"
-                />
-              </div>
+              <Label>{t('sched.task_price')}</Label>
+              <CurrencyInput
+                value={taskPrice}
+                onChange={(val) => setTaskPrice(val)}
+                placeholder="0.00"
+              />
             </div>
           </div>
           <DialogFooter>

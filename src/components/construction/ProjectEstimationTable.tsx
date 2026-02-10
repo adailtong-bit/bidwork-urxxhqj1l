@@ -37,11 +37,6 @@ export function ProjectEstimationTable({
   const { t, formatCurrency, formatDate } = useLanguageStore()
   const project = getProject(projectId)
 
-  const [newItem, setNewItem] = useState<{
-    name: string
-    stage: string
-  } | null>(null)
-
   if (!project) return null
 
   const items = project.constructionItems || []
@@ -135,7 +130,9 @@ export function ProjectEstimationTable({
                   <TableRow key={item.id}>
                     <TableCell>
                       <Input
-                        value={item.name}
+                        value={
+                          t(item.name) === item.name ? item.name : t(item.name)
+                        }
                         onChange={(e) =>
                           handleUpdateItem(item.id, 'name', e.target.value)
                         }
@@ -154,7 +151,7 @@ export function ProjectEstimationTable({
                           >
                             <CalendarIcon className="mr-2 h-3 w-3" />
                             {item.startDate ? (
-                              formatDate(item.startDate, 'dd/MM/yy')
+                              formatDate(item.startDate, 'P')
                             ) : (
                               <span>{t('general.select')}</span>
                             )}
@@ -185,7 +182,7 @@ export function ProjectEstimationTable({
                           >
                             <CalendarIcon className="mr-2 h-3 w-3" />
                             {item.endDate ? (
-                              formatDate(item.endDate, 'dd/MM/yy')
+                              formatDate(item.endDate, 'P')
                             ) : (
                               <span>{t('general.select')}</span>
                             )}
@@ -204,18 +201,13 @@ export function ProjectEstimationTable({
                       </Popover>
                     </TableCell>
                     <TableCell className="text-right">
-                      <Input
-                        type="number"
+                      <CurrencyInput
                         className="h-8 text-right"
-                        value={item.pricePerSqFt || ''}
-                        placeholder={project.sqFt ? '0.00' : '-'}
+                        value={item.pricePerSqFt || 0}
+                        placeholder={project.sqFt ? '0' : '-'}
                         disabled={!project.sqFt}
-                        onChange={(e) =>
-                          handleUpdateItem(
-                            item.id,
-                            'pricePerSqFt',
-                            parseFloat(e.target.value),
-                          )
+                        onChange={(val) =>
+                          handleUpdateItem(item.id, 'pricePerSqFt', val)
                         }
                       />
                     </TableCell>

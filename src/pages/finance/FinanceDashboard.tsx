@@ -53,6 +53,7 @@ import {
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { CurrencyInput } from '@/components/CurrencyInput'
 
 export default function FinanceDashboard() {
   const { user } = useAuthStore()
@@ -64,7 +65,7 @@ export default function FinanceDashboard() {
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [scheduleData, setScheduleData] = useState({
     title: '',
-    amount: '',
+    amount: 0,
     date: '',
   })
 
@@ -81,10 +82,9 @@ export default function FinanceDashboard() {
         <div className="bg-destructive/10 p-4 rounded-full">
           <Lock className="h-12 w-12 text-destructive" />
         </div>
-        <h1 className="text-2xl font-bold">Acesso Restrito</h1>
+        <h1 className="text-2xl font-bold">{t('access.restricted.title')}</h1>
         <p className="text-muted-foreground text-center max-w-md">
-          Você não tem permissão para visualizar o painel financeiro. Entre em
-          contato com o administrador da sua organização.
+          {t('access.restricted.desc')}
         </p>
         <Button asChild>
           <Link to="/dashboard">{t('back')}</Link>
@@ -144,7 +144,7 @@ export default function FinanceDashboard() {
         payerName: user.name,
         receiverId: 'mock-receiver',
         receiverName: 'Fornecedor Externo',
-        amount: Number(scheduleData.amount),
+        amount: scheduleData.amount,
         category: 'other',
       },
       new Date(scheduleData.date),
@@ -276,7 +276,13 @@ export default function FinanceDashboard() {
                         axisLine={false}
                         tickFormatter={(value) => formatCurrency(value)}
                       />
-                      <Tooltip content={<ChartTooltipContent />} />
+                      <Tooltip
+                        content={
+                          <ChartTooltipContent
+                            formatter={(value) => formatCurrency(Number(value))}
+                          />
+                        }
+                      />
                       <Bar
                         dataKey={user.role === 'executor' ? 'entrada' : 'saida'}
                         fill="var(--color-entrada)"
@@ -389,7 +395,12 @@ export default function FinanceDashboard() {
                       tickFormatter={(value) => formatCurrency(value)}
                     />
                     <Tooltip
-                      content={<ChartTooltipContent indicator="dot" />}
+                      content={
+                        <ChartTooltipContent
+                          indicator="dot"
+                          formatter={(value) => formatCurrency(Number(value))}
+                        />
+                      }
                     />
                     <Area
                       dataKey="saida"
@@ -442,16 +453,16 @@ export default function FinanceDashboard() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>{t('finance.value')} (R$)</Label>
-                    <Input
+                    <Label>{t('finance.value')}</Label>
+                    <CurrencyInput
                       value={scheduleData.amount}
-                      onChange={(e) =>
+                      onChange={(val) =>
                         setScheduleData({
                           ...scheduleData,
-                          amount: e.target.value,
+                          amount: val,
                         })
                       }
-                      type="number"
+                      placeholder="0.00"
                     />
                   </div>
                   <div className="grid gap-2">

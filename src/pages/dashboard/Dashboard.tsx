@@ -216,7 +216,13 @@ export default function Dashboard() {
                     axisLine={false}
                     tickFormatter={(value) => formatCurrency(value)}
                   />
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => formatCurrency(Number(value))}
+                      />
+                    }
+                  />
                   <Line
                     type="monotone"
                     dataKey="value"
@@ -249,7 +255,13 @@ export default function Dashboard() {
                     axisLine={false}
                     fontSize={12}
                   />
-                  <Tooltip content={<ChartTooltipContent />} />
+                  <Tooltip
+                    content={
+                      <ChartTooltipContent
+                        formatter={(value) => formatCurrency(Number(value))}
+                      />
+                    }
+                  />
                   <Bar
                     dataKey="avgPrice"
                     fill="var(--color-avgPrice)"

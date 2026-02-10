@@ -306,44 +306,44 @@ interface ProjectState {
 
 export const DEFAULT_STAGES_TEMPLATE = [
   {
-    name: '1. Compra do Terreno',
-    description: 'Pesquisa, Seleção, Zonas e Licenças.',
+    name: 'stage.land_purchase',
+    description: 'stage.land_purchase_desc',
   },
   {
-    name: '2. Planejamento e Projeto',
-    description: 'Contratação, Desenvolvimento do Projeto.',
+    name: 'stage.planning',
+    description: 'stage.planning_desc',
   },
 ]
 
 // Estimation Templates
 export const ESTIMATION_TEMPLATES = {
   'single-family': [
-    { name: 'Excavation', stage: 'M1' },
-    { name: 'Foundation Pouring', stage: 'M1' },
-    { name: 'Concrete Slab', stage: 'M1' },
-    { name: 'Framing', stage: 'M2' },
-    { name: 'Roofing', stage: 'M2' },
-    { name: 'Windows Installation', stage: 'M2' },
-    { name: 'Plumbing Rough-in', stage: 'M3' },
-    { name: 'Electrical Wiring', stage: 'M3' },
-    { name: 'HVAC Ductwork', stage: 'M3' },
-    { name: 'Insulation', stage: 'M4' },
-    { name: 'Drywall', stage: 'M4' },
-    { name: 'Flooring', stage: 'M4' },
-    { name: 'Painting', stage: 'M4' },
+    { name: 'est.item.excavation', stage: 'M1' },
+    { name: 'est.item.foundation_pouring', stage: 'M1' },
+    { name: 'est.item.concrete_slab', stage: 'M1' },
+    { name: 'est.item.framing', stage: 'M2' },
+    { name: 'est.item.roofing', stage: 'M2' },
+    { name: 'est.item.windows', stage: 'M2' },
+    { name: 'est.item.plumbing_rough', stage: 'M3' },
+    { name: 'est.item.electrical_wiring', stage: 'M3' },
+    { name: 'est.item.hvac_duct', stage: 'M3' },
+    { name: 'est.item.insulation', stage: 'M4' },
+    { name: 'est.item.drywall', stage: 'M4' },
+    { name: 'est.item.flooring', stage: 'M4' },
+    { name: 'est.item.painting', stage: 'M4' },
   ],
   renovation: [
-    { name: 'Demolition', stage: 'M1' },
-    { name: 'Debris Removal', stage: 'M1' },
-    { name: 'Site Preparation', stage: 'M1' },
-    { name: 'Structural Repairs', stage: 'M2' },
-    { name: 'Wall Modifications', stage: 'M2' },
-    { name: 'HVAC Update', stage: 'M3' },
-    { name: 'Electrical Panel Upgrade', stage: 'M3' },
-    { name: 'Plumbing Fixtures', stage: 'M3' },
-    { name: 'New Flooring', stage: 'M4' },
-    { name: 'Painting', stage: 'M4' },
-    { name: 'Cabinet Installation', stage: 'M4' },
+    { name: 'est.item.demolition', stage: 'M1' },
+    { name: 'est.item.debris_removal', stage: 'M1' },
+    { name: 'est.item.site_prep', stage: 'M1' },
+    { name: 'est.item.structural_repairs', stage: 'M2' },
+    { name: 'est.item.wall_mod', stage: 'M2' },
+    { name: 'est.item.hvac_update', stage: 'M3' },
+    { name: 'est.item.panel_upgrade', stage: 'M3' },
+    { name: 'est.item.plumbing_fix', stage: 'M3' },
+    { name: 'est.item.new_flooring', stage: 'M4' },
+    { name: 'est.item.painting', stage: 'M4' },
+    { name: 'est.item.cabinets', stage: 'M4' },
   ],
 }
 
@@ -478,7 +478,7 @@ const mockProjects: Project[] = [
     constructionItems: [
       {
         id: 'ci-1',
-        name: 'Excavation',
+        name: 'est.item.excavation',
         stage: 'M1',
         startDate: new Date(Date.now() - 86400000 * 30),
         endDate: new Date(Date.now() - 86400000 * 25),
@@ -487,7 +487,7 @@ const mockProjects: Project[] = [
       },
       {
         id: 'ci-2',
-        name: 'Foundation Pouring',
+        name: 'est.item.foundation_pouring',
         stage: 'M1',
         startDate: new Date(Date.now() - 86400000 * 20),
         endDate: new Date(Date.now() - 86400000 * 10),

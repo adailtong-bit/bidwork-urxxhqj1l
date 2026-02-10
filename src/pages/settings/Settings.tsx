@@ -54,9 +54,12 @@ export default function Settings() {
   const { toast } = useToast()
   const { t, currentLanguage, setLanguage } = useLanguageStore()
 
-  // Ensure hooks are always called in the same order
+  // Derive initial country from address or default to BR, but allow changing it
+  const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
+    (user?.address?.country as CountryCode) || 'BR',
+  )
+
   const entityType = user?.entityType || 'pf'
-  const country = user?.address?.country || 'BR'
 
   const createProfileSchema = (
     entityType: 'pf' | 'pj',
@@ -84,7 +87,7 @@ export default function Settings() {
   }
 
   const form = useForm({
-    resolver: zodResolver(createProfileSchema(entityType, country)),
+    resolver: zodResolver(createProfileSchema(entityType, selectedCountry)),
     defaultValues: {
       name: user?.name || '',
       companyName: user?.companyName || '',
@@ -124,6 +127,10 @@ export default function Settings() {
         zipCode: user.address?.zipCode || '',
       })
 
+      if (user.address?.country) {
+        setSelectedCountry(user.address.country as CountryCode)
+      }
+
       setBanking(
         user.bankingDetails || {
           bank: '',
@@ -152,7 +159,7 @@ export default function Settings() {
         city: data.city,
         state: data.state,
         zipCode: data.zipCode,
-        country: country,
+        country: selectedCountry,
       },
     })
     setIsEditing(false)
@@ -307,7 +314,7 @@ export default function Settings() {
                           <Input
                             {...field}
                             disabled={!isEditing}
-                            placeholder="(00) 00000-0000"
+                            placeholder={t('settings.placeholder.phone')}
                           />
                         </FormControl>
                         <FormMessage />
@@ -322,7 +329,11 @@ export default function Settings() {
                       <FormItem>
                         <FormLabel>{t('settings.form.tax_id')}</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={!isEditing} />
+                          <Input
+                            {...field}
+                            disabled={!isEditing}
+                            placeholder={t('settings.placeholder.doc')}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -331,9 +342,27 @@ export default function Settings() {
                 </div>
 
                 <Separator className="my-4" />
-                <h3 className="text-sm font-medium flex items-center gap-2 mb-3">
-                  <MapPin className="h-4 w-4" /> {t('settings.address.title')}
-                </h3>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-medium flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> {t('settings.address.title')}
+                  </h3>
+                  {isEditing && (
+                    <Select
+                      value={selectedCountry}
+                      onValueChange={(val: CountryCode) =>
+                        setSelectedCountry(val)
+                      }
+                    >
+                      <SelectTrigger className="w-[180px] h-8 text-xs">
+                        <SelectValue placeholder="País" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="BR">Brasil</SelectItem>
+                        <SelectItem value="US">United States</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <FormField
@@ -343,7 +372,11 @@ export default function Settings() {
                       <FormItem>
                         <FormLabel>{t('settings.address.zip')}</FormLabel>
                         <FormControl>
-                          <Input {...field} disabled={!isEditing} />
+                          <Input
+                            {...field}
+                            disabled={!isEditing}
+                            placeholder={t('settings.placeholder.zip')}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -494,7 +527,7 @@ export default function Settings() {
               <div className="grid gap-2">
                 <Label>{t('settings.banking.bank')}</Label>
                 <Input
-                  placeholder="Ex: Nubank"
+                  placeholder={t('settings.placeholder.bank')}
                   value={banking.bank}
                   onChange={(e) =>
                     setBanking({ ...banking, bank: e.target.value })
@@ -504,7 +537,7 @@ export default function Settings() {
               <div className="grid gap-2">
                 <Label>{t('settings.banking.agency')}</Label>
                 <Input
-                  placeholder="0000"
+                  placeholder={t('settings.placeholder.agency')}
                   value={banking.agency}
                   onChange={(e) =>
                     setBanking({ ...banking, agency: e.target.value })
@@ -514,7 +547,7 @@ export default function Settings() {
               <div className="grid gap-2">
                 <Label>{t('settings.banking.account')}</Label>
                 <Input
-                  placeholder="00000-0"
+                  placeholder={t('settings.placeholder.account')}
                   value={banking.account}
                   onChange={(e) =>
                     setBanking({ ...banking, account: e.target.value })
@@ -528,7 +561,7 @@ export default function Settings() {
                 <CreditCard className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   className="pl-9"
-                  placeholder="Documento"
+                  placeholder={t('settings.placeholder.doc')}
                   value={banking.document}
                   onChange={(e) =>
                     setBanking({ ...banking, document: e.target.value })

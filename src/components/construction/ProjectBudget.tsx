@@ -25,7 +25,7 @@ import {
 } from '@/components/ui/card'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { Trash2, Plus, DollarSign } from 'lucide-react'
+import { Trash2, Plus } from 'lucide-react'
 import { CurrencyInput } from '@/components/CurrencyInput'
 
 interface ProjectBudgetProps {
@@ -147,14 +147,10 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
               <label className="text-xs font-medium">
                 {t('proj.budget.unit_cost')}
               </label>
-              <div className="relative">
-                <DollarSign className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                <CurrencyInput
-                  className="pl-8"
-                  value={newItem.unitCost}
-                  onChange={(val) => setNewItem({ ...newItem, unitCost: val })}
-                />
-              </div>
+              <CurrencyInput
+                value={newItem.unitCost}
+                onChange={(val) => setNewItem({ ...newItem, unitCost: val })}
+              />
             </div>
             <div className="md:col-span-2">
               <Button onClick={handleAddItem} className="w-full">
