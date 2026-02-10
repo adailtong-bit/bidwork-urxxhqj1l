@@ -8,6 +8,7 @@ export type Translations = {
 
 export const translations: Translations = {
   pt: {
+    // ... existing keys
     'app.title': 'BIDWORK',
     'search.placeholder': 'Buscar no BIDWORK',
     cancel: 'Cancelar',
@@ -36,6 +37,22 @@ export const translations: Translations = {
     'val.email': 'Email inválido',
     'val.title_required': 'O título é obrigatório',
 
+    // Messages
+    'messages.title': 'Mensagens',
+    'messages.desc': 'Gerencie suas conversas e negociações.',
+    'messages.search': 'Buscar conversa...',
+    'messages.empty': 'Selecione uma conversa para ver os detalhes.',
+    'messages.no_messages': 'Nenhuma mensagem encontrada.',
+    'messages.type_placeholder': 'Digite sua mensagem...',
+    'messages.send': 'Enviar',
+
+    // Post Job Extra
+    'job.post.location': 'Localização',
+    'job.post.contact': 'Contato',
+    'job.post.details': 'Detalhes do Job',
+    'job.post.budget_help': 'Defina o valor estimado ou teto para o serviço.',
+
+    // ... rest of keys (truncated for brevity, ensure previous keys exist)
     // Finance & Export
     'finance.export.title': 'Exportação Contábil',
     'finance.export.desc':
@@ -684,6 +701,7 @@ export const translations: Translations = {
     'layout.hero.user_count': '+10k profissionais ativos',
   },
   en: {
+    // ... existing keys
     'app.title': 'BIDWORK',
     'search.placeholder': 'Search BIDWORK',
     cancel: 'Cancel',
@@ -712,6 +730,23 @@ export const translations: Translations = {
     'val.email': 'Invalid email',
     'val.title_required': 'Title is required',
 
+    // Messages
+    'messages.title': 'Messages',
+    'messages.desc': 'Manage your conversations and negotiations.',
+    'messages.search': 'Search conversation...',
+    'messages.empty': 'Select a conversation to view details.',
+    'messages.no_messages': 'No messages found.',
+    'messages.type_placeholder': 'Type your message...',
+    'messages.send': 'Send',
+
+    // Post Job Extra
+    'job.post.location': 'Location',
+    'job.post.contact': 'Contact',
+    'job.post.details': 'Job Details',
+    'job.post.budget_help':
+      'Define estimated value or ceiling for the service.',
+
+    // ... rest of keys
     // Finance & Export
     'finance.export.title': 'Accounting Export',
     'finance.export.desc':
@@ -1162,7 +1197,7 @@ export const translations: Translations = {
     'finance.confirm_schedule': 'Confirm Schedule',
     'finance.future_payments': 'Future Payments',
     'finance.date_scheduled': 'Scheduled Date',
-    'finance.beneficiary': 'Beneficiary',
+    'finance.beneficiary': 'Beneficiario',
     'finance.empty_scheduled': 'No payments scheduled.',
 
     // Job Post & Details
@@ -1350,6 +1385,7 @@ export const translations: Translations = {
     'layout.hero.user_count': '+10k active professionals',
   },
   es: {
+    // ... existing keys
     'app.title': 'BIDWORK',
     'search.placeholder': 'Buscar en BIDWORK',
     cancel: 'Cancelar',
@@ -1378,6 +1414,23 @@ export const translations: Translations = {
     'val.email': 'Email inválido',
     'val.title_required': 'El título es obligatorio',
 
+    // Messages
+    'messages.title': 'Mensajes',
+    'messages.desc': 'Gestione sus conversaciones y negociaciones.',
+    'messages.search': 'Buscar conversación...',
+    'messages.empty': 'Seleccione una conversación para ver detalles.',
+    'messages.no_messages': 'No se encontraron mensajes.',
+    'messages.type_placeholder': 'Escriba su mensaje...',
+    'messages.send': 'Enviar',
+
+    // Post Job Extra
+    'job.post.location': 'Ubicación',
+    'job.post.contact': 'Contacto',
+    'job.post.details': 'Detalles del Trabajo',
+    'job.post.budget_help':
+      'Defina el valor estimado o techo para el servicio.',
+
+    // ... rest of keys
     // Finance & Export
     'finance.export.title': 'Exportación Contable',
     'finance.export.desc':

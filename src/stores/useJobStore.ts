@@ -52,6 +52,7 @@ export interface Job {
   maxExecutionDeadline?: Date
   premiumType: 'none' | 'region' | 'category'
   smartMatchScore?: number
+  contactPhone?: string // Added contact phone
 }
 
 interface JobState {
@@ -112,6 +113,7 @@ const createMockJob = (
       : undefined,
   premiumType: Math.random() > 0.7 ? 'region' : 'none',
   smartMatchScore: Math.floor(Math.random() * 30) + 70,
+  contactPhone: '(11) 99999-9999',
 })
 
 const mockJobs: Job[] = [

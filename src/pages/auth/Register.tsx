@@ -13,6 +13,7 @@ import {
   commonValidation,
   CountryCode,
 } from '@/lib/validation'
+import { maskPhone, maskZip } from '@/lib/utils'
 import {
   Loader2,
   User,
@@ -43,7 +44,7 @@ export default function Register() {
   const { register: registerUser, isLoading } = useAuthStore()
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { t } = useLanguageStore()
+  const { t, currentLanguage } = useLanguageStore()
 
   const [country, setCountry] = useState<CountryCode>('BR')
 
@@ -342,12 +343,17 @@ export default function Register() {
                       <FormLabel>{t('settings.form.phone')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={
-                            country === 'BR'
-                              ? '(11) 99999-0000'
-                              : '(555) 555-0123'
-                          }
+                          placeholder={t('settings.placeholder.phone')}
                           {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              maskPhone(
+                                e.target.value,
+                                country === 'BR' ? 'pt' : 'en',
+                              ),
+                            )
+                          }
+                          maxLength={country === 'BR' ? 15 : 14}
                         />
                       </FormControl>
                       <FormMessage />
@@ -362,8 +368,17 @@ export default function Register() {
                       <FormLabel>{t('settings.address.zip')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder={country === 'BR' ? '00000-000' : '12345'}
+                          placeholder={t('settings.placeholder.zip')}
                           {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              maskZip(
+                                e.target.value,
+                                country === 'BR' ? 'pt' : 'en',
+                              ),
+                            )
+                          }
+                          maxLength={country === 'BR' ? 9 : 10}
                         />
                       </FormControl>
                       <FormMessage />

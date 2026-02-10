@@ -7,7 +7,7 @@ import {
   FolderOpen,
   PlusCircle,
   Search,
-  MessageSquare,
+  MessageSquare, // Kept this one, changed bottom nav
   Briefcase,
   Crown,
   Coins,
@@ -30,6 +30,7 @@ import {
   Wrench,
   LogIn,
   UserPlus,
+  Mail, // Imported Mail for distinct icon
 } from 'lucide-react'
 import {
   Sidebar,
@@ -92,7 +93,7 @@ export function MainSidebar() {
     {
       title: t('sidebar.messages'),
       url: '/messages',
-      icon: MessageSquare,
+      icon: Mail, // Changed from MessageSquare to Mail
     },
   ]
 
@@ -168,7 +169,7 @@ export function MainSidebar() {
   const partnerItems = [
     {
       title: t('sidebar.team'),
-      url: '/partner/dashboard', // handled via tabs in dashboard for simplicity
+      url: '/partner/dashboard',
       icon: Users,
     },
     {

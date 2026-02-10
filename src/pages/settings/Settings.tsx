@@ -26,6 +26,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { getCountryValidation, CountryCode } from '@/lib/validation'
+import { maskPhone, maskZip } from '@/lib/utils'
 import {
   Building2,
   MapPin,
@@ -315,6 +316,12 @@ export default function Settings() {
                             {...field}
                             disabled={!isEditing}
                             placeholder={t('settings.placeholder.phone')}
+                            onChange={(e) =>
+                              field.onChange(
+                                maskPhone(e.target.value, currentLanguage),
+                              )
+                            }
+                            maxLength={currentLanguage === 'pt' ? 15 : 14}
                           />
                         </FormControl>
                         <FormMessage />
@@ -376,6 +383,12 @@ export default function Settings() {
                             {...field}
                             disabled={!isEditing}
                             placeholder={t('settings.placeholder.zip')}
+                            onChange={(e) =>
+                              field.onChange(
+                                maskZip(e.target.value, currentLanguage),
+                              )
+                            }
+                            maxLength={currentLanguage === 'pt' ? 9 : 10}
                           />
                         </FormControl>
                         <FormMessage />

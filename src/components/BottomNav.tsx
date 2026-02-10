@@ -1,5 +1,12 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Home, Search, PlusCircle, Briefcase, User } from 'lucide-react'
+import {
+  Home,
+  Search,
+  PlusCircle,
+  Briefcase,
+  User,
+  MessageSquare,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -70,7 +77,7 @@ export function BottomNav() {
             isActive('/messages') ? 'text-primary' : 'text-muted-foreground',
           )}
         >
-          <Briefcase className="h-5 w-5" />
+          <MessageSquare className="h-5 w-5" />
           <span className="text-[10px] font-medium">{t('nav.inbox')}</span>
         </Link>
 

@@ -41,6 +41,7 @@ import {
   HardHat,
   Image as ImageIcon,
   Loader2,
+  Phone,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -48,17 +49,19 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
-import { cn } from '@/lib/utils'
+import { cn, maskPhone, maskZip } from '@/lib/utils'
 import { format } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { ptBR, enUS, es } from 'date-fns/locale'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { CurrencyInput } from '@/components/CurrencyInput'
+import { getCountryValidation } from '@/lib/validation'
 
 export default function PostJob() {
-  const { addJob } = useJobStore() // Removed hasActiveJob destructuring
+  const { addJob } = useJobStore()
   const { user } = useAuthStore()
   const { categories } = useCategoryStore()
   const { projects, updateStageActuals } = useProjectStore()
-  const { t } = useLanguageStore() // Added translation hook
+  const { t, getDateLocale, currentLanguage } = useLanguageStore()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
@@ -71,14 +74,20 @@ export default function PostJob() {
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
 
+  // Get localized validations (defaulting to BR for this example as we don't have job country selector)
+  const { phone: phoneValidation, zip: zipValidation } = getCountryValidation(
+    (user?.address?.country as any) || 'BR',
+  )
+
   const jobSchema = z.object({
     title: z.string().min(5, t('val.title_required')),
     description: z.string().min(20, t('val.required')),
     type: z.enum(['fixed', 'auction']),
     category: z.string().min(1, t('val.required')),
     subCategory: z.string().min(1, t('val.required')),
+    contactPhone: phoneValidation,
     // Address Fields
-    zipCode: z.string().min(8, t('val.required')),
+    zipCode: zipValidation,
     street: z.string().min(3, t('val.required')),
     number: z.string().min(1, t('val.required')),
     complement: z.string().optional(),
@@ -87,8 +96,7 @@ export default function PostJob() {
     state: z.string().length(2, t('val.required')),
     // Budget & Dates
     budget: z
-      .string()
-      .transform((val) => Number(val))
+      .number({ required_error: t('val.required') })
       .refine((val) => val > 0, t('val.required')),
     auctionEndDate: z.date().optional(),
     maxExecutionDeadline: z.date({
@@ -110,13 +118,14 @@ export default function PostJob() {
       type: 'fixed',
       category: '',
       subCategory: '',
-      zipCode: '',
-      street: '',
-      number: '',
-      complement: '',
-      neighborhood: '',
-      city: user?.location?.split(' - ')[0] || '',
-      state: user?.location?.split(' - ')[1] || '',
+      contactPhone: user?.phone || '',
+      zipCode: user?.address?.zipCode || '',
+      street: user?.address?.street || '',
+      number: user?.address?.number || '',
+      complement: user?.address?.complement || '',
+      neighborhood: user?.address?.neighborhood || '',
+      city: user?.location?.split(' - ')[0] || user?.address?.city || '',
+      state: user?.location?.split(' - ')[1] || user?.address?.state || '',
       budget: 0,
       publicationDate: new Date(),
       premiumType: 'none',
@@ -135,8 +144,6 @@ export default function PostJob() {
   const currentCategory = categories.find((c) => c.name === selectedCategory)
   const availableSubCategories = currentCategory?.subCategories || []
 
-  // Validation logic removed as requested by user story
-
   const handleAddPhotoLink = () => {
     if (!photoInput) return
     setPhotos([...photos, photoInput])
@@ -144,7 +151,7 @@ export default function PostJob() {
   }
 
   const handleRemovePhoto = (index: number) => {
-    setPhotos(photos.filter((_, i) => i !== index))
+    setPhotos.filter((_, i) => i !== index)
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -152,7 +159,6 @@ export default function PostJob() {
     if (!files || files.length === 0) return
 
     setIsUploading(true)
-    // Simulate upload delay
     setTimeout(() => {
       const newPhotos = Array.from(files).map((file) =>
         URL.createObjectURL(file),
@@ -202,6 +208,7 @@ export default function PostJob() {
       projectId: data.projectId,
       stageId: data.stageId,
       regionCode: data.state,
+      contactPhone: data.contactPhone,
     })
 
     if (data.projectId && data.stageId && data.type === 'fixed') {
@@ -210,7 +217,7 @@ export default function PostJob() {
 
     toast({
       title: t('success'),
-      description: 'Job publicado com sucesso!', // Kept hardcoded as it's a notification, or add key if strictly required. "Job published successfully!"
+      description: 'Job publicado com sucesso!',
     })
 
     if (data.projectId) {
@@ -303,7 +310,7 @@ export default function PostJob() {
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('plans.details.title')}</CardTitle>
+              <CardTitle>{t('job.post.details')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -313,7 +320,7 @@ export default function PostJob() {
                   <FormItem>
                     <FormLabel>{t('plans.field.title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Reforma" {...field} />
+                      <Input placeholder="Ex: Reforma da Sala" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -348,7 +355,7 @@ export default function PostJob() {
                       <Select
                         onValueChange={(val) => {
                           field.onChange(val)
-                          form.setValue('subCategory', '') // Reset subcategory
+                          form.setValue('subCategory', '')
                         }}
                         defaultValue={field.value}
                       >
@@ -402,6 +409,34 @@ export default function PostJob() {
                 />
               </div>
 
+              {/* Contact Phone */}
+              <FormField
+                control={form.control}
+                name="contactPhone"
+                render={({ field }) => (
+                  <FormItem className="pt-2">
+                    <FormLabel>{t('job.post.contact')}</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Phone className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder={t('settings.placeholder.phone')}
+                          className="pl-9"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              maskPhone(e.target.value, currentLanguage),
+                            )
+                          }
+                          maxLength={currentLanguage === 'pt' ? 15 : 14}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {/* Deadline */}
               <FormField
                 control={form.control}
@@ -420,7 +455,9 @@ export default function PostJob() {
                             )}
                           >
                             {field.value ? (
-                              format(field.value, 'PPP', { locale: ptBR })
+                              format(field.value, 'PPP', {
+                                locale: getDateLocale(),
+                              })
                             ) : (
                               <span>{t('date')}</span>
                             )}
@@ -445,85 +482,10 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
-          {/* Images Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle>{t('job.photos')}</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <FormLabel>Upload</FormLabel>
-                <div className="flex gap-4 items-center">
-                  <Button
-                    type="button"
-                    variant="secondary"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploading}
-                    className="w-full md:w-auto"
-                  >
-                    {isUploading ? (
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    ) : (
-                      <ImageIcon className="h-4 w-4 mr-2" />
-                    )}
-                    {t('eq.select.file')}
-                  </Button>
-                  <Input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                    multiple
-                    onChange={handleFileUpload}
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <FormLabel>Link</FormLabel>
-                <div className="flex gap-2">
-                  <Input
-                    placeholder="https://..."
-                    value={photoInput}
-                    onChange={(e) => setPhotoInput(e.target.value)}
-                  />
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={handleAddPhotoLink}
-                  >
-                    <Upload className="h-4 w-4 mr-2" /> {t('add')}
-                  </Button>
-                </div>
-              </div>
-
-              {photos.length > 0 && (
-                <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
-                  {photos.map((photo, idx) => (
-                    <div key={idx} className="relative group shrink-0">
-                      <img
-                        src={photo}
-                        alt="Job preview"
-                        className="w-32 h-32 object-cover rounded-md border shadow-sm"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleRemovePhoto(idx)}
-                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
           {/* Address Section */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('settings.address.title')}</CardTitle>
+              <CardTitle>{t('job.post.location')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -534,7 +496,16 @@ export default function PostJob() {
                     <FormItem>
                       <FormLabel>{t('settings.address.zip')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="00000-000" {...field} />
+                        <Input
+                          placeholder={t('settings.placeholder.zip')}
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(
+                              maskZip(e.target.value, currentLanguage),
+                            )
+                          }
+                          maxLength={currentLanguage === 'pt' ? 9 : 10}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -700,16 +671,15 @@ export default function PostJob() {
                           : t('job.budget')}
                       </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <DollarSign className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            className="pl-9"
-                            type="number"
-                            placeholder="0.00"
-                            {...field}
-                          />
-                        </div>
+                        <CurrencyInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          placeholder="0.00"
+                        />
                       </FormControl>
+                      <FormDescription>
+                        {t('job.post.budget_help')}
+                      </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -733,7 +703,9 @@ export default function PostJob() {
                                 )}
                               >
                                 {field.value ? (
-                                  format(field.value, 'PPP', { locale: ptBR })
+                                  format(field.value, 'PPP', {
+                                    locale: getDateLocale(),
+                                  })
                                 ) : (
                                   <span>{t('date')}</span>
                                 )}
@@ -757,6 +729,81 @@ export default function PostJob() {
                   />
                 )}
               </div>
+            </CardContent>
+          </Card>
+
+          {/* Images Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle>{t('job.photos')}</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <FormLabel>Upload</FormLabel>
+                <div className="flex gap-4 items-center">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploading}
+                    className="w-full md:w-auto"
+                  >
+                    {isUploading ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <ImageIcon className="h-4 w-4 mr-2" />
+                    )}
+                    {t('eq.select.file')}
+                  </Button>
+                  <Input
+                    type="file"
+                    ref={fileInputRef}
+                    className="hidden"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileUpload}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <FormLabel>Link</FormLabel>
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="https://..."
+                    value={photoInput}
+                    onChange={(e) => setPhotoInput(e.target.value)}
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={handleAddPhotoLink}
+                  >
+                    <Upload className="h-4 w-4 mr-2" /> {t('add')}
+                  </Button>
+                </div>
+              </div>
+
+              {photos.length > 0 && (
+                <div className="flex gap-4 mt-4 overflow-x-auto pb-2">
+                  {photos.map((photo, idx) => (
+                    <div key={idx} className="relative group shrink-0">
+                      <img
+                        src={photo}
+                        alt="Job preview"
+                        className="w-32 h-32 object-cover rounded-md border shadow-sm"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleRemovePhoto(idx)}
+                        className="absolute -top-2 -right-2 bg-destructive text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -785,7 +832,9 @@ export default function PostJob() {
                             />
                           </FormControl>
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
-                            <span className="font-semibold">Gratuito</span>
+                            <span className="font-semibold">
+                              {t('job.premium.free')}
+                            </span>
                           </FormLabel>
                         </FormItem>
                         <FormItem>
@@ -798,7 +847,7 @@ export default function PostJob() {
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <Zap className="mb-2 h-5 w-5 text-blue-500" />
                             <span className="font-semibold text-center">
-                              Região (+R$ 19,90)
+                              {t('job.premium.region')}
                             </span>
                           </FormLabel>
                         </FormItem>
@@ -812,7 +861,7 @@ export default function PostJob() {
                           <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer relative overflow-hidden h-full">
                             <Zap className="mb-2 h-5 w-5 text-yellow-500 fill-yellow-500" />
                             <span className="font-semibold text-center">
-                              Categoria (+R$ 39,90)
+                              {t('job.premium.category')}
                             </span>
                           </FormLabel>
                         </FormItem>

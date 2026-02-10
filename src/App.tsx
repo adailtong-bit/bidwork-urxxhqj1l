@@ -48,6 +48,7 @@ import PartnerDashboard from '@/pages/partner/PartnerDashboard'
 import Resources from '@/pages/construction/Resources'
 import TeamInvoicing from '@/pages/construction/TeamInvoicing'
 import ConstructionDocuments from '@/pages/construction/ConstructionDocuments'
+import Messages from '@/pages/messages/Messages'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
@@ -215,10 +216,7 @@ const App = () => {
               <Route path="/settings" element={<Settings />} />
               <Route path="/testing" element={<TestingHub />} />
 
-              <Route
-                path="/messages"
-                element={<Navigate to="/dashboard" replace />}
-              />
+              <Route path="/messages" element={<Messages />} />
             </Route>
           </Route>
           <Route path="*" element={<NotFound />} />
