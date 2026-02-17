@@ -29,8 +29,8 @@ export function CurrencyInput({
       locale = 'en-US'
       currency = 'USD'
     } else if (currentLanguage === 'es') {
-      locale = 'es-ES' // Using Spain as proxy for formatting
-      currency = 'USD' // Often used in LATAM business, or could be generic
+      locale = 'es-ES' // Using Spain as proxy for formatting but keeping USD usually for LATAM general or specific currency
+      currency = 'USD' // Defaulting to USD for international template
     }
 
     // Format the value as currency

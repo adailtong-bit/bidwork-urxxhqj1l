@@ -26,7 +26,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { getCountryValidation, CountryCode } from '@/lib/validation'
-import { maskPhone, maskZip } from '@/lib/utils'
+import { maskPhone, maskZip, maskTaxId } from '@/lib/utils'
 import {
   Building2,
   MapPin,
@@ -340,6 +340,12 @@ export default function Settings() {
                             {...field}
                             disabled={!isEditing}
                             placeholder={t('settings.placeholder.doc')}
+                            onChange={(e) =>
+                              field.onChange(
+                                maskTaxId(e.target.value, currentLanguage),
+                              )
+                            }
+                            maxLength={currentLanguage === 'pt' ? 18 : 14}
                           />
                         </FormControl>
                         <FormMessage />
@@ -388,7 +394,7 @@ export default function Settings() {
                                 maskZip(e.target.value, currentLanguage),
                               )
                             }
-                            maxLength={currentLanguage === 'pt' ? 9 : 10}
+                            maxLength={currentLanguage === 'pt' ? 9 : 5}
                           />
                         </FormControl>
                         <FormMessage />
@@ -577,8 +583,12 @@ export default function Settings() {
                   placeholder={t('settings.placeholder.doc')}
                   value={banking.document}
                   onChange={(e) =>
-                    setBanking({ ...banking, document: e.target.value })
+                    setBanking({
+                      ...banking,
+                      document: maskTaxId(e.target.value, currentLanguage),
+                    })
                   }
+                  maxLength={currentLanguage === 'pt' ? 18 : 14}
                 />
               </div>
             </div>

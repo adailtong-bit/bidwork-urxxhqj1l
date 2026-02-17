@@ -5,7 +5,6 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, Send, MessageSquare } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { formatDistanceToNow } from 'date-fns'
 import { useAuthStore } from '@/stores/useAuthStore'
 
@@ -107,6 +106,14 @@ export default function Messages() {
     setMessageInput('')
   }
 
+  // Helper to format date strictly with locale
+  const formatTimeAgo = (date: Date) => {
+    return formatDistanceToNow(date, {
+      addSuffix: true,
+      locale: getDateLocale(),
+    })
+  }
+
   return (
     <div className="flex h-[calc(100vh-100px)] gap-4 pb-20 md:pb-0">
       {/* Conversation List */}
@@ -162,10 +169,7 @@ export default function Messages() {
                         {conv.partnerName}
                       </span>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatDistanceToNow(conv.lastMessageTime, {
-                          addSuffix: false,
-                          locale: getDateLocale(),
-                        })}
+                        {formatTimeAgo(conv.lastMessageTime)}
                       </span>
                     </div>
                     <p className="text-sm text-muted-foreground truncate">
@@ -226,10 +230,7 @@ export default function Messages() {
                   >
                     <p className="text-sm">{msg.content}</p>
                     <span className="text-[10px] opacity-70 block mt-1 text-right">
-                      {formatDistanceToNow(msg.timestamp, {
-                        addSuffix: true,
-                        locale: getDateLocale(),
-                      })}
+                      {formatTimeAgo(msg.timestamp)}
                     </span>
                   </div>
                 </div>

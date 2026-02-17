@@ -33,7 +33,6 @@ import {
   Calendar as CalendarIcon,
   Gavel,
   Tag,
-  DollarSign,
   Clock,
   Zap,
   Upload,
@@ -42,6 +41,7 @@ import {
   Image as ImageIcon,
   Loader2,
   Phone,
+  Link as LinkIcon,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -51,7 +51,6 @@ import {
 } from '@/components/ui/popover'
 import { cn, maskPhone, maskZip } from '@/lib/utils'
 import { format } from 'date-fns'
-import { ptBR, enUS, es } from 'date-fns/locale'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { CurrencyInput } from '@/components/CurrencyInput'
 import { getCountryValidation } from '@/lib/validation'
@@ -74,10 +73,10 @@ export default function PostJob() {
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
 
-  // Get localized validations (defaulting to BR for this example as we don't have job country selector)
-  const { phone: phoneValidation, zip: zipValidation } = getCountryValidation(
-    (user?.address?.country as any) || 'BR',
-  )
+  // Determine country for validation
+  const country = (user?.address?.country as 'BR' | 'US') || 'BR'
+  const { phone: phoneValidation, zip: zipValidation } =
+    getCountryValidation(country)
 
   const jobSchema = z.object({
     title: z.string().min(5, t('val.title_required')),
@@ -151,7 +150,7 @@ export default function PostJob() {
   }
 
   const handleRemovePhoto = (index: number) => {
-    setPhotos.filter((_, i) => i !== index)
+    setPhotos(photos.filter((_, i) => i !== index))
   }
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -233,9 +232,9 @@ export default function PostJob() {
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">
-          {t('dashboard.post_job')}
+          {t('sidebar.post_job')}
         </h1>
-        <p className="text-muted-foreground">{t('plans.details.desc')}</p>
+        <p className="text-muted-foreground">{t('job.post.details')}</p>
       </div>
 
       <Form {...form}>
@@ -382,7 +381,7 @@ export default function PostJob() {
                   name="subCategory"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Sub-Categoria</FormLabel>
+                      <FormLabel>{t('job.subcategory')}</FormLabel>
                       <Select
                         onValueChange={field.onChange}
                         value={field.value}
@@ -471,6 +470,7 @@ export default function PostJob() {
                           selected={field.value}
                           onSelect={field.onChange}
                           disabled={(date) => date < new Date()}
+                          locale={getDateLocale()}
                           initialFocus
                         />
                       </PopoverContent>
@@ -504,7 +504,7 @@ export default function PostJob() {
                               maskZip(e.target.value, currentLanguage),
                             )
                           }
-                          maxLength={currentLanguage === 'pt' ? 9 : 10}
+                          maxLength={currentLanguage === 'pt' ? 9 : 5}
                         />
                       </FormControl>
                       <FormMessage />
@@ -617,7 +617,7 @@ export default function PostJob() {
                 name="type"
                 render={({ field }) => (
                   <FormItem className="space-y-3">
-                    <FormLabel>Tipo</FormLabel>
+                    <FormLabel>{t('job.type')}</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -691,7 +691,7 @@ export default function PostJob() {
                     name="auctionEndDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Fim</FormLabel>
+                        <FormLabel>{t('job.end_date')}</FormLabel>
                         <Popover>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -719,6 +719,7 @@ export default function PostJob() {
                               selected={field.value}
                               onSelect={field.onChange}
                               disabled={(date) => date < new Date()}
+                              locale={getDateLocale()}
                               initialFocus
                             />
                           </PopoverContent>
@@ -739,7 +740,7 @@ export default function PostJob() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <FormLabel>Upload</FormLabel>
+                <FormLabel>{t('job.upload')}</FormLabel>
                 <div className="flex gap-4 items-center">
                   <Button
                     type="button"
@@ -767,7 +768,7 @@ export default function PostJob() {
               </div>
 
               <div className="space-y-2">
-                <FormLabel>Link</FormLabel>
+                <FormLabel>{t('job.link')}</FormLabel>
                 <div className="flex gap-2">
                   <Input
                     placeholder="https://..."
@@ -779,7 +780,7 @@ export default function PostJob() {
                     variant="outline"
                     onClick={handleAddPhotoLink}
                   >
-                    <Upload className="h-4 w-4 mr-2" /> {t('add')}
+                    <LinkIcon className="h-4 w-4 mr-2" /> {t('add')}
                   </Button>
                 </div>
               </div>

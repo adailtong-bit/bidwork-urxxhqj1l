@@ -19,12 +19,12 @@ export const countryConfigs = {
     label: 'United States',
     // Matches (555) 555-5555
     phoneRegex: /^\(\d{3}\) \d{3}-\d{4}$/,
-    // Matches 12345 or 12345-6789
-    zipRegex: /^\d{5}(-\d{4})?$/,
+    // Matches 12345
+    zipRegex: /^\d{5}$/,
     phonePlaceholder: '(555) 555-0123',
     zipPlaceholder: '12345',
-    // Simple EIN check
-    taxIdRegex: /^\d{2}-\d{7}$/,
+    // Simple EIN check or SSN
+    taxIdRegex: /^\d{3}-\d{2}-\d{4}$|^\d{2}-\d{7}$/,
   },
 }
 
