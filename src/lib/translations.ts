@@ -85,9 +85,9 @@ export const translations: Translations = {
     'settings.placeholder.account': '00000-0',
     'settings.placeholder.doc': 'CPF/CNPJ',
 
-    'stage.land_purchase': '1. Compra do Terreno',
+    'stage.land_purchase': 'Compra de Terreno',
     'stage.land_purchase_desc': 'Pesquisa, Seleção, Zonas e Licenças.',
-    'stage.planning': '2. Planejamento e Projeto',
+    'stage.planning': 'Planejamento',
     'stage.planning_desc': 'Contratação, Desenvolvimento do Projeto.',
 
     'est.item.excavation': 'Escavação',
@@ -781,9 +781,9 @@ export const translations: Translations = {
     'settings.placeholder.account': '000000',
     'settings.placeholder.doc': 'SSN/EIN',
 
-    'stage.land_purchase': '1. Land Purchase',
+    'stage.land_purchase': 'Land Purchase',
     'stage.land_purchase_desc': 'Research, Selection, Zoning and Permits.',
-    'stage.planning': '2. Planning & Design',
+    'stage.planning': 'Planning',
     'stage.planning_desc': 'Hiring, Project Development.',
 
     'est.item.excavation': 'Excavation',
@@ -1226,7 +1226,7 @@ export const translations: Translations = {
     'job.send_bid': 'Send Bid',
     'job.payment_protected': 'Payment Protected',
     'job.payment_desc': 'Value released after completion.',
-    'job.photos': 'Photos',
+    'job.photos': 'Fotos',
     'job.published': 'Published on',
     'job.schedule': 'Schedule',
     'job.best_offer': 'Best Offer',
@@ -1475,9 +1475,9 @@ export const translations: Translations = {
     'settings.placeholder.account': '0000000000',
     'settings.placeholder.doc': 'RFC/DNI',
 
-    'stage.land_purchase': '1. Compra del Terreno',
+    'stage.land_purchase': 'Compra de Terreno',
     'stage.land_purchase_desc': 'Investigación, Selección, Zonificación.',
-    'stage.planning': '2. Planificación y Diseño',
+    'stage.planning': 'Planificación',
     'stage.planning_desc': 'Contratación, Desarrollo.',
 
     'est.item.excavation': 'Excavación',
@@ -1565,7 +1565,7 @@ export const translations: Translations = {
     'sidebar.group.admin': 'Administración',
     'sidebar.group.dev': 'Desarrollo',
 
-    'header.notifications': 'Notificaciones',
+    'header.notifications': 'Notificações',
     'header.notifications.empty': 'No hay notificaciones.',
     'header.notifications.view_all': 'Ver todas',
     'header.verified': 'Verificado',
@@ -2094,3 +2094,4 @@ export const translations: Translations = {
     'home.service.dog_training': 'Adiestramiento',
   },
 }
+

@@ -52,7 +52,7 @@ export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const { getProject, setProjectSqFt } = useProjectStore()
   const { toast } = useToast()
-  const { t, formatDate, formatCurrency } = useLanguageStore()
+  const { t, formatDate, formatCurrency, currentLanguage } = useLanguageStore()
 
   const csvInputRef = useRef<HTMLInputElement>(null)
   const project = getProject(id!)
@@ -118,8 +118,8 @@ export default function ProjectDetail() {
           </span>
           <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
             <CalendarIcon className="h-3 w-3" />{' '}
-            {formatDate(project.startDate, 'dd/MM/yyyy')} -{' '}
-            {formatDate(project.endDate, 'dd/MM/yyyy')}
+            {formatDate(project.startDate, 'P')} -{' '}
+            {formatDate(project.endDate, 'P')}
           </span>
         </div>
 
@@ -296,11 +296,14 @@ export default function ProjectDetail() {
                           {t(`status.${stage.status}`)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
-                          {formatDate(stage.startDate, 'dd/MM')}
+                          {formatDate(
+                            stage.startDate,
+                            currentLanguage === 'en' ? 'MM/dd' : 'dd/MM',
+                          )}
                         </span>
                       </div>
                       <CardTitle className="text-lg leading-tight mt-2">
-                        {stage.name}
+                        {t(stage.name)}
                       </CardTitle>
                       <Progress value={stage.progress} className="h-1.5 mt-2" />
                     </CardHeader>
@@ -330,7 +333,7 @@ export default function ProjectDetail() {
                                       : ''
                                   }
                                 >
-                                  {sub.name}
+                                  {t(sub.name)}
                                 </span>
                               </li>
                             ))}
@@ -383,9 +386,11 @@ export default function ProjectDetail() {
                           <div className="flex items-center gap-2 mt-1">
                             <Badge variant="outline">
                               {t('proj.partner.stage')}:{' '}
-                              {project.stages.find(
-                                (s) => s.id === partner.stageId,
-                              )?.name || 'Geral'}
+                              {t(
+                                project.stages.find(
+                                  (s) => s.id === partner.stageId,
+                                )?.name || 'Geral',
+                              )}
                             </Badge>
                             <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 border-yellow-200">
                               {t('proj.partner.score')}:{' '}
@@ -645,3 +650,4 @@ export default function ProjectDetail() {
     </div>
   )
 }
+
