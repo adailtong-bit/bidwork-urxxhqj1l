@@ -2094,4 +2094,3 @@ export const translations: Translations = {
     'home.service.dog_training': 'Adiestramiento',
   },
 }
-
