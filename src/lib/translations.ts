@@ -702,6 +702,9 @@ export const translations: Translations = {
     'docs.upload_date': 'Data de Envio',
 
     'home.listings.title': 'Destaques',
+    'home.promo.text': 'Serviços de {service} a partir de {price}',
+    'home.promo.btn': 'Ver Ofertas',
+    'home.service.dog_training': 'Adestramento',
   },
   en: {
     'app.title': 'BIDWORK',
@@ -1331,7 +1334,7 @@ export const translations: Translations = {
     'settings.address.zip': 'Zip Code',
     'settings.address.street': 'Street',
     'settings.address.number': 'Number',
-    'settings.address.complement': 'Complement',
+    'settings.address.complement': 'Complemento',
     'settings.address.neighborhood': 'Neighborhood',
     'settings.address.city': 'City',
     'settings.address.state': 'State',
@@ -1393,6 +1396,9 @@ export const translations: Translations = {
     'docs.upload_date': 'Upload Date',
 
     'home.listings.title': 'Highlights',
+    'home.promo.text': '{service} services starting at {price}',
+    'home.promo.btn': 'View Offers',
+    'home.service.dog_training': 'Dog Training',
   },
   es: {
     'app.title': 'BIDWORK',
@@ -2058,7 +2064,7 @@ export const translations: Translations = {
 
     'plans.title': 'Mis Planes',
     'plans.create': 'Crear Plan',
-    'plans.search': 'Buscar planes...',
+    'plans.search': 'Buscar planos...',
     'plans.status.all': 'Todos los Estados',
     'plans.empty': 'No se encontraron planes',
     'plans.empty_desc': 'Intente ajustar filtros o crear nuevo.',
@@ -2083,5 +2089,8 @@ export const translations: Translations = {
     'docs.upload_date': 'Fecha de Subida',
 
     'home.listings.title': 'Destacados',
+    'home.promo.text': 'Servicios de {service} desde {price}',
+    'home.promo.btn': 'Ver Ofertas',
+    'home.service.dog_training': 'Adiestramiento',
   },
 }
