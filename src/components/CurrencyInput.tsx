@@ -18,29 +18,26 @@ export function CurrencyInput({
   ...props
 }: CurrencyInputProps) {
   const [displayValue, setDisplayValue] = React.useState('')
-  const { currentLanguage } = useLanguageStore()
+  const { currentLanguage, currentCurrency } = useLanguageStore()
 
   React.useEffect(() => {
-    // Determine locale and currency based on selected language
+    // Determine locale for number formatting based on current language
     let locale = 'pt-BR'
-    let currency = 'BRL'
 
     if (currentLanguage === 'en') {
       locale = 'en-US'
-      currency = 'USD'
     } else if (currentLanguage === 'es') {
-      locale = 'es-ES' // Using Spain as proxy for formatting but keeping USD usually for LATAM general or specific currency
-      currency = 'USD' // Defaulting to USD for international template
+      locale = 'es-ES'
     }
 
-    // Format the value as currency
+    // Format the value as currency using the selected currency from store
     const formatted = new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currency,
+      currency: currentCurrency || 'BRL',
     }).format(value)
 
     setDisplayValue(formatted)
-  }, [value, currentLanguage])
+  }, [value, currentLanguage, currentCurrency])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value

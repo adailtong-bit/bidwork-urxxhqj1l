@@ -14,7 +14,6 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
   PieChart,
   Pie,
   Cell,
@@ -67,11 +66,11 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
 
   const chartConfig = {
     budget: {
-      label: t('proj.budget.title'),
+      label: t('proj.reports.budgeted'),
       color: 'hsl(var(--chart-1))',
     },
     actual: {
-      label: 'Realizado',
+      label: t('proj.reports.actual'),
       color: 'hsl(var(--chart-2))',
     },
   }
@@ -79,7 +78,7 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
   const handleExport = (type: 'pdf' | 'csv') => {
     toast({
       title: t('success'),
-      description: `Relatório exportado em ${type.toUpperCase()}`,
+      description: t('proj.reports.exported', { type: type.toUpperCase() }),
     })
   }
 
@@ -90,9 +89,7 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
           <h2 className="text-2xl font-bold tracking-tight">
             {t('proj.reports.title')}
           </h2>
-          <p className="text-muted-foreground">
-            Análise financeira e de progresso.
-          </p>
+          <p className="text-muted-foreground">{t('proj.reports.desc')}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={() => handleExport('pdf')}>
@@ -108,7 +105,9 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
         <Card>
           <CardHeader>
             <CardTitle>{t('proj.reports.progress_budget')}</CardTitle>
-            <CardDescription>Comparativo por Etapa</CardDescription>
+            <CardDescription>
+              {t('proj.reports.chart_progress')}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -133,13 +132,13 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
                     dataKey="budget"
                     fill="var(--color-budget)"
                     radius={[4, 4, 0, 0]}
-                    name="Orçado"
+                    name={t('proj.reports.budgeted')}
                   />
                   <Bar
                     dataKey="actual"
                     fill="var(--color-actual)"
                     radius={[4, 4, 0, 0]}
-                    name="Realizado"
+                    name={t('proj.reports.actual')}
                   />
                 </BarChart>
               </ChartContainer>
@@ -150,7 +149,7 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
         <Card>
           <CardHeader>
             <CardTitle>{t('proj.reports.category_dist')}</CardTitle>
-            <CardDescription>Distribuição do Orçamento</CardDescription>
+            <CardDescription>{t('proj.reports.chart_dist')}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="h-[300px]">
@@ -178,7 +177,7 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
             </div>
             <div className="text-center mt-4">
               <span className="text-sm text-muted-foreground">
-                Total: {formatCurrency(totalBudget)}
+                {t('proj.reports.total')}: {formatCurrency(totalBudget)}
               </span>
             </div>
           </CardContent>

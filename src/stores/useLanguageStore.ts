@@ -4,9 +4,13 @@ import { translations, Language } from '@/lib/translations'
 import { ptBR, enUS, es } from 'date-fns/locale'
 import { format } from 'date-fns'
 
+export type Currency = 'USD' | 'BRL' | 'EUR'
+
 interface LanguageState {
   currentLanguage: Language
+  currentCurrency: Currency
   setLanguage: (lang: Language) => void
+  setCurrency: (currency: Currency) => void
   t: (key: string, params?: Record<string, string | number>) => string
   formatCurrency: (value: number) => string
   formatDate: (date: Date, formatStr: string) => string
@@ -17,7 +21,9 @@ export const useLanguageStore = create<LanguageState>()(
   persist(
     (set, get) => ({
       currentLanguage: 'pt',
+      currentCurrency: 'BRL',
       setLanguage: (lang) => set({ currentLanguage: lang }),
+      setCurrency: (currency) => set({ currentCurrency: currency }),
       t: (key, params) => {
         const lang = get().currentLanguage
         let text = translations[lang][key] || key
@@ -32,9 +38,10 @@ export const useLanguageStore = create<LanguageState>()(
       },
       formatCurrency: (value) => {
         const lang = get().currentLanguage
+        const currency = get().currentCurrency || 'BRL'
         const locale =
           lang === 'pt' ? 'pt-BR' : lang === 'es' ? 'es-ES' : 'en-US'
-        const currency = lang === 'pt' ? 'BRL' : 'USD'
+
         return new Intl.NumberFormat(locale, {
           style: 'currency',
           currency,

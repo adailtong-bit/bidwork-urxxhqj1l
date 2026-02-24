@@ -33,8 +33,8 @@ export function ExternalIntegrationDialog({
   const handleToggle = (platform: 'trello' | 'asana' | 'jira') => {
     toggleIntegration(projectId, platform)
     toast({
-      title: 'Integração Atualizada',
-      description: `Status de conexão com ${platform} alterado.`,
+      title: t('proj.sync.updated'),
+      description: t('proj.sync.status_changed', { platform }),
     })
   }
 
@@ -71,7 +71,7 @@ export function ExternalIntegrationDialog({
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {isConnected
-                      ? `${t('proj.sync.connected')} - Sync: ${
+                      ? `${t('proj.sync.connected')} - ${t('proj.sync.sync')} ${
                           integration?.lastSync
                             ? formatDate(integration.lastSync, 'HH:mm')
                             : '-'

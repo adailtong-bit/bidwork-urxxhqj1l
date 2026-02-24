@@ -5,10 +5,9 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export function maskPhone(value: string, lang: string = 'pt') {
+export function maskPhone(value: string, region: string = 'BR') {
   let v = value.replace(/\D/g, '')
-  // US/International fallback
-  if (lang === 'en' || lang === 'us') {
+  if (region === 'US') {
     if (v.length > 10) v = v.substring(0, 10)
     if (v.length > 6) return v.replace(/^(\d{3})(\d{3})(\d{0,4})/, '($1) $2-$3')
     if (v.length > 3) return v.replace(/^(\d{3})(\d{0,3})/, '($1) $2')
@@ -22,9 +21,9 @@ export function maskPhone(value: string, lang: string = 'pt') {
   return v
 }
 
-export function maskZip(value: string, lang: string = 'pt') {
+export function maskZip(value: string, region: string = 'BR') {
   let v = value.replace(/\D/g, '')
-  if (lang === 'en' || lang === 'us') {
+  if (region === 'US') {
     if (v.length > 5) v = v.substring(0, 5)
     return v
   }
@@ -34,9 +33,9 @@ export function maskZip(value: string, lang: string = 'pt') {
   return v
 }
 
-export function maskTaxId(value: string, lang: string = 'pt') {
+export function maskTaxId(value: string, region: string = 'BR') {
   let v = value.replace(/\D/g, '')
-  if (lang === 'en' || lang === 'us') {
+  if (region === 'US') {
     // SSN (000-00-0000)
     if (v.length > 9) v = v.substring(0, 9)
     if (v.length > 5) return v.replace(/^(\d{3})(\d{2})(\d{0,4})/, '$1-$2-$3')

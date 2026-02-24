@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/form'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
-import { useLanguageStore } from '@/stores/useLanguageStore'
+import { useLanguageStore, Currency } from '@/stores/useLanguageStore'
 import { getCountryValidation, CountryCode } from '@/lib/validation'
 import { maskPhone, maskZip, maskTaxId } from '@/lib/utils'
 import {
@@ -53,7 +53,8 @@ import {
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
   const { toast } = useToast()
-  const { t, currentLanguage, setLanguage } = useLanguageStore()
+  const { t, currentLanguage, setLanguage, currentCurrency, setCurrency } =
+    useLanguageStore()
 
   // Derive initial country from address or default to BR, but allow changing it
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
@@ -318,10 +319,10 @@ export default function Settings() {
                             placeholder={t('settings.placeholder.phone')}
                             onChange={(e) =>
                               field.onChange(
-                                maskPhone(e.target.value, currentLanguage),
+                                maskPhone(e.target.value, selectedCountry),
                               )
                             }
-                            maxLength={currentLanguage === 'pt' ? 15 : 14}
+                            maxLength={selectedCountry === 'BR' ? 15 : 14}
                           />
                         </FormControl>
                         <FormMessage />
@@ -342,10 +343,10 @@ export default function Settings() {
                             placeholder={t('settings.placeholder.doc')}
                             onChange={(e) =>
                               field.onChange(
-                                maskTaxId(e.target.value, currentLanguage),
+                                maskTaxId(e.target.value, selectedCountry),
                               )
                             }
-                            maxLength={currentLanguage === 'pt' ? 18 : 14}
+                            maxLength={selectedCountry === 'BR' ? 18 : 14}
                           />
                         </FormControl>
                         <FormMessage />
@@ -367,11 +368,11 @@ export default function Settings() {
                       }
                     >
                       <SelectTrigger className="w-[180px] h-8 text-xs">
-                        <SelectValue placeholder="País" />
+                        <SelectValue placeholder={t('general.select')} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="BR">Brasil</SelectItem>
-                        <SelectItem value="US">United States</SelectItem>
+                        <SelectItem value="BR">{t('country.br')}</SelectItem>
+                        <SelectItem value="US">{t('country.us')}</SelectItem>
                       </SelectContent>
                     </Select>
                   )}
@@ -391,10 +392,10 @@ export default function Settings() {
                             placeholder={t('settings.placeholder.zip')}
                             onChange={(e) =>
                               field.onChange(
-                                maskZip(e.target.value, currentLanguage),
+                                maskZip(e.target.value, selectedCountry),
                               )
                             }
-                            maxLength={currentLanguage === 'pt' ? 9 : 5}
+                            maxLength={selectedCountry === 'BR' ? 9 : 5}
                           />
                         </FormControl>
                         <FormMessage />
@@ -501,7 +502,7 @@ export default function Settings() {
           </CardContent>
         </Card>
 
-        {/* Language Settings */}
+        {/* Language & Currency Settings */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -510,7 +511,7 @@ export default function Settings() {
             <CardDescription>{t('settings.language.desc')}</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-4 items-center">
+            <div className="flex flex-col md:flex-row gap-6 items-center">
               <div className="w-full md:w-1/2">
                 <Label className="mb-2 block">
                   {t('settings.language.select')}
@@ -526,6 +527,24 @@ export default function Settings() {
                     <SelectItem value="pt">{t('language.pt')}</SelectItem>
                     <SelectItem value="en">{t('language.en')}</SelectItem>
                     <SelectItem value="es">{t('language.es')}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="w-full md:w-1/2">
+                <Label className="mb-2 block">
+                  {t('settings.currency.select')}
+                </Label>
+                <Select
+                  value={currentCurrency}
+                  onValueChange={(val: Currency) => setCurrency(val)}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="USD">{t('currency.usd')}</SelectItem>
+                    <SelectItem value="BRL">{t('currency.brl')}</SelectItem>
+                    <SelectItem value="EUR">{t('currency.eur')}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -585,10 +604,10 @@ export default function Settings() {
                   onChange={(e) =>
                     setBanking({
                       ...banking,
-                      document: maskTaxId(e.target.value, currentLanguage),
+                      document: maskTaxId(e.target.value, selectedCountry),
                     })
                   }
-                  maxLength={currentLanguage === 'pt' ? 18 : 14}
+                  maxLength={selectedCountry === 'BR' ? 18 : 14}
                 />
               </div>
             </div>

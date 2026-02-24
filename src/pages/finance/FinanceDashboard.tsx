@@ -143,7 +143,7 @@ export default function FinanceDashboard() {
         payerId: user.id,
         payerName: user.name,
         receiverId: 'mock-receiver',
-        receiverName: 'Fornecedor Externo',
+        receiverName: t('finance.mock.supplier'),
         amount: scheduleData.amount,
         category: 'other',
       },
@@ -243,7 +243,7 @@ export default function FinanceDashboard() {
           <TabsTrigger value="overview">{t('finance.overview')}</TabsTrigger>
           {isPJ && (
             <TabsTrigger value="cashflow">
-              {t('finance.cashflow')} (Advanced)
+              {t('finance.cashflow')} {t('finance.advanced')}
             </TabsTrigger>
           )}
           <TabsTrigger value="scheduled">{t('finance.scheduled')}</TabsTrigger>
@@ -449,7 +449,7 @@ export default function FinanceDashboard() {
                           title: e.target.value,
                         })
                       }
-                      placeholder="Ex: Pagamento Fornecedor Aço"
+                      placeholder={t('finance.placeholder.description')}
                     />
                   </div>
                   <div className="grid gap-2">

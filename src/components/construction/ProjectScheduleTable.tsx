@@ -241,7 +241,7 @@ export function ProjectScheduleTable({
                       )}
                     </Button>
                     <span className="truncate" title={stage.name}>
-                      {stage.name}
+                      {t(stage.name)}
                     </span>
                   </div>
                 </TableCell>
@@ -297,7 +297,7 @@ export function ProjectScheduleTable({
                             className="truncate text-sm font-medium"
                             title={sub.name}
                           >
-                            {sub.name}
+                            {t(sub.name)}
                           </span>
                           {sub.assignedTeamMemberId && (
                             <span className="text-[10px] text-primary flex items-center gap-1 mt-0.5">
@@ -305,7 +305,7 @@ export function ProjectScheduleTable({
                               {partners
                                 .flatMap((p) => p.team)
                                 .find((m) => m.id === sub.assignedTeamMemberId)
-                                ?.name || 'Membro da Equipe'}
+                                ?.name || t('sched.team_member_fallback')}
                               {sub.taskPrice &&
                                 ` • ${formatCurrency(sub.taskPrice)}`}
                             </span>
@@ -390,7 +390,7 @@ export function ProjectScheduleTable({
                             >
                               <CheckCircle2 className="mr-2 h-4 w-4" />
                               {sub.status === 'completed'
-                                ? 'Reabrir'
+                                ? t('sched.reopen')
                                 : t('confirm')}
                             </DropdownMenuItem>
                             <DropdownMenuItem
@@ -400,8 +400,8 @@ export function ProjectScheduleTable({
                             >
                               <AlertCircle className="mr-2 h-4 w-4" />
                               {sub.status === 'delayed'
-                                ? 'Remover Atraso'
-                                : 'Marcar Atraso'}
+                                ? t('sched.remove_delay')
+                                : t('sched.mark_delay')}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive focus:text-destructive"
@@ -424,7 +424,7 @@ export function ProjectScheduleTable({
                         <div className="flex items-center gap-2 border-l-2 border-muted pl-3">
                           <Input
                             autoFocus
-                            placeholder="Nome da nova atividade..."
+                            placeholder={t('sched.new_activity.placeholder')}
                             className="h-8"
                             value={newItem.name}
                             onChange={(e) =>
@@ -483,7 +483,7 @@ export function ProjectScheduleTable({
               onClick={handleConfirmDelete}
               className="bg-destructive text-destructive-foreground"
             >
-              {deleteStep === 1 ? 'Continuar' : t('confirm')}
+              {deleteStep === 1 ? t('confirm') : t('confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

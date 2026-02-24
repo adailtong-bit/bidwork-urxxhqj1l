@@ -30,7 +30,6 @@ import {
   Clock,
   FileText,
 } from 'lucide-react'
-import { format } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 
 interface ProjectApprovalWorkflowProps {
@@ -48,7 +47,7 @@ export function ProjectApprovalWorkflow({
   if (!project) return null
 
   const handleStatusChange = (id: string, status: any) => {
-    updateApprovalStatus(projectId, id, status, 'Gerente de Projeto') // Mock user
+    updateApprovalStatus(projectId, id, status, t('proj.approvals.manager')) // Mock user
     toast({
       title: t('success'),
       description: `${t('status')} ${t('proj.approvals.' + status)}`,
@@ -80,20 +79,18 @@ export function ProjectApprovalWorkflow({
     <Card className="w-full">
       <CardHeader>
         <CardTitle>{t('proj.approvals.title')}</CardTitle>
-        <CardDescription>
-          Gerenciamento de documentos e faturas pendentes.
-        </CardDescription>
+        <CardDescription>{t('proj.approvals.desc')}</CardDescription>
       </CardHeader>
       <CardContent>
         <div className="rounded-md border">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Tipo</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Data</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Histórico</TableHead>
+                <TableHead>{t('proj.approvals.type')}</TableHead>
+                <TableHead>{t('proj.approvals.description')}</TableHead>
+                <TableHead>{t('proj.approvals.date')}</TableHead>
+                <TableHead>{t('proj.approvals.status')}</TableHead>
+                <TableHead>{t('proj.approvals.history')}</TableHead>
                 <TableHead className="w-[50px]"></TableHead>
               </TableRow>
             </TableHeader>
@@ -114,7 +111,7 @@ export function ProjectApprovalWorkflow({
                     <TableCell>{getStatusBadge(log.status)}</TableCell>
                     <TableCell>
                       <span className="text-xs text-muted-foreground">
-                        {log.history.length} alterações
+                        {log.history.length} {t('proj.approvals.changes')}
                       </span>
                     </TableCell>
                     <TableCell>
@@ -160,7 +157,7 @@ export function ProjectApprovalWorkflow({
                     colSpan={6}
                     className="text-center py-8 text-muted-foreground"
                   >
-                    Nenhum item pendente de aprovação.
+                    {t('proj.approvals.empty')}
                   </TableCell>
                 </TableRow>
               )}

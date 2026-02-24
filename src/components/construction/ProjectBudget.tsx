@@ -94,7 +94,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                 {t('proj.budget.item')}
               </label>
               <Input
-                placeholder="Ex: Cimento, Pedreiro..."
+                placeholder={t('proj.budget.placeholder')}
                 value={newItem.description}
                 onChange={(e) =>
                   setNewItem({ ...newItem, description: e.target.value })

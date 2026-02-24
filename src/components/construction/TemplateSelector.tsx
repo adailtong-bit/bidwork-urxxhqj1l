@@ -64,7 +64,7 @@ export function TemplateSelector({
       const mockParsedItems: ConstructionItem[] = [
         {
           id: 'custom-1',
-          name: 'Custom Task 1',
+          name: 'est.custom.task1',
           stage: 'M1',
           startDate: new Date(),
           endDate: addDays(new Date(), 5),
@@ -73,7 +73,7 @@ export function TemplateSelector({
         },
         {
           id: 'custom-2',
-          name: 'Custom Task 2',
+          name: 'est.custom.task2',
           stage: 'M2',
           startDate: addDays(new Date(), 6),
           endDate: addDays(new Date(), 10),
@@ -93,9 +93,7 @@ export function TemplateSelector({
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>{t('est.template.select')}</DialogTitle>
-          <DialogDescription>
-            Escolha um modelo padrão ou envie seu próprio arquivo.
-          </DialogDescription>
+          <DialogDescription>{t('est.template.select_desc')}</DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 py-6">
@@ -117,7 +115,7 @@ export function TemplateSelector({
                       {t('est.template.single_family')}
                     </CardTitle>
                     <CardDescription>
-                      Estrutura completa (M1-M4)
+                      {t('est.template.single_family_desc')}
                     </CardDescription>
                   </div>
                 </CardHeader>
@@ -135,7 +133,9 @@ export function TemplateSelector({
                     <CardTitle className="text-base">
                       {t('est.template.renovation')}
                     </CardTitle>
-                    <CardDescription>Focado em reformas</CardDescription>
+                    <CardDescription>
+                      {t('est.template.renovation_desc')}
+                    </CardDescription>
                   </div>
                 </CardHeader>
               </Card>
