@@ -125,7 +125,6 @@ export interface Integration {
   lastSync?: Date
 }
 
-// New Interface for Estimation Feature
 export interface ConstructionItem {
   id: string
   name: string
@@ -135,6 +134,13 @@ export interface ConstructionItem {
   pricePerSqFt?: number
   totalPrice: number
   isCustom?: boolean
+}
+
+export interface LaborAdjustment {
+  id: string
+  description: string
+  amount: number
+  date: Date
 }
 
 export interface Project {
@@ -155,9 +161,9 @@ export interface Project {
   approvalLogs: ApprovalLog[]
   integrations: Integration[]
   allocatedCosts?: CostItem[]
-  // New Fields
   sqFt?: number
   constructionItems: ConstructionItem[]
+  laborAdjustments?: LaborAdjustment[]
 }
 
 interface ProjectState {
@@ -173,6 +179,7 @@ interface ProjectState {
       | 'integrations'
       | 'allocatedCosts'
       | 'constructionItems'
+      | 'laborAdjustments'
     >,
   ) => void
   updateProject: (id: string, data: Partial<Project>) => void
@@ -289,7 +296,6 @@ interface ProjectState {
     platform: Integration['platform'],
   ) => void
   addAllocatedCost: (projectId: string, cost: Omit<CostItem, 'id'>) => void
-  // New Actions for Estimation
   setProjectSqFt: (projectId: string, sqFt: number) => void
   applyTemplate: (projectId: string, items: ConstructionItem[]) => void
   addConstructionItem: (
@@ -302,6 +308,10 @@ interface ProjectState {
     data: Partial<ConstructionItem>,
   ) => void
   removeConstructionItem: (projectId: string, itemId: string) => void
+  addLaborAdjustment: (
+    projectId: string,
+    adjustment: Omit<LaborAdjustment, 'id'>,
+  ) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -315,7 +325,6 @@ export const DEFAULT_STAGES_TEMPLATE = [
   },
 ]
 
-// Estimation Templates
 export const ESTIMATION_TEMPLATES = {
   'single-family': [
     { name: 'est.item.excavation', stage: 'M1' },
@@ -370,7 +379,7 @@ const mockProjects: Project[] = [
     status: 'in_progress',
     totalBudget: 1500000,
     totalSpent: 350000,
-    sqFt: 2500, // Example SqFt
+    sqFt: 2500,
     partners: [
       {
         id: 'partner-1',
@@ -483,7 +492,7 @@ const mockProjects: Project[] = [
         startDate: new Date(Date.now() - 86400000 * 30),
         endDate: new Date(Date.now() - 86400000 * 25),
         pricePerSqFt: 5,
-        totalPrice: 12500, // 2500 * 5
+        totalPrice: 12500,
       },
       {
         id: 'ci-2',
@@ -491,7 +500,15 @@ const mockProjects: Project[] = [
         stage: 'M1',
         startDate: new Date(Date.now() - 86400000 * 20),
         endDate: new Date(Date.now() - 86400000 * 10),
-        totalPrice: 25000, // Fixed
+        totalPrice: 25000,
+      },
+    ],
+    laborAdjustments: [
+      {
+        id: 'adj-1',
+        description: 'Horas extras concretagem',
+        amount: 3500,
+        date: new Date(Date.now() - 86400000 * 3),
       },
     ],
   },
@@ -513,6 +530,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           integrations: [],
           allocatedCosts: [],
           constructionItems: [],
+          laborAdjustments: [],
         },
       ],
     })),
@@ -699,7 +717,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) => {
         if (p.id === projectId) {
-          // ... (existing logic)
           return p
         }
         return p
@@ -1067,5 +1084,20 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
           : p,
       ),
+    })),
+  addLaborAdjustment: (projectId, adjustment) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            laborAdjustments: [
+              ...(p.laborAdjustments || []),
+              { ...adjustment, id: Math.random().toString(36).substr(2, 9) },
+            ],
+          }
+        }
+        return p
+      }),
     })),
 }))

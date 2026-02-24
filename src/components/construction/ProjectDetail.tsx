@@ -47,6 +47,7 @@ import {
 } from '@/components/ui/dialog'
 import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
+import { ProjectExecution } from '@/components/construction/ProjectExecution'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -145,7 +146,7 @@ export default function ProjectDetail() {
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-4xl flex-nowrap justify-start md:justify-center min-w-[700px] mb-8 h-auto p-1">
+          <TabsList className="w-full max-w-5xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
             <TabsTrigger value="estimation" className="flex-1">
               {t('est.tab.title')}
             </TabsTrigger>
@@ -154,6 +155,9 @@ export default function ProjectDetail() {
             </TabsTrigger>
             <TabsTrigger value="budget" className="flex-1">
               {t('proj.budget.title')}
+            </TabsTrigger>
+            <TabsTrigger value="execution" className="flex-1">
+              {t('proj.detail.financial_execution') || 'Execução'}
             </TabsTrigger>
             <TabsTrigger value="partners" className="flex-1">
               {t('proj.detail.partners')}
@@ -352,6 +356,11 @@ export default function ProjectDetail() {
         {/* Budget Tab */}
         <TabsContent value="budget" className="w-full animate-fade-in">
           <ProjectBudget projectId={project.id} />
+        </TabsContent>
+
+        {/* Execution Tab */}
+        <TabsContent value="execution" className="w-full animate-fade-in">
+          <ProjectExecution projectId={project.id} />
         </TabsContent>
 
         {/* Partners Tab */}
