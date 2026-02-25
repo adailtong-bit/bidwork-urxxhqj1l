@@ -42,6 +42,8 @@ import {
   Loader2,
   Phone,
   Link as LinkIcon,
+  Check,
+  ChevronsUpDown,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -49,6 +51,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover'
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from '@/components/ui/command'
+import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { cn, maskPhone, maskZip } from '@/lib/utils'
 import { format } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -72,6 +84,10 @@ export default function PostJob() {
 
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
+
+  const [linkToProject, setLinkToProject] = useState(!!preProjectId)
+  const [openProject, setOpenProject] = useState(false)
+  const [openStage, setOpenStage] = useState(false)
 
   // Determine country for validation
   const country = (user?.address?.country as 'BR' | 'US') || 'BR'
@@ -143,6 +159,14 @@ export default function PostJob() {
   const currentCategory = categories.find((c) => c.name === selectedCategory)
   const availableSubCategories = currentCategory?.subCategories || []
 
+  const handleToggleLink = (checked: boolean) => {
+    setLinkToProject(checked)
+    if (!checked) {
+      form.setValue('projectId', '')
+      form.setValue('stageId', '')
+    }
+  }
+
   const handleAddPhotoLink = () => {
     if (!photoInput) return
     setPhotos([...photos, photoInput])
@@ -204,13 +228,18 @@ export default function PostJob() {
       auctionEndDate: data.auctionEndDate,
       maxExecutionDeadline: data.maxExecutionDeadline,
       premiumType: data.premiumType,
-      projectId: data.projectId,
-      stageId: data.stageId,
+      projectId: linkToProject ? data.projectId || undefined : undefined,
+      stageId: linkToProject ? data.stageId || undefined : undefined,
       regionCode: data.state,
       contactPhone: data.contactPhone,
     })
 
-    if (data.projectId && data.stageId && data.type === 'fixed') {
+    if (
+      linkToProject &&
+      data.projectId &&
+      data.stageId &&
+      data.type === 'fixed'
+    ) {
       updateStageActuals(data.projectId, data.stageId, 'labor', data.budget)
     }
 
@@ -219,7 +248,7 @@ export default function PostJob() {
       description: 'Job publicado com sucesso!',
     })
 
-    if (data.projectId) {
+    if (linkToProject && data.projectId) {
       navigate(`/construction/projects/${data.projectId}`)
     } else {
       navigate('/my-jobs')
@@ -242,67 +271,179 @@ export default function PostJob() {
           {/* Construction/Project Context */}
           {isConstrutora && (
             <Card className="border-l-4 border-l-orange-500">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <HardHat className="h-5 w-5" />{' '}
-                  {t('construction.table.project')}
+              <CardHeader className={linkToProject ? 'pb-4' : ''}>
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <HardHat className="h-5 w-5" />{' '}
+                    {t('construction.table.project')}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-normal">
+                    <Label
+                      htmlFor="link-project"
+                      className="cursor-pointer font-medium"
+                    >
+                      Vincular este serviço a uma obra existente?
+                    </Label>
+                    <Switch
+                      id="link-project"
+                      checked={linkToProject}
+                      onCheckedChange={handleToggleLink}
+                    />
+                  </div>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="projectId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('construction.table.project')}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('general.select')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {projects.map((p) => (
-                            <SelectItem key={p.id} value={p.id}>
-                              {p.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="stageId"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('proj.partner.stage')}</FormLabel>
-                      <Select
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        disabled={!selectedProjectId}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder={t('general.select')} />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {availableStages.map((s) => (
-                            <SelectItem key={s.id} value={s.id}>
-                              {s.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
+              {linkToProject && (
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>
+                          {t('construction.table.project')} (Opcional)
+                        </FormLabel>
+                        <Popover
+                          open={openProject}
+                          onOpenChange={setOpenProject}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  'w-full justify-between',
+                                  !field.value && 'text-muted-foreground',
+                                )}
+                              >
+                                {field.value
+                                  ? projects.find((p) => p.id === field.value)
+                                      ?.name
+                                  : t('general.select')}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="p-0"
+                            style={{
+                              width: 'var(--radix-popover-trigger-width)',
+                            }}
+                          >
+                            <Command>
+                              <CommandInput
+                                placeholder={t('general.search') || 'Buscar...'}
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  Nenhum projeto encontrado.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {projects.map((p) => (
+                                    <CommandItem
+                                      key={p.id}
+                                      value={p.name}
+                                      onSelect={() => {
+                                        form.setValue('projectId', p.id)
+                                        form.setValue('stageId', '')
+                                        setOpenProject(false)
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          p.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                        )}
+                                      />
+                                      {p.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="stageId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>
+                          {t('proj.partner.stage')} (Opcional)
+                        </FormLabel>
+                        <Popover open={openStage} onOpenChange={setOpenStage}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                disabled={!selectedProjectId}
+                                className={cn(
+                                  'w-full justify-between',
+                                  !field.value && 'text-muted-foreground',
+                                )}
+                              >
+                                {field.value
+                                  ? availableStages.find(
+                                      (s) => s.id === field.value,
+                                    )?.name
+                                  : t('general.select')}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="p-0"
+                            style={{
+                              width: 'var(--radix-popover-trigger-width)',
+                            }}
+                          >
+                            <Command>
+                              <CommandInput
+                                placeholder={t('general.search') || 'Buscar...'}
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  Nenhuma etapa encontrada.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {availableStages.map((s) => (
+                                    <CommandItem
+                                      key={s.id}
+                                      value={s.name}
+                                      onSelect={() => {
+                                        form.setValue('stageId', s.id)
+                                        setOpenStage(false)
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          s.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                        )}
+                                      />
+                                      {s.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              )}
             </Card>
           )}
 
