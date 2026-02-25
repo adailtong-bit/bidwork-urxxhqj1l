@@ -34,6 +34,7 @@ import FinanceDashboard from '@/pages/finance/FinanceDashboard'
 import AccountingExport from '@/pages/finance/AccountingExport'
 import ManageCategories from '@/pages/admin/ManageCategories'
 import ManageAds from '@/pages/admin/ManageAds'
+import ManageConstructionPricing from '@/pages/admin/ManageConstructionPricing'
 import ConstructionDashboard from '@/pages/construction/ConstructionDashboard'
 import ProjectDetail from '@/pages/construction/ProjectDetail'
 import ProjectList from '@/pages/construction/ProjectList'
@@ -48,6 +49,8 @@ import PartnerDashboard from '@/pages/partner/PartnerDashboard'
 import Resources from '@/pages/construction/Resources'
 import TeamInvoicing from '@/pages/construction/TeamInvoicing'
 import ConstructionDocuments from '@/pages/construction/ConstructionDocuments'
+import ConstructionPlans from '@/pages/construction/ConstructionPlans'
+import ConstructionCheckout from '@/pages/construction/ConstructionCheckout'
 import Messages from '@/pages/messages/Messages'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -143,6 +146,14 @@ const App = () => {
                   </AdminRoute>
                 }
               />
+              <Route
+                path="/admin/construction-pricing"
+                element={
+                  <AdminRoute>
+                    <ManageConstructionPricing />
+                  </AdminRoute>
+                }
+              />
 
               <Route path="/plans" element={<PlansList />} />
               <Route path="/plans/:id" element={<PlanDetail />} />
@@ -177,7 +188,6 @@ const App = () => {
                 path="/construction/inventory"
                 element={<InventoryManager />}
               />
-              {/* New Routes */}
               <Route path="/construction/resources" element={<Resources />} />
               <Route
                 path="/construction/invoicing"
@@ -186,6 +196,14 @@ const App = () => {
               <Route
                 path="/construction/documents"
                 element={<ConstructionDocuments />}
+              />
+              <Route
+                path="/construction/plans"
+                element={<ConstructionPlans />}
+              />
+              <Route
+                path="/construction/checkout/:planId"
+                element={<ConstructionCheckout />}
               />
 
               {/* Training & Gamification Routes */}

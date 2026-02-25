@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import { useProjectStore } from '@/stores/useProjectStore'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -25,7 +26,6 @@ import {
   AlertCircle,
   ArrowRight,
   PieChart,
-  Lock,
 } from 'lucide-react'
 import { differenceInDays } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -39,13 +39,15 @@ import {
   DialogFooter,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { useToast } from '@/hooks/use-toast'
+import { PremiumConstructionModal } from '@/components/PremiumConstructionModal'
 
 export default function ConstructionDashboard() {
   const { projects } = useProjectStore()
-  const { user, activateConstructionSubscription } = useAuthStore()
+  const { user } = useAuthStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
-  const { toast } = useToast()
+  const navigate = useNavigate()
+
+  const [showPremiumModal, setShowPremiumModal] = useState(false)
 
   const activeProjects = projects.filter((p) => p.status === 'in_progress')
   const completedProjects = projects.filter((p) => p.status === 'completed')
@@ -56,52 +58,12 @@ export default function ConstructionDashboard() {
   // Subscription Check
   const isSubscribed = user?.constructionSubscription?.active
 
-  if (!isSubscribed) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-6 text-center">
-        <div className="bg-muted p-6 rounded-full">
-          <Lock className="h-16 w-16 text-muted-foreground" />
-        </div>
-        <div className="max-w-md space-y-2">
-          <h1 className="text-3xl font-bold">
-            {t('construction.subscription.required')}
-          </h1>
-          <p className="text-muted-foreground">
-            {t('construction.subscription.desc')}
-          </p>
-        </div>
-        <Card className="w-full max-w-sm">
-          <CardHeader>
-            <CardTitle>{t('construction.plan.title')}</CardTitle>
-            <CardDescription>{t('construction.plan.desc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2 text-left">
-            <div className="flex justify-between text-sm">
-              <span>{t('construction.plan.projects')}</span>
-              <span className="font-bold">Até 10</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span>{t('construction.plan.base_price')}</span>
-              <span className="font-bold">
-                {formatCurrency(500)}
-                /mês
-              </span>
-            </div>
-          </CardContent>
-          <CardFooter>
-            <Button
-              className="w-full"
-              onClick={() => {
-                activateConstructionSubscription()
-                toast({ title: t('success') })
-              }}
-            >
-              {t('construction.plan.activate')}
-            </Button>
-          </CardFooter>
-        </Card>
-      </div>
-    )
+  const handleProtectedAction = (callback: () => void) => {
+    if (!isSubscribed) {
+      setShowPremiumModal(true)
+    } else {
+      callback()
+    }
   }
 
   const finishedProjectStats = completedProjects.map((p) => {
@@ -140,6 +102,11 @@ export default function ConstructionDashboard() {
 
   return (
     <div className="space-y-8">
+      <PremiumConstructionModal
+        open={showPremiumModal}
+        onOpenChange={setShowPremiumModal}
+      />
+
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
@@ -149,10 +116,12 @@ export default function ConstructionDashboard() {
             {t('construction.dashboard.desc')}
           </p>
         </div>
-        <Button asChild>
-          <Link to="/construction/projects/new">
-            <Plus className="mr-2 h-4 w-4" /> {t('construction.new_project')}
-          </Link>
+        <Button
+          onClick={() =>
+            handleProtectedAction(() => navigate('/construction/projects/new'))
+          }
+        >
+          <Plus className="mr-2 h-4 w-4" /> {t('construction.new_project')}
         </Button>
       </div>
 
@@ -251,7 +220,7 @@ export default function ConstructionDashboard() {
         </Card>
       </div>
 
-      {user?.constructionSubscription && (
+      {user?.constructionSubscription?.active && (
         <Card className="bg-blue-50/50 border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-blue-800">
@@ -436,11 +405,17 @@ export default function ConstructionDashboard() {
                 </div>
               </CardContent>
               <CardFooter className="pt-0">
-                <Button asChild className="w-full" variant="outline">
-                  <Link to={`/construction/projects/${project.id}`}>
-                    {t('construction.manage')}{' '}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
+                <Button
+                  className="w-full"
+                  variant="outline"
+                  onClick={() =>
+                    handleProtectedAction(() =>
+                      navigate(`/construction/projects/${project.id}`),
+                    )
+                  }
+                >
+                  {t('construction.manage')}{' '}
+                  <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
             </Card>

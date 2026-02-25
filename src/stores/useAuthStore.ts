@@ -124,7 +124,10 @@ interface AuthState {
   setPendingEvaluation: (evaluation: User['pendingEvaluation']) => void
   buyCredits: (amount: number) => void
   upgradeSubscription: (tier: 'pro' | 'business') => void
-  activateConstructionSubscription: () => void
+  activateConstructionSubscription: (details?: {
+    limit: number
+    price: number
+  }) => void
   submitKYC: (file: File) => Promise<void>
   addTeamMember: (
     member: Omit<TeamMember, 'id' | 'avatar' | 'status' | 'performance'>,
@@ -420,16 +423,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         ? { ...state.user, subscriptionTier: tier, isPremium: true }
         : null,
     })),
-  activateConstructionSubscription: () =>
+  activateConstructionSubscription: (details) =>
     set((state) => ({
       user: state.user
         ? {
             ...state.user,
             constructionSubscription: {
               active: true,
-              basePrice: 500,
+              basePrice: details?.price || 500,
               franchiseeMarkup: 50,
-              projectLimit: 10,
+              projectLimit: details?.limit || 10,
               activeProjects: 0,
             },
           }
