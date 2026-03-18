@@ -62,6 +62,51 @@ const mockRankedUsers: RankedUser[] = [
     avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=24',
     rank: 5,
   },
+  {
+    id: 'u6',
+    name: 'Fernanda Lima',
+    role: 'UX/UI Designer',
+    points: 2600,
+    badges: ['Creative Mind'],
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=25',
+    rank: 6,
+  },
+  {
+    id: 'u7',
+    name: 'Lucas Martins',
+    role: 'Engenheiro Civil',
+    points: 2450,
+    badges: ['Structural Expert'],
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=26',
+    rank: 7,
+  },
+  {
+    id: 'u8',
+    name: 'Beatriz Costa',
+    role: 'Mestre de Obras',
+    points: 2100,
+    badges: ['Leadership'],
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=27',
+    rank: 8,
+  },
+  {
+    id: 'u9',
+    name: 'Paulo Ferreira',
+    role: 'Pintor Profissional',
+    points: 1950,
+    badges: ['Clean Work'],
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=28',
+    rank: 9,
+  },
+  {
+    id: 'u10',
+    name: 'Amanda Mendes',
+    role: 'Especialista de Marketing',
+    points: 1800,
+    badges: ['Growth Hacker'],
+    avatar: 'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=29',
+    rank: 10,
+  },
 ]
 
 export default function Leaderboard() {
@@ -220,7 +265,6 @@ export default function Leaderboard() {
             </CardContent>
           </Card>
         </TabsContent>
-        {/* Placeholders for other tabs */}
         <TabsContent value="construction">
           <div className="text-center py-10 text-muted-foreground">
             {t('loading')}

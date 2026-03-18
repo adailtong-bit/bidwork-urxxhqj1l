@@ -143,6 +143,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ isLoading: true })
     await new Promise((resolve) => setTimeout(resolve, 800))
 
+    let id = Math.random().toString(36).substr(2, 9)
     let role: 'contractor' | 'executor' | 'admin' | 'partner' = 'contractor'
     let teamRole: TeamRole | undefined = undefined
     let entityType: 'pf' | 'pj' = 'pf'
@@ -183,6 +184,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
     // PJ Owner Logic
     if (email === 'contractor.pj@bidwork.app') {
+      id = 'owner-1'
       name = 'Admin Tech Corp'
       companyName = 'Construtora Tech Corp'
       taxId = '12.345.678/0001-90'
@@ -217,6 +219,36 @@ export const useAuthStore = create<AuthState>((set) => ({
           status: 'busy',
           performance: 8.8,
         },
+        {
+          id: 't3',
+          name: 'Roberto Mestre',
+          role: 'Collaborator',
+          email: 'roberto@techcorp.com',
+          avatar:
+            'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=12',
+          status: 'active',
+          performance: 9.1,
+        },
+        {
+          id: 't4',
+          name: 'Julia Arquiteta',
+          role: 'Project Manager',
+          email: 'julia@techcorp.com',
+          avatar:
+            'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=13',
+          status: 'active',
+          performance: 9.8,
+        },
+        {
+          id: 't5',
+          name: 'Marcos Contador',
+          role: 'Accountant',
+          email: 'marcos@techcorp.com',
+          avatar:
+            'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=14',
+          status: 'inactive',
+          performance: 8.5,
+        },
       ]
     }
     // Accountant Team Member Logic
@@ -247,6 +279,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         activeProjects: 3,
       }
     } else if (email === 'executor.pj@bidwork.app') {
+      id = 'exec-pj-1'
       name = 'Soluções Rápidas Ltda'
       companyName = 'Soluções Rápidas Ltda'
       taxId = '98.765.432/0001-10'
@@ -281,6 +314,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       role = 'partner'
       entityType = 'pj'
     } else if (email === 'executor.pf@bidwork.app') {
+      id = 'exec-1'
       name = 'João Freelancer'
       taxId = '123.456.789-00'
       role = 'executor'
@@ -299,6 +333,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         activeProjects: 0,
       }
     } else if (email === 'admin@bidwork.app') {
+      id = 'admin-1'
       name = 'Administrador do Sistema'
       role = 'admin'
     }
@@ -307,7 +342,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       isLoading: false,
       isAuthenticated: true,
       user: {
-        id: Math.random().toString(36),
+        id,
         name,
         companyName,
         email,

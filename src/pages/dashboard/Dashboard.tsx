@@ -16,6 +16,9 @@ import {
   Wallet,
   ShieldCheck,
   Zap,
+  Users,
+  Briefcase,
+  HardHat,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
@@ -29,7 +32,81 @@ export default function Dashboard() {
   const { jobs } = useJobStore()
   const { t, formatCurrency } = useLanguageStore()
 
+  const isAdmin = user?.role === 'admin'
   const isContractor = user?.role === 'contractor'
+
+  if (isAdmin) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Painel Administrativo
+          </h2>
+          <p className="text-muted-foreground">
+            Visão geral do sistema e métricas de plataforma.
+          </p>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Usuários Ativos
+              </CardTitle>
+              <Users className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">12,450</div>
+              <p className="text-xs text-muted-foreground">
+                +15% desde o último mês
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Jobs Abertos
+              </CardTitle>
+              <Briefcase className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">842</div>
+              <p className="text-xs text-muted-foreground">
+                Em mais de 50 categorias
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Volume Transacionado
+              </CardTitle>
+              <Wallet className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {formatCurrency(4500000)}
+              </div>
+              <p className="text-xs text-muted-foreground">Mês atual</p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium">
+                Obras Premium
+              </CardTitle>
+              <HardHat className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">320</div>
+              <p className="text-xs text-muted-foreground">
+                Projetos gerenciados na plataforma
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
 
   const activeJobs = isContractor
     ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'in_progress')
