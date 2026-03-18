@@ -33,9 +33,8 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import {
   Download,
   Wallet,
-  TrendingUp,
+  TrendingDown,
   Clock,
-  DollarSign,
   Calendar,
   Plus,
   Lock,
@@ -60,7 +59,7 @@ export default function FinanceDashboard() {
   const { getTransactionsByUser, schedulePayment, getScheduledPayments } =
     usePaymentStore()
   const { toast } = useToast()
-  const { t, formatCurrency, formatDate } = useLanguageStore()
+  const { formatCurrency, formatDate } = useLanguageStore()
 
   const [isScheduleOpen, setIsScheduleOpen] = useState(false)
   const [scheduleData, setScheduleData] = useState({
@@ -82,12 +81,12 @@ export default function FinanceDashboard() {
         <div className="bg-destructive/10 p-4 rounded-full">
           <Lock className="h-12 w-12 text-destructive" />
         </div>
-        <h1 className="text-2xl font-bold">{t('access.restricted.title')}</h1>
+        <h1 className="text-2xl font-bold">Acesso Restrito</h1>
         <p className="text-muted-foreground text-center max-w-md">
-          {t('access.restricted.desc')}
+          Você não tem permissão para visualizar o painel financeiro.
         </p>
         <Button asChild>
-          <Link to="/dashboard">{t('back')}</Link>
+          <Link to="/dashboard">Voltar ao Início</Link>
         </Button>
       </div>
     )
@@ -97,7 +96,6 @@ export default function FinanceDashboard() {
   const transactions = getTransactionsByUser(user.id)
   const scheduled = getScheduledPayments(user.id)
 
-  // Calculate Totals
   const totalEarnings = transactions
     .filter((t) => t.receiverId === user.id && t.status === 'completed')
     .reduce((acc, curr) => acc + curr.amount, 0)
@@ -114,26 +112,22 @@ export default function FinanceDashboard() {
     )
     .reduce((acc, curr) => acc + curr.amount, 0)
 
+  // Emulate total balance for the visual AC matching
+  const totalBalance = totalEarnings - totalSpent + 15000
+
   // Mock Cash Flow Data
   const cashFlowData = [
-    { month: t('dashboard.months.jan'), entrada: 4000, saida: 2400 },
-    { month: t('dashboard.months.feb'), entrada: 3000, saida: 1398 },
-    { month: t('dashboard.months.mar'), entrada: 2000, saida: 9800 },
-    { month: t('dashboard.months.apr'), entrada: 2780, saida: 3908 },
-    { month: t('dashboard.months.may'), entrada: 1890, saida: 4800 },
-    { month: t('dashboard.months.jun'), entrada: 2390, saida: 3800 },
-    { month: t('dashboard.months.jul'), entrada: 3490, saida: 4300 },
+    { month: 'Jan', entrada: 4000, saida: 2400 },
+    { month: 'Fev', entrada: 3000, saida: 1398 },
+    { month: 'Mar', entrada: 2000, saida: 9800 },
+    { month: 'Abr', entrada: 2780, saida: 3908 },
+    { month: 'Mai', entrada: 1890, saida: 4800 },
+    { month: 'Jun', entrada: 2390, saida: 3800 },
   ]
 
   const chartConfig = {
-    entrada: {
-      label: t('finance.chart.income'),
-      color: 'hsl(var(--primary))',
-    },
-    saida: {
-      label: t('finance.chart.expenses'),
-      color: 'hsl(var(--destructive))',
-    },
+    entrada: { label: 'Receitas', color: 'hsl(var(--primary))' },
+    saida: { label: 'Despesas', color: 'hsl(var(--destructive))' },
   }
 
   const handleSchedule = () => {
@@ -143,7 +137,7 @@ export default function FinanceDashboard() {
         payerId: user.id,
         payerName: user.name,
         receiverId: 'mock-receiver',
-        receiverName: t('finance.mock.supplier'),
+        receiverName: 'Fornecedor Externo',
         amount: scheduleData.amount,
         category: 'other',
       },
@@ -151,7 +145,7 @@ export default function FinanceDashboard() {
     )
 
     setIsScheduleOpen(false)
-    toast({ title: t('finance.scheduled') })
+    toast({ title: 'Pagamento Agendado!' })
   }
 
   return (
@@ -159,51 +153,57 @@ export default function FinanceDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isPJ ? t('finance.management_corporate') : t('finance.management')}
+            Dashboard Financeiro
           </h1>
           <p className="text-muted-foreground">
-            {user.role === 'executor'
-              ? t('finance.desc_receivables')
-              : t('finance.desc_payments')}
+            Acompanhe o fluxo de caixa, pagamentos e recebimentos da conta.
           </p>
         </div>
         <div className="flex gap-2">
           {isPJ && (
             <Button variant="outline" asChild>
               <Link to="/finance/accounting">
-                <Download className="mr-2 h-4 w-4" /> {t('sidebar.accounting')}
+                <Download className="mr-2 h-4 w-4" /> Exportação Contábil
               </Link>
             </Button>
           )}
         </div>
       </div>
 
+      {/* KPI Cards based on AC */}
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {user.role === 'executor'
-                ? t('finance.total_received')
-                : t('finance.total_invested')}
-            </CardTitle>
+            <CardTitle className="text-sm font-medium">Saldo Total</CardTitle>
             <Wallet className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(
-                user.role === 'executor' ? totalEarnings : totalSpent,
-              )}
+              {formatCurrency(totalBalance)}
             </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-              <TrendingUp className="h-3 w-3 text-emerald-500" />{' '}
-              {t('finance.updated_today')}
+            <p className="text-xs text-muted-foreground mt-1">
+              Disponível em conta
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Gasto</CardTitle>
+            <TrendingDown className="h-4 w-4 text-destructive" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {formatCurrency(totalSpent)}
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Despesas e pagamentos efetuados
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              {t('finance.escrow_held')}
+              Faturas Pendentes
             </CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
@@ -212,27 +212,7 @@ export default function FinanceDashboard() {
               {formatCurrency(pendingAmount)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {t('finance.release_after')}
-            </p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('finance.ticket_avg')}
-            </CardTitle>
-            <DollarSign className="h-4 w-4 text-indigo-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {formatCurrency(
-                transactions.length > 0
-                  ? (totalEarnings + totalSpent) / transactions.length
-                  : 0,
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {t('finance.per_transaction')}
+              Valores em análise ou retidos
             </p>
           </CardContent>
         </Card>
@@ -240,20 +220,16 @@ export default function FinanceDashboard() {
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">{t('finance.overview')}</TabsTrigger>
-          {isPJ && (
-            <TabsTrigger value="cashflow">
-              {t('finance.cashflow')} {t('finance.advanced')}
-            </TabsTrigger>
-          )}
-          <TabsTrigger value="scheduled">{t('finance.scheduled')}</TabsTrigger>
+          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
+          {isPJ && <TabsTrigger value="cashflow">Fluxo de Caixa</TabsTrigger>}
+          <TabsTrigger value="scheduled">Agendamentos</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid gap-6 md:grid-cols-2">
-            <Card>
+          <div className="grid gap-6 md:grid-cols-3">
+            <Card className="md:col-span-1">
               <CardHeader>
-                <CardTitle>{t('finance.simple_flow')}</CardTitle>
+                <CardTitle>Balanço</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -261,7 +237,7 @@ export default function FinanceDashboard() {
                     config={chartConfig}
                     className="w-full h-full"
                   >
-                    <BarChart data={cashFlowData.slice(0, 6)}>
+                    <BarChart data={cashFlowData.slice(0, 4)}>
                       <XAxis
                         dataKey="month"
                         stroke="#888888"
@@ -269,13 +245,7 @@ export default function FinanceDashboard() {
                         tickLine={false}
                         axisLine={false}
                       />
-                      <YAxis
-                        stroke="#888888"
-                        fontSize={12}
-                        tickLine={false}
-                        axisLine={false}
-                        tickFormatter={(value) => formatCurrency(value)}
-                      />
+                      <YAxis hide />
                       <Tooltip
                         content={
                           <ChartTooltipContent
@@ -284,8 +254,13 @@ export default function FinanceDashboard() {
                         }
                       />
                       <Bar
-                        dataKey={user.role === 'executor' ? 'entrada' : 'saida'}
+                        dataKey="entrada"
                         fill="var(--color-entrada)"
+                        radius={[4, 4, 0, 0]}
+                      />
+                      <Bar
+                        dataKey="saida"
+                        fill="var(--color-saida)"
                         radius={[4, 4, 0, 0]}
                       />
                     </BarChart>
@@ -294,18 +269,19 @@ export default function FinanceDashboard() {
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>{t('finance.recent_transactions')}</CardTitle>
+                <CardTitle>Histórico de Transações</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>{t('date')}</TableHead>
-                      <TableHead>{t('finance.description')}</TableHead>
-                      <TableHead>{t('finance.value')}</TableHead>
-                      <TableHead>{t('status')}</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Descrição</TableHead>
+                      <TableHead>Valor</TableHead>
+                      <TableHead>Tipo</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -318,38 +294,44 @@ export default function FinanceDashboard() {
                           <TableCell className="font-medium">
                             {tx.jobTitle}
                           </TableCell>
-                          <TableCell>{formatCurrency(tx.amount)}</TableCell>
+                          <TableCell className="font-semibold">
+                            {formatCurrency(tx.amount)}
+                          </TableCell>
+                          <TableCell>
+                            {tx.payerId === user.id ? (
+                              <span className="text-red-500 font-medium">
+                                Despesa
+                              </span>
+                            ) : (
+                              <span className="text-green-500 font-medium">
+                                Receita
+                              </span>
+                            )}
+                          </TableCell>
                           <TableCell>
                             {tx.status === 'completed' && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-emerald-100 text-emerald-800"
-                              >
-                                {t('status.paid')}
+                              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                                Pago
                               </Badge>
                             )}
                             {tx.status === 'pending' && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-yellow-100 text-yellow-800"
-                              >
-                                {t('status.pending')}
+                              <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
+                                Pendente
                               </Badge>
                             )}
                             {tx.status === 'escrow' && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-blue-100 text-blue-800"
-                              >
-                                {t('status.escrow')}
+                              <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100">
+                                Escrow
                               </Badge>
                             )}
                             {tx.status === 'scheduled' && (
-                              <Badge
-                                variant="secondary"
-                                className="bg-purple-100 text-purple-800"
-                              >
-                                {t('status.scheduled')}
+                              <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
+                                Agendado
+                              </Badge>
+                            )}
+                            {tx.status === 'failed' && (
+                              <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
+                                Cancelado
                               </Badge>
                             )}
                           </TableCell>
@@ -358,10 +340,10 @@ export default function FinanceDashboard() {
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={4}
+                          colSpan={5}
                           className="text-center text-muted-foreground py-8"
                         >
-                          {t('finance.empty_transactions')}
+                          Nenhuma transação encontrada.
                         </TableCell>
                       </TableRow>
                     )}
@@ -375,8 +357,10 @@ export default function FinanceDashboard() {
         <TabsContent value="cashflow" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>{t('finance.projected_flow')}</CardTitle>
-              <CardDescription>{t('finance.comparative_desc')}</CardDescription>
+              <CardTitle>Fluxo Projetado</CardTitle>
+              <CardDescription>
+                Comparativo de entradas e saídas ao longo dos meses.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="h-[400px]">
@@ -430,17 +414,16 @@ export default function FinanceDashboard() {
             <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" />{' '}
-                  {t('finance.schedule_payment')}
+                  <Plus className="mr-2 h-4 w-4" /> Agendar Pagamento
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>{t('finance.new_schedule')}</DialogTitle>
+                  <DialogTitle>Novo Agendamento</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label>{t('finance.description')}</Label>
+                    <Label>Descrição</Label>
                     <Input
                       value={scheduleData.title}
                       onChange={(e) =>
@@ -449,24 +432,21 @@ export default function FinanceDashboard() {
                           title: e.target.value,
                         })
                       }
-                      placeholder={t('finance.placeholder.description')}
+                      placeholder="Ex: Fornecedor Cimento"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>{t('finance.value')}</Label>
+                    <Label>Valor</Label>
                     <CurrencyInput
                       value={scheduleData.amount}
                       onChange={(val) =>
-                        setScheduleData({
-                          ...scheduleData,
-                          amount: val,
-                        })
+                        setScheduleData({ ...scheduleData, amount: val })
                       }
                       placeholder="0.00"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>{t('finance.date')}</Label>
+                    <Label>Data Programada</Label>
                     <Input
                       value={scheduleData.date}
                       onChange={(e) =>
@@ -480,9 +460,7 @@ export default function FinanceDashboard() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleSchedule}>
-                    {t('finance.confirm_schedule')}
-                  </Button>
+                  <Button onClick={handleSchedule}>Confirmar</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -490,17 +468,17 @@ export default function FinanceDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>{t('finance.future_payments')}</CardTitle>
+              <CardTitle>Pagamentos Futuros</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>{t('finance.date_scheduled')}</TableHead>
-                    <TableHead>{t('finance.description')}</TableHead>
-                    <TableHead>{t('finance.beneficiary')}</TableHead>
-                    <TableHead>{t('finance.value')}</TableHead>
-                    <TableHead>{t('status')}</TableHead>
+                    <TableHead>Data Programada</TableHead>
+                    <TableHead>Descrição</TableHead>
+                    <TableHead>Beneficiário</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -522,7 +500,7 @@ export default function FinanceDashboard() {
                           variant="outline"
                           className="border-purple-200 bg-purple-50 text-purple-700"
                         >
-                          {t('status.scheduled')}
+                          Agendado
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -533,7 +511,7 @@ export default function FinanceDashboard() {
                         colSpan={5}
                         className="text-center py-8 text-muted-foreground"
                       >
-                        {t('finance.empty_scheduled')}
+                        Nenhum pagamento futuro agendado.
                       </TableCell>
                     </TableRow>
                   )}

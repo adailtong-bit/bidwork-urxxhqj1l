@@ -7,357 +7,161 @@ export interface Bid {
   executorName: string
   amount: number
   description: string
-  createdAt: Date
   executorReputation: number
-}
-
-export interface Address {
-  zipCode: string
-  street: string
-  number: string
-  complement?: string
-  neighborhood: string
-  city: string
-  state: string
+  createdAt: Date
 }
 
 export interface Job {
   id: string
-  ownerId: string
-  ownerName: string
-  projectId?: string // Linked Project ID
-  stageId?: string // Linked Stage ID
   title: string
   description: string
-  photos: string[]
   type: 'fixed' | 'auction'
-  status:
-    | 'open'
-    | 'suspended'
-    | 'in_progress'
-    | 'completed'
-    | 'dispute'
-    | 'cancelled'
   category: string
   subCategory?: string
-  location: string // Simplified location for display (e.g. "City - State")
-  address?: Address // Detailed address
-  regionCode: string
+  location: string
+  address: any
   budget: number
-  bids: Bid[]
-  acceptedBidId?: string
+  ownerId: string
+  ownerName: string
+  status:
+    | 'open'
+    | 'in_progress'
+    | 'completed'
+    | 'suspended'
+    | 'cancelled'
+    | 'dispute'
   createdAt: Date
   publicationDate: Date
   auctionEndDate?: Date
   maxExecutionDeadline?: Date
   premiumType: 'none' | 'region' | 'category'
+  projectId?: string
+  stageId?: string
+  regionCode: string
+  contactPhone?: string
+  photos?: string[]
+  bids: Bid[]
+  acceptedBidId?: string
   smartMatchScore?: number
-  contactPhone?: string // Added contact phone
 }
 
 interface JobState {
   jobs: Job[]
-  addJob: (
-    job: Omit<Job, 'id' | 'createdAt' | 'bids' | 'status' | 'smartMatchScore'>,
-  ) => void
-  addBid: (jobId: string, bid: Omit<Bid, 'id' | 'createdAt'>) => void
+  addJob: (job: any) => void
+  getJob: (id: string) => Job | undefined
+  addBid: (jobId: string, bid: any) => void
   acceptBid: (jobId: string, bidId: string) => void
   completeJob: (jobId: string) => void
   openDispute: (jobId: string) => void
-  cancelJob: (jobId: string) => void
-  getJob: (id: string) => Job | undefined
-  getJobsByProject: (projectId: string) => Job[]
-  hasActiveJob: (userId: string) => boolean
+  updateJobStatus: (jobId: string, status: Job['status']) => void
 }
 
-const baseDate = new Date()
-
-const createMockJob = (
-  id: string,
-  title: string,
-  type: 'fixed' | 'auction',
-  status: Job['status'],
-  region: string,
-  category: string,
-  budget: number,
-  photos: string[] = [],
-  offsetDays: number = 0,
-): Job => ({
-  id,
-  ownerId: `owner-${id}`,
-  ownerName: `Cliente ${region}`,
-  title,
-  description: `Descrição detalhada para o serviço de ${title} na região de ${region}.`,
-  photos,
-  type,
-  status,
-  category,
-  subCategory: 'Geral',
-  location: `${region} Capital, ${region}`,
-  address: {
-    zipCode: '01001-000',
-    street: 'Av. Mock',
-    number: '123',
-    neighborhood: 'Centro',
-    city: `${region} Capital`,
-    state: region,
-  },
-  regionCode: region,
-  budget,
-  bids: [],
-  createdAt: new Date(baseDate.getTime() - offsetDays * 86400000),
-  publicationDate: new Date(baseDate.getTime() - offsetDays * 86400000),
-  auctionEndDate:
-    type === 'auction'
-      ? new Date(baseDate.getTime() + 86400000 * 5)
-      : undefined,
-  premiumType: Math.random() > 0.7 ? 'region' : 'none',
-  smartMatchScore: Math.floor(Math.random() * 30) + 70,
-  contactPhone: '(11) 99999-9999',
-})
-
-const mockJobs: Job[] = [
-  createMockJob(
-    '1',
-    'Desenvolvimento App React Native',
-    'auction',
-    'open',
-    'SP',
-    'Tecnologia',
-    5000,
-    [
-      'https://img.usecurling.com/p/400/300?q=code',
-      'https://img.usecurling.com/p/400/300?q=app',
-    ],
-    2,
-  ),
-  createMockJob(
-    '2',
-    'Reforma Completa Cozinha',
-    'auction',
-    'open',
-    'RJ',
-    'Reformas',
-    8500,
-    ['https://img.usecurling.com/p/400/300?q=kitchen'],
-    1,
-  ),
-  {
-    ...createMockJob(
-      '3',
-      'Terraplanagem Residencial Alpha',
-      'auction',
-      'in_progress',
-      'SP',
-      'Reformas',
-      25000,
-      [],
-      10,
-    ),
-    ownerId: 'owner-1',
-    projectId: 'proj-1',
-    stageId: 'st-1',
-    bids: [
-      {
-        id: 'bid-1',
-        jobId: '3',
-        executorId: 'exec-1',
-        executorName: 'João Freelancer',
-        amount: 24000,
-        description: 'Equipe completa com retroescavadeira.',
-        createdAt: new Date(),
-        executorReputation: 4.8,
-      },
-    ],
-    acceptedBidId: 'bid-1',
-  },
-  {
-    ...createMockJob(
-      '4',
-      'Pintura Fachada Prédio',
-      'fixed',
-      'open',
-      'SP',
-      'Reformas',
-      12000,
-      [],
-      3,
-    ),
-    ownerId: 'owner-1',
-  },
-  {
-    ...createMockJob(
-      '5',
-      'Instalação Elétrica Completa',
-      'auction',
-      'open',
-      'SP',
-      'Reformas',
-      8000,
-      [],
-      5,
-    ),
-    ownerId: 'owner-1',
-    bids: [
-      {
-        id: 'bid-5',
-        jobId: '5',
-        executorId: 'exec-1',
-        executorName: 'João Freelancer',
-        amount: 7500,
-        description: 'Tenho certificação NR10.',
-        createdAt: new Date(),
-        executorReputation: 4.8,
-      },
-    ],
-  },
-  {
-    ...createMockJob(
-      '6',
-      'Fundação e Baldrame',
-      'fixed',
-      'in_progress',
-      'SP',
-      'Construção',
-      45000,
-      [],
-      15,
-    ),
-    ownerId: 'owner-1',
-    projectId: 'proj-1',
-    bids: [
-      {
-        id: 'bid-6',
-        jobId: '6',
-        executorId: 'exec-pj-1',
-        executorName: 'Soluções Rápidas Ltda',
-        amount: 45000,
-        description: 'Proposta aceita para a fundação.',
-        createdAt: new Date(),
-        executorReputation: 4.5,
-      },
-    ],
-    acceptedBidId: 'bid-6',
-  },
-  {
-    ...createMockJob(
-      '7',
-      'Projeto Arquitetônico Base',
-      'fixed',
-      'completed',
-      'SP',
-      'Design',
-      15000,
-      [],
-      40,
-    ),
-    ownerId: 'owner-1',
-    projectId: 'proj-1',
-    bids: [
-      {
-        id: 'bid-7',
-        jobId: '7',
-        executorId: 'exec-1',
-        executorName: 'João Freelancer',
-        amount: 15000,
-        description: 'Projeto aprovado na prefeitura.',
-        createdAt: new Date(),
-        executorReputation: 4.8,
-      },
-    ],
-    acceptedBidId: 'bid-7',
-  },
-  {
-    ...createMockJob(
-      '8',
-      'Sondagem do Terreno',
-      'fixed',
-      'completed',
-      'SP',
-      'Construção',
-      5000,
-      [],
-      45,
-    ),
-    ownerId: 'owner-1',
-    projectId: 'proj-1',
-  },
-]
-
 export const useJobStore = create<JobState>((set, get) => ({
-  jobs: mockJobs,
-  addJob: (jobData) =>
+  jobs: [
+    {
+      id: 'job-1',
+      title: 'Reforma Completa de Fachada',
+      description:
+        'Buscamos profissional para reforma da fachada comercial, incluindo pintura e pequenos reparos estruturais.',
+      type: 'fixed',
+      category: 'Reformas',
+      location: 'São Paulo - SP',
+      address: {},
+      budget: 8500,
+      ownerId: 'owner-1',
+      ownerName: 'Empresa XPTO',
+      status: 'open',
+      createdAt: new Date(),
+      publicationDate: new Date(),
+      premiumType: 'category',
+      regionCode: 'SP',
+      bids: [
+        {
+          id: 'bid-1',
+          jobId: 'job-1',
+          executorId: 'exec-1',
+          executorName: 'João Freelancer',
+          amount: 8000,
+          description:
+            'Posso realizar o serviço com qualidade e entrega rápida.',
+          executorReputation: 4.8,
+          createdAt: new Date(),
+        },
+      ],
+    },
+    {
+      id: 'job-2',
+      title: 'Desenvolvimento de Aplicativo',
+      description: 'Criar um app para gestão de estoque integrado via API.',
+      type: 'auction',
+      category: 'TI e Programação',
+      location: 'Remoto',
+      address: {},
+      budget: 15000,
+      ownerId: 'owner-1',
+      ownerName: 'Admin Tech Corp',
+      status: 'in_progress',
+      createdAt: new Date(Date.now() - 86400000 * 5),
+      publicationDate: new Date(Date.now() - 86400000 * 5),
+      premiumType: 'none',
+      regionCode: 'BR',
+      bids: [],
+    },
+  ],
+  addJob: (job) =>
     set((state) => ({
       jobs: [
         {
-          ...jobData,
+          ...job,
           id: Math.random().toString(36).substr(2, 9),
-          createdAt: new Date(),
           status: 'open',
+          createdAt: new Date(),
           bids: [],
-          regionCode: jobData.address?.state || 'SP',
-          smartMatchScore: 100,
         },
         ...state.jobs,
       ],
     })),
-  addBid: (jobId, bidData) =>
+  getJob: (id) => get().jobs.find((j) => j.id === id),
+  addBid: (jobId, bid) =>
     set((state) => ({
-      jobs: state.jobs.map((job) => {
-        if (job.id === jobId) {
-          return {
-            ...job,
-            bids: [
-              ...job.bids,
-              {
-                ...bidData,
-                id: Math.random().toString(36).substr(2, 9),
-                jobId,
-                createdAt: new Date(),
-              },
-            ],
-          }
-        }
-        return job
-      }),
+      jobs: state.jobs.map((j) =>
+        j.id === jobId
+          ? {
+              ...j,
+              bids: [
+                ...j.bids,
+                {
+                  ...bid,
+                  id: Math.random().toString(36).substr(2, 9),
+                  createdAt: new Date(),
+                },
+              ],
+            }
+          : j,
+      ),
     })),
   acceptBid: (jobId, bidId) =>
     set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === jobId
-          ? {
-              ...job,
-              status: 'suspended',
-              acceptedBidId: bidId,
-            }
-          : job,
+      jobs: state.jobs.map((j) =>
+        j.id === jobId
+          ? { ...j, acceptedBidId: bidId, status: 'in_progress' }
+          : j,
       ),
     })),
   completeJob: (jobId) =>
     set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === jobId ? { ...job, status: 'completed' } : job,
+      jobs: state.jobs.map((j) =>
+        j.id === jobId ? { ...j, status: 'completed' } : j,
       ),
     })),
   openDispute: (jobId) =>
     set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === jobId ? { ...job, status: 'dispute' } : job,
+      jobs: state.jobs.map((j) =>
+        j.id === jobId ? { ...j, status: 'dispute' } : j,
       ),
     })),
-  cancelJob: (jobId) =>
+  updateJobStatus: (jobId, status) =>
     set((state) => ({
-      jobs: state.jobs.map((job) =>
-        job.id === jobId ? { ...job, status: 'cancelled' } : job,
-      ),
+      jobs: state.jobs.map((j) => (j.id === jobId ? { ...j, status } : j)),
     })),
-  getJob: (id) => get().jobs.find((j) => j.id === id),
-  getJobsByProject: (projectId) =>
-    get().jobs.filter((j) => j.projectId === projectId),
-  hasActiveJob: (userId) => {
-    return get().jobs.some(
-      (j) =>
-        j.ownerId === userId && !['completed', 'cancelled'].includes(j.status),
-    )
-  },
 }))

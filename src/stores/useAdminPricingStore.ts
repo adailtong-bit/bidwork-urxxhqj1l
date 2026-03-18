@@ -1,51 +1,60 @@
 import { create } from 'zustand'
 
-export interface ConstructionPlan {
+export interface SubscriptionPlan {
   id: string
   name: string
   description: string
-  maxProjects: number
   price: number
-  complexity: 'Low' | 'Medium' | 'High'
-  workSize: string
+  features: string[]
+  popular?: boolean
 }
 
 interface AdminPricingState {
-  plans: ConstructionPlan[]
-  addPlan: (plan: Omit<ConstructionPlan, 'id'>) => void
-  updatePlan: (id: string, plan: Partial<ConstructionPlan>) => void
+  plans: SubscriptionPlan[]
+  addPlan: (plan: Omit<SubscriptionPlan, 'id'>) => void
+  updatePlan: (id: string, plan: Partial<SubscriptionPlan>) => void
   deletePlan: (id: string) => void
 }
 
 export const useAdminPricingStore = create<AdminPricingState>((set) => ({
   plans: [
     {
-      id: 'plan-1',
-      name: 'Projeto Pequeno',
-      description: 'Ideal para reformas e pequenas construções residenciais.',
-      maxProjects: 1,
-      price: 199.9,
-      complexity: 'Low',
-      workSize: 'Até 200m²',
+      id: 'plan-basic',
+      name: 'Basic',
+      description: 'Essencial para autônomos e pequenos projetos.',
+      price: 0,
+      features: [
+        'Acesso a jobs básicos',
+        'Perfil padrão',
+        'Taxa de serviço de 15%',
+        'Suporte por email',
+      ],
     },
     {
-      id: 'plan-2',
-      name: 'Projeto Médio',
-      description:
-        'Perfeito para obras comerciais ou residências de alto padrão.',
-      maxProjects: 3,
-      price: 499.9,
-      complexity: 'Medium',
-      workSize: 'Até 500m²',
+      id: 'plan-pro',
+      name: 'Pro',
+      description: 'Perfeito para freelancers ativos e contratantes regulares.',
+      price: 49.9,
+      features: [
+        'Destaque Regional em buscas',
+        'Taxa de serviço reduzida (10%)',
+        'Relatórios de desempenho',
+        '50 Créditos mensais para lances',
+      ],
+      popular: true,
     },
     {
-      id: 'plan-3',
-      name: 'Plano Construtora',
-      description: 'Gestão completa para múltiplas obras simultâneas.',
-      maxProjects: 10,
-      price: 1299.9,
-      complexity: 'High',
-      workSize: 'Ilimitado',
+      id: 'plan-enterprise',
+      name: 'Enterprise',
+      description: 'Gestão completa para construtoras e agências.',
+      price: 149.9,
+      features: [
+        'Destaque Nacional em buscas',
+        'Taxa de serviço mínima (5%)',
+        'Dashboards avançados de mercado',
+        'Créditos ilimitados para lances',
+        'Gerente de conta dedicado',
+      ],
     },
   ],
   addPlan: (plan) =>

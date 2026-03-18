@@ -9,7 +9,6 @@ import {
   Search,
   Briefcase,
   Crown,
-  Coins,
   Trophy,
   TestTube2,
   Users,
@@ -17,14 +16,6 @@ import {
   Tags,
   Megaphone,
   HardHat,
-  Package,
-  GraduationCap,
-  Truck,
-  FileSpreadsheet,
-  Route,
-  ClipboardList,
-  Medal,
-  FileText,
   Home,
   Wrench,
   LogIn,
@@ -53,217 +44,113 @@ import {
 import { useAuthStore } from '@/stores/useAuthStore'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
-import { useLanguageStore } from '@/stores/useLanguageStore'
+
+interface SidebarSection {
+  label: string
+  className?: string
+  items: { title: string; url: string; icon: any }[]
+}
 
 export function MainSidebar() {
   const { user, logout } = useAuthStore()
   const location = useLocation()
   const { state } = useSidebar()
-  const { t } = useLanguageStore()
 
   const isContractor = user?.role === 'contractor'
-  const isPartner = user?.role === 'partner'
   const isPJ = user?.entityType === 'pj'
   const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
 
-  // RBAC Checks
-  const hasTeamRole = !!user?.teamRole
-  const canAccessFinance =
-    !hasTeamRole || ['Admin', 'Accountant'].includes(user?.teamRole || '')
-  const canAccessConstruction =
-    !hasTeamRole || ['Admin', 'Project Manager'].includes(user?.teamRole || '')
+  // Build the menu strictly based on RBAC and Acceptance Criteria
+  let sections: SidebarSection[] = []
 
-  const publicItems = [
-    { title: t('sidebar.home'), url: '/', icon: Home },
-    { title: t('sidebar.services'), url: '/services', icon: Wrench },
-    { title: t('nav.find_jobs'), url: '/find-jobs', icon: Search },
-    { title: t('sidebar.login'), url: '/login', icon: LogIn },
-    { title: t('sidebar.register'), url: '/register', icon: UserPlus },
-  ]
-
-  const commonItems = [
-    {
-      title: isPartner
-        ? t('sidebar.partner_dashboard')
-        : t('sidebar.dashboard'),
-      url: isPartner ? '/partner/dashboard' : '/dashboard',
-      icon: LayoutDashboard,
-    },
-    {
-      title: t('sidebar.messages'),
-      url: '/messages',
-      icon: Mail,
-    },
-  ]
-
-  const contractorItems = [
-    {
-      title: t('sidebar.post_job'),
-      url: '/post-job',
-      icon: PlusCircle,
-    },
-    {
-      title: t('sidebar.my_jobs'),
-      url: '/my-jobs',
-      icon: Briefcase,
-    },
-  ]
-
-  const constructionItems = [
-    {
-      title: t('sidebar.construction'),
-      url: '/construction/dashboard',
-      icon: HardHat,
-    },
-    {
-      title: t('sidebar.materials'),
-      url: '/construction/materials',
-      icon: Package,
-    },
-    {
-      title: t('sidebar.inventory'),
-      url: '/construction/inventory',
-      icon: ClipboardList,
-    },
-    {
-      title: t('sidebar.logistics'),
-      url: '/construction/logistics',
-      icon: Route,
-    },
-    {
-      title: t('sidebar.equipment'),
-      url: '/construction/equipment',
-      icon: Truck,
-    },
-    {
-      title: t('sidebar.construction_docs'),
-      url: '/construction/documents',
-      icon: FileText,
-    },
-  ]
-
-  const executorItems = [
-    {
-      title: t('sidebar.find_jobs'),
-      url: '/find-jobs',
-      icon: Search,
-    },
-    {
-      title: t('sidebar.applications'),
-      url: '/my-jobs',
-      icon: Briefcase,
-    },
-    {
-      title: t('sidebar.training'),
-      url: '/training',
-      icon: GraduationCap,
-    },
-    {
-      title: t('sidebar.leaderboard'),
-      url: '/leaderboard',
-      icon: Medal,
-    },
-  ]
-
-  const partnerItems = [
-    {
-      title: t('sidebar.team'),
-      url: '/partner/dashboard',
-      icon: Users,
-    },
-    {
-      title: t('sidebar.invoices'),
-      url: '/finance',
-      icon: FileSpreadsheet,
-    },
-  ]
-
-  const financeItems = [
-    {
-      title: t('sidebar.finance'),
-      url: '/finance',
-      icon: Wallet,
-    },
-    {
-      title: t('sidebar.subscription'),
-      url: '/subscription',
-      icon: Crown,
-    },
-    {
-      title: t('sidebar.credits'),
-      url: '/credits',
-      icon: Coins,
-    },
-    {
-      title: t('sidebar.loyalty'),
-      url: '/loyalty',
-      icon: Trophy,
-    },
-  ]
-
-  if (isPJ) {
-    financeItems.splice(1, 0, {
-      title: t('sidebar.accounting'),
-      url: '/finance/accounting',
-      icon: FileSpreadsheet,
-    })
-  }
-
-  const utilityItems = [
-    {
-      title: t('sidebar.documents'),
-      url: '/documents',
-      icon: FolderOpen,
-    },
-    {
-      title: t('sidebar.settings'),
-      url: '/settings',
-      icon: Settings,
-    },
-  ]
-
-  if (isPJ) {
-    utilityItems.unshift({
-      title: t('sidebar.users'),
-      url: '/team',
-      icon: Users,
-    })
-  }
-
-  const adminItems = [
-    {
-      title: t('sidebar.categories'),
-      url: '/admin/categories',
-      icon: Tags,
-    },
-    {
-      title: t('sidebar.ads'),
-      url: '/admin/ads',
-      icon: Megaphone,
-    },
-    {
-      title: 'Planos de Obra',
-      url: '/admin/construction-pricing',
-      icon: HardHat,
-    },
-  ]
-
-  const devItems = [
-    {
-      title: t('sidebar.testing'),
-      url: '/testing',
-      icon: TestTube2,
-    },
-  ]
-
-  let menuItems: any[] = []
   if (!user) {
-    menuItems = publicItems
+    sections.push({
+      label: 'Visitante',
+      items: [
+        { title: 'Início', url: '/', icon: Home },
+        { title: 'Serviços', url: '/services', icon: Wrench },
+        { title: 'Encontrar Jobs', url: '/find-jobs', icon: Search },
+        { title: 'Login', url: '/login', icon: LogIn },
+        { title: 'Cadastrar', url: '/register', icon: UserPlus },
+      ],
+    })
   } else {
-    menuItems = [...commonItems]
-    if (isContractor) menuItems = [...menuItems, ...contractorItems]
-    else if (isPartner) menuItems = [...menuItems, ...partnerItems]
-    else menuItems = [...menuItems, ...executorItems]
+    // 1. General Dashboard for logged users
+    sections.push({
+      label: 'Principal',
+      items: [
+        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+        { title: 'Mensagens', url: '/messages', icon: Mail },
+        { title: 'Postar Novo Job', url: '/post-job', icon: PlusCircle }, // Available broadly
+      ],
+    })
+
+    // 2. Specific Role Sections
+    if (isAdmin) {
+      sections.push({
+        label: 'Administração',
+        className: 'text-destructive font-bold',
+        items: [
+          {
+            title: 'Planos de Obra',
+            url: '/admin/construction-pricing',
+            icon: HardHat,
+          },
+          { title: 'Gestão de Usuários', url: '/team', icon: Users },
+          { title: 'Categorias', url: '/admin/categories', icon: Tags },
+          { title: 'Anúncios', url: '/admin/ads', icon: Megaphone },
+        ],
+      })
+    } else if (isContractor && isPJ) {
+      // Contractor PJ
+      sections.push({
+        label: 'Gestão de Obras (PJ)',
+        className: 'text-orange-600 font-semibold',
+        items: [
+          { title: 'Minha Equipe', url: '/team', icon: Users },
+          {
+            title: 'Minhas Obras',
+            url: '/construction/dashboard',
+            icon: Briefcase,
+          },
+          { title: 'Assinaturas', url: '/subscription', icon: Crown },
+        ],
+      })
+    } else if (user.role === 'executor') {
+      // Service Provider
+      sections.push({
+        label: 'Provedor de Serviços',
+        items: [
+          { title: 'Ranking', url: '/leaderboard', icon: Trophy },
+          { title: 'Encontrar Jobs', url: '/find-jobs', icon: Search },
+          { title: 'Meus Ganhos', url: '/finance', icon: Wallet },
+        ],
+      })
+    } else {
+      // Fallback for PF Contractors or other combinations to keep UX functional
+      sections.push({
+        label: 'Meus Projetos',
+        items: [
+          { title: 'Minhas Atividades', url: '/my-jobs', icon: Briefcase },
+          { title: 'Painel Financeiro', url: '/finance', icon: Wallet },
+        ],
+      })
+    }
+
+    // 3. Utilities for everyone
+    sections.push({
+      label: 'Utilitários',
+      items: [
+        { title: 'Documentos', url: '/documents', icon: FolderOpen },
+        { title: 'Configurações', url: '/settings', icon: Settings },
+      ],
+    })
+
+    // 4. Dev Hub
+    sections.push({
+      label: 'Ferramentas de Teste',
+      items: [{ title: 'Testing Hub', url: '/testing', icon: TestTube2 }],
+    })
   }
 
   return (
@@ -284,54 +171,21 @@ export function MainSidebar() {
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>
-            {!user
-              ? t('sidebar.group.public')
-              : isContractor
-                ? t('sidebar.group.contractor')
-                : isPartner
-                  ? t('sidebar.group.partner')
-                  : t('sidebar.group.executor')}
-          </SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={
-                      location.pathname === item.url ||
-                      (item.url !== '/' &&
-                        location.pathname.startsWith(`${item.url}/`))
-                    }
-                    tooltip={item.title}
-                  >
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        {user && isContractor && canAccessConstruction && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-orange-600 font-semibold">
-              {t('sidebar.group.construction')}
+        {sections.map((section, idx) => (
+          <SidebarGroup key={idx}>
+            <SidebarGroupLabel className={section.className}>
+              {section.label}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {constructionItems.map((item) => (
+                {section.items.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
                       isActive={
                         location.pathname === item.url ||
-                        location.pathname.startsWith(item.url)
+                        (item.url !== '/' &&
+                          location.pathname.startsWith(`${item.url}/`))
                       }
                       tooltip={item.title}
                     >
@@ -345,106 +199,7 @@ export function MainSidebar() {
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
-        )}
-
-        {user && isAdmin && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-destructive font-bold">
-              {t('sidebar.group.admin')}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {adminItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname === item.url}
-                      tooltip={item.title}
-                    >
-                      <Link to={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {user && canAccessFinance && (
-          <SidebarGroup>
-            <SidebarGroupLabel>{t('sidebar.group.finance')}</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {financeItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname === item.url}
-                      tooltip={item.title}
-                    >
-                      <Link to={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {user && (
-          <SidebarGroup>
-            <SidebarGroupLabel>
-              {t('sidebar.group.utilities')}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {utilityItems.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton
-                      asChild
-                      isActive={location.pathname === item.url}
-                      tooltip={item.title}
-                    >
-                      <Link to={item.url}>
-                        <item.icon />
-                        <span>{item.title}</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        <SidebarGroup>
-          <SidebarGroupLabel>{t('sidebar.group.dev')}</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {devItems.map((item) => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={location.pathname === item.url}
-                    tooltip={item.title}
-                    className="text-orange-600 hover:text-orange-700 hover:bg-orange-50"
-                  >
-                    <Link to={item.url}>
-                      <item.icon />
-                      <span>{item.title}</span>
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        ))}
       </SidebarContent>
       {user && (
         <SidebarFooter>
@@ -459,15 +214,7 @@ export function MainSidebar() {
                         {user?.name}
                       </span>
                       <span className="text-xs text-muted-foreground truncate capitalize">
-                        {user?.teamRole
-                          ? `${t(`role.${user.teamRole.toLowerCase().replace(' ', '_')}`)}`
-                          : user?.role === 'admin'
-                            ? t('role.admin')
-                            : user?.role === 'partner'
-                              ? t('role.partner')
-                              : user?.role === 'executor'
-                                ? t('role.executor')
-                                : t('role.contractor')}
+                        {user.role} {user.entityType === 'pj' ? '(PJ)' : '(PF)'}
                       </span>
                     </div>
                     <ChevronUp className="ml-auto" />
@@ -482,7 +229,7 @@ export function MainSidebar() {
                     className="text-destructive focus:text-destructive cursor-pointer"
                   >
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>{t('sidebar.logout')}</span>
+                    <span>Sair da Conta</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>

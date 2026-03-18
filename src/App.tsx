@@ -108,8 +108,6 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/services" element={<Services />} />
             <Route path="/find-jobs" element={<FindJobs />} />
-            <Route path="/my-jobs" element={<MyJobs />} />
-            <Route path="/jobs/:id" element={<JobDetail />} />
 
             {/* Public Auth Routes */}
             <Route element={<AuthLayout />}>
@@ -129,7 +127,10 @@ const App = () => {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/partner/dashboard" element={<PartnerDashboard />} />
 
-              {/* Admin Routes */}
+              <Route path="/my-jobs" element={<MyJobs />} />
+              <Route path="/jobs/:id" element={<JobDetail />} />
+
+              {/* Admin Routes strictly protected */}
               <Route
                 path="/admin/categories"
                 element={
