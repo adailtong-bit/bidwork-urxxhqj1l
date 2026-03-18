@@ -92,9 +92,9 @@ export function MainSidebar() {
         className: 'text-destructive font-bold',
         items: [
           {
-            title: 'Planos de Obra',
-            url: '/admin/construction-pricing',
-            icon: HardHat,
+            title: 'Gestão de Planos',
+            url: '/admin/plans',
+            icon: Crown,
           },
           { title: 'Gestão de Usuários', url: '/team', icon: Users },
           { title: 'Categorias', url: '/admin/categories', icon: Tags },
@@ -124,6 +124,7 @@ export function MainSidebar() {
           { title: 'Ranking', url: '/leaderboard', icon: Trophy },
           { title: 'Encontrar Jobs', url: '/find-jobs', icon: Search },
           { title: 'Meus Ganhos', url: '/finance', icon: Wallet },
+          { title: 'Planos', url: '/subscription', icon: Crown },
         ],
       })
     } else {
@@ -133,6 +134,7 @@ export function MainSidebar() {
         items: [
           { title: 'Minhas Atividades', url: '/my-jobs', icon: Briefcase },
           { title: 'Painel Financeiro', url: '/finance', icon: Wallet },
+          { title: 'Planos', url: '/subscription', icon: Crown },
         ],
       })
     }

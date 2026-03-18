@@ -21,13 +21,19 @@ export default function SubscriptionPlans() {
   const { formatCurrency } = useLanguageStore()
 
   const handleSubscribe = (tierName: string) => {
-    // For demo purposes, we accept the tier name
     upgradeSubscription('pro')
     toast({
       title: 'Assinatura Atualizada!',
       description: `Parabéns! Agora você tem acesso aos recursos do plano ${tierName}.`,
     })
   }
+
+  // Filter plans relevant to executors or advertisers
+  const availablePlans = plans.filter(
+    (p) =>
+      p.active &&
+      (p.targetAudience === 'executor' || p.targetAudience === 'advertiser'),
+  )
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-8 px-4">
@@ -42,7 +48,7 @@ export default function SubscriptionPlans() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
-        {plans.map((plan) => (
+        {availablePlans.map((plan) => (
           <Card
             key={plan.id}
             className={`flex flex-col relative ${
@@ -76,7 +82,9 @@ export default function SubscriptionPlans() {
                   {formatCurrency(plan.price)}
                 </span>
                 {plan.price !== 0 && (
-                  <span className="text-muted-foreground">/mês</span>
+                  <span className="text-muted-foreground">
+                    /{plan.billingCycle === 'monthly' ? 'mês' : 'ciclo'}
+                  </span>
                 )}
               </div>
               <CardDescription className="mt-2 min-h-[40px]">

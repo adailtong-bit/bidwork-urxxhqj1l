@@ -40,7 +40,7 @@ export default function ConstructionCheckout() {
     // Simulate payment API call
     setTimeout(() => {
       activateConstructionSubscription({
-        limit: plan.maxProjects,
+        limit: plan.maxProjects || 1,
         price: plan.price,
       })
       toast({
@@ -167,7 +167,10 @@ export default function ConstructionCheckout() {
                 <p className="text-sm font-medium text-muted-foreground">
                   Cobrança
                 </p>
-                <p className="font-medium">Mensal Recorrente</p>
+                <p className="font-medium">
+                  {plan.billingCycle === 'monthly' ? 'Mensal' : 'Anual'}{' '}
+                  Recorrente
+                </p>
               </div>
               <div className="border-t pt-4 flex justify-between items-center">
                 <span className="font-bold">Total a Pagar</span>

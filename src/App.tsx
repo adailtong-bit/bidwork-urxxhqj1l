@@ -34,7 +34,7 @@ import FinanceDashboard from '@/pages/finance/FinanceDashboard'
 import AccountingExport from '@/pages/finance/AccountingExport'
 import ManageCategories from '@/pages/admin/ManageCategories'
 import ManageAds from '@/pages/admin/ManageAds'
-import ManageConstructionPricing from '@/pages/admin/ManageConstructionPricing'
+import ManagePlans from '@/pages/admin/ManagePlans'
 import ConstructionDashboard from '@/pages/construction/ConstructionDashboard'
 import ProjectDetail from '@/pages/construction/ProjectDetail'
 import ProjectList from '@/pages/construction/ProjectList'
@@ -148,10 +148,10 @@ const App = () => {
                 }
               />
               <Route
-                path="/admin/construction-pricing"
+                path="/admin/plans"
                 element={
                   <AdminRoute>
-                    <ManageConstructionPricing />
+                    <ManagePlans />
                   </AdminRoute>
                 }
               />
