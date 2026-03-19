@@ -96,6 +96,11 @@ export function MainSidebar() {
             url: '/admin/plans',
             icon: Crown,
           },
+          {
+            title: 'Planos de Obras',
+            url: '/admin/construction-plans',
+            icon: HardHat,
+          },
           { title: 'Gestão de Usuários', url: '/team', icon: Users },
           { title: 'Categorias', url: '/admin/categories', icon: Tags },
           { title: 'Anúncios', url: '/admin/ads', icon: Megaphone },
