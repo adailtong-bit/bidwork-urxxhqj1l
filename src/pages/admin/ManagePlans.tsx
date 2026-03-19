@@ -219,13 +219,24 @@ export default function ManagePlans() {
                   <Label>
                     Nome do Plano <span className="text-destructive">*</span>
                   </Label>
-                  <Input
-                    value={editForm.name || ''}
-                    onChange={(e) =>
-                      setEditForm({ ...editForm, name: e.target.value })
+                  <Select
+                    value={editForm.name || undefined}
+                    onValueChange={(val: string) =>
+                      setEditForm({ ...editForm, name: val })
                     }
-                    placeholder="Ex: Premium Executor"
-                  />
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o nome do plano" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Básico">Básico</SelectItem>
+                      <SelectItem value="Bronze">Bronze</SelectItem>
+                      <SelectItem value="Prata">Prata</SelectItem>
+                      <SelectItem value="Ouro">Ouro</SelectItem>
+                      <SelectItem value="Premium">Premium</SelectItem>
+                      <SelectItem value="Enterprise">Enterprise</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>

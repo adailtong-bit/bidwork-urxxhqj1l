@@ -32,7 +32,7 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
   plans: [
     {
       id: 'plan-exec-basic',
-      name: 'Basic Executor',
+      name: 'Básico',
       description: 'Essencial para autônomos.',
       price: 0,
       features: ['Acesso a jobs básicos', 'Perfil padrão'],
@@ -43,7 +43,7 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
     },
     {
       id: 'plan-exec-pro',
-      name: 'Pro Executor',
+      name: 'Premium',
       description: 'Perfeito para freelancers ativos.',
       price: 49.9,
       features: [
@@ -59,7 +59,7 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
     },
     {
       id: 'plan-adv-pro',
-      name: 'Anunciante Premium',
+      name: 'Ouro',
       description: 'Mais alcance para suas vagas.',
       price: 99.9,
       features: ['Anúncios no topo', 'Sem limites de jobs criados'],
@@ -70,7 +70,7 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
     },
     {
       id: 'plan-cont-pro',
-      name: 'Construtor Pro',
+      name: 'Enterprise',
       description: 'Gestão completa para construtoras.',
       price: 149.9,
       features: ['Dashboard avançado', 'Até 10 obras simultâneas'],

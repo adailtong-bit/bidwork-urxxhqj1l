@@ -114,12 +114,24 @@ export function ConstructionPlanFormModal({
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Nome do Plano</Label>
-                <Input
-                  value={formData.name || ''}
-                  onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                <Select
+                  value={formData.name || undefined}
+                  onValueChange={(val: string) =>
+                    setFormData({ ...formData, name: val })
                   }
-                />
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione o nome do plano" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Básico">Básico</SelectItem>
+                    <SelectItem value="Bronze">Bronze</SelectItem>
+                    <SelectItem value="Prata">Prata</SelectItem>
+                    <SelectItem value="Ouro">Ouro</SelectItem>
+                    <SelectItem value="Premium">Premium</SelectItem>
+                    <SelectItem value="Enterprise">Enterprise</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <div className="space-y-2">
                 <Label>Preço (R$)</Label>
