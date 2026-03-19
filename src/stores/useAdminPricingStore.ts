@@ -14,10 +14,24 @@ export interface SubscriptionPlan {
   billingCycle: BillingCycle
   validityDays: number
   active: boolean
+
   // Contractor specific metadata
   maxProjects?: number
   complexity?: 'Low' | 'Medium' | 'High'
   workSize?: string
+
+  // Push Notification Rules
+  pushEnabled?: boolean
+  pushLeadTimeHours?: number
+  pushMessageText?: string
+
+  // Priority & Visibility
+  priorityWeight?: number
+  earlyAccessHours?: number
+  visibilityBoost?: number
+
+  // Skill Logic
+  skillMatchingRule?: 'strict' | 'flexible' | 'all'
 }
 
 interface AdminPricingState {
@@ -40,6 +54,10 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
+      pushEnabled: false,
+      priorityWeight: 1,
+      earlyAccessHours: 0,
+      skillMatchingRule: 'strict',
     },
     {
       id: 'plan-exec-pro',
@@ -56,6 +74,13 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
+      pushEnabled: true,
+      pushLeadTimeHours: 24,
+      pushMessageText:
+        'Vagas exclusivas liberadas! Confira agora com seu acesso antecipado.',
+      priorityWeight: 10,
+      earlyAccessHours: 12,
+      skillMatchingRule: 'flexible',
     },
     {
       id: 'plan-adv-pro',
@@ -67,6 +92,10 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
+      visibilityBoost: 5,
+      pushEnabled: true,
+      pushLeadTimeHours: 12,
+      pushMessageText: 'Seus anúncios Ouro estão com alta visualização hoje.',
     },
     {
       id: 'plan-cont-pro',
@@ -81,6 +110,11 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
       maxProjects: 10,
       complexity: 'High',
       workSize: 'Grande',
+      priorityWeight: 20,
+      pushEnabled: true,
+      pushLeadTimeHours: 48,
+      pushMessageText:
+        'Resumo das suas obras Enterprise disponível. Verifique o dashboard.',
     },
   ],
   addPlan: (plan) =>
