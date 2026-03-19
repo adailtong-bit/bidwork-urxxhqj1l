@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
 import { Input } from '@/components/ui/input'
@@ -33,10 +33,20 @@ import {
 } from 'lucide-react'
 import { formatDistanceToNow, subDays, isAfter } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import { AdSection } from '@/components/AdSection'
+
+// Simple string hash for stable pseudo-random sorting
+const hashString = (str: string) => {
+  let h = 0
+  for (let i = 0; i < str.length; i++)
+    h = Math.imul(31 * h + str.charCodeAt(i)) | 0
+  return h
+}
 
 export default function FindJobs() {
   const { jobs } = useJobStore()
+  const { user } = useAuthStore()
   const { t, formatCurrency, getDateLocale } = useLanguageStore()
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
@@ -45,66 +55,118 @@ export default function FindJobs() {
   const [regionFilter, setRegionFilter] = useState('all')
   const [isSmartSort, setIsSmartSort] = useState(false)
 
-  const availableJobs = jobs.filter((job) => job.status === 'open')
+  // Identify if user is on the Free ("Básico") plan
+  const isBasicUser = !user || !user.planName || user.planName === 'Básico'
 
+  const availableJobs = jobs.filter((job) => job.status === 'open')
   const regions = Array.from(new Set(jobs.map((j) => j.regionCode))).filter(
     Boolean,
   )
 
-  const filteredJobs = availableJobs
-    .filter((job) => {
-      const matchesSearch =
-        job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        job.location.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredJobs = useMemo(() => {
+    const now = new Date()
+    const twentyFourHoursAgo = subDays(now, 1)
 
-      const matchesCategory =
-        categoryFilter === 'all' || job.category === categoryFilter
-      const matchesType = typeFilter === 'all' || job.type === typeFilter
-      const matchesRegion =
-        regionFilter === 'all' || job.regionCode === regionFilter
+    return availableJobs
+      .filter((job) => {
+        // Base text & select filters
+        const matchesSearch =
+          job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          job.location.toLowerCase().includes(searchTerm.toLowerCase())
 
-      let matchesDate = true
-      if (dateFilter !== 'all') {
-        const now = new Date()
-        let cutoffDate = new Date()
-        if (dateFilter === '24h') cutoffDate = subDays(now, 1)
-        if (dateFilter === '7d') cutoffDate = subDays(now, 7)
-        if (dateFilter === '30d') cutoffDate = subDays(now, 30)
+        const matchesCategory =
+          categoryFilter === 'all' || job.category === categoryFilter
+        const matchesType = typeFilter === 'all' || job.type === typeFilter
+        const matchesRegion =
+          regionFilter === 'all' || job.regionCode === regionFilter
 
-        matchesDate = isAfter(new Date(job.createdAt), cutoffDate)
-      }
+        let matchesDate = true
+        if (dateFilter !== 'all') {
+          let cutoffDate = new Date()
+          if (dateFilter === '24h') cutoffDate = subDays(now, 1)
+          if (dateFilter === '7d') cutoffDate = subDays(now, 7)
+          if (dateFilter === '30d') cutoffDate = subDays(now, 30)
 
-      return (
-        matchesSearch &&
-        matchesCategory &&
-        matchesType &&
-        matchesRegion &&
-        matchesDate
-      )
-    })
-    .sort((a, b) => {
-      if (isSmartSort) {
-        const scoreA = a.smartMatchScore || 0
-        const scoreB = b.smartMatchScore || 0
-        return scoreB - scoreA
-      }
+          matchesDate = isAfter(new Date(job.createdAt), cutoffDate)
+        }
 
-      const getScore = (type: string) => {
-        if (type === 'category') return 3
-        if (type === 'region') return 2
-        return 1
-      }
+        // Visibility Restriction Logic for Free Users
+        if (isBasicUser) {
+          const isNewListing = isAfter(
+            new Date(job.createdAt),
+            twentyFourHoursAgo,
+          )
+          const isPriorityListing =
+            job.premiumType !== 'none' ||
+            (job.creatorPlan && job.creatorPlan !== 'Básico')
 
-      const scoreA = getScore(a.premiumType)
-      const scoreB = getScore(b.premiumType)
+          // Hide priority or new (<24h) listings from basic users
+          if (isNewListing || isPriorityListing) {
+            return false
+          }
+        }
 
-      if (scoreA !== scoreB) {
-        return scoreB - scoreA
-      }
+        return (
+          matchesSearch &&
+          matchesCategory &&
+          matchesType &&
+          matchesRegion &&
+          matchesDate
+        )
+      })
+      .sort((a, b) => {
+        if (isSmartSort) {
+          return (b.smartMatchScore || 0) - (a.smartMatchScore || 0)
+        }
 
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
+        if (isBasicUser) {
+          // Random Access Logic: Stable randomized sort for free users
+          return hashString(a.id) - hashString(b.id)
+        } else {
+          // Priority Visibility: Ranked by plan level of the creator
+          const getPlanWeight = (plan?: string) => {
+            switch (plan) {
+              case 'Enterprise':
+                return 5
+              case 'Premium':
+                return 4
+              case 'Ouro':
+                return 3
+              case 'Prata':
+                return 2
+              case 'Bronze':
+                return 1
+              default:
+                return 0
+            }
+          }
+
+          const scoreA =
+            getPlanWeight(a.creatorPlan) + (a.premiumType !== 'none' ? 10 : 0)
+          const scoreB =
+            getPlanWeight(b.creatorPlan) + (b.premiumType !== 'none' ? 10 : 0)
+
+          if (scoreA !== scoreB) {
+            return scoreB - scoreA // Higher weight first
+          }
+
+          // Fallback to recent
+          return (
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        }
+      })
+  }, [
+    availableJobs,
+    searchTerm,
+    categoryFilter,
+    typeFilter,
+    dateFilter,
+    regionFilter,
+    isBasicUser,
+    isSmartSort,
+  ])
 
   return (
     <div className="space-y-6 container mx-auto max-w-6xl pb-20">
@@ -115,6 +177,23 @@ export default function FindJobs() {
           {t('dashboard.find_jobs')}
         </h1>
         <p className="text-muted-foreground">{t('market.desc')}</p>
+
+        {isBasicUser && (
+          <div className="bg-muted p-3 rounded-md text-sm border flex items-center gap-2 mt-2">
+            <Zap className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>
+              Você está no plano <strong>Básico</strong>. Vagas prioritárias e
+              recém-publicadas (últimas 24h) ficam ocultas.{' '}
+              <Link
+                to="/subscription"
+                className="text-primary hover:underline font-semibold"
+              >
+                Faça upgrade
+              </Link>{' '}
+              para ter acesso imediato!
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex flex-col gap-4 p-4 bg-muted/30 rounded-lg border">
@@ -213,7 +292,8 @@ export default function FindJobs() {
           <Card
             key={job.id}
             className={`flex flex-col hover:border-primary/50 transition-colors ${
-              job.premiumType === 'category'
+              job.premiumType === 'category' ||
+              (job.creatorPlan && job.creatorPlan !== 'Básico')
                 ? 'border-l-4 border-l-yellow-500 shadow-md bg-yellow-50/10'
                 : job.premiumType === 'region'
                   ? 'border-l-4 border-l-blue-500 shadow-sm'
@@ -231,15 +311,19 @@ export default function FindJobs() {
                       {job.smartMatchScore}% Match
                     </Badge>
                   )}
-                  {job.premiumType === 'category' && !isSmartSort && (
-                    <Badge
-                      variant="secondary"
-                      className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
-                    >
-                      <Zap className="h-3 w-3 fill-current" />{' '}
-                      {t('ad.highlight')}
-                    </Badge>
-                  )}
+                  {(job.premiumType !== 'none' ||
+                    (job.creatorPlan && job.creatorPlan !== 'Básico')) &&
+                    !isSmartSort && (
+                      <Badge
+                        variant="secondary"
+                        className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
+                      >
+                        <Zap className="h-3 w-3 fill-current" />{' '}
+                        {job.creatorPlan && job.creatorPlan !== 'Básico'
+                          ? job.creatorPlan
+                          : t('ad.highlight')}
+                      </Badge>
+                    )}
                 </div>
                 <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
                   <Calendar className="h-3 w-3" />

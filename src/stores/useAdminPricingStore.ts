@@ -32,6 +32,7 @@ export interface SubscriptionPlan {
 
   // Skill Logic
   skillMatchingRule?: 'strict' | 'flexible' | 'all'
+  skillWeight?: number
 }
 
 interface AdminPricingState {
@@ -58,6 +59,7 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
       priorityWeight: 1,
       earlyAccessHours: 0,
       skillMatchingRule: 'strict',
+      skillWeight: 1,
     },
     {
       id: 'plan-exec-pro',
@@ -79,8 +81,9 @@ export const useAdminPricingStore = create<AdminPricingState>((set) => ({
       pushMessageText:
         'Vagas exclusivas liberadas! Confira agora com seu acesso antecipado.',
       priorityWeight: 10,
-      earlyAccessHours: 12,
+      earlyAccessHours: 24,
       skillMatchingRule: 'flexible',
+      skillWeight: 8,
     },
     {
       id: 'plan-adv-pro',

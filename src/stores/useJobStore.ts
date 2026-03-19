@@ -23,6 +23,13 @@ export interface Job {
   budget: number
   ownerId: string
   ownerName: string
+  creatorPlan?:
+    | 'Básico'
+    | 'Bronze'
+    | 'Prata'
+    | 'Ouro'
+    | 'Premium'
+    | 'Enterprise'
   status:
     | 'open'
     | 'in_progress'
@@ -60,7 +67,7 @@ export const useJobStore = create<JobState>((set, get) => ({
   jobs: [
     {
       id: 'job-1',
-      title: 'Reforma Completa de Fachada',
+      title: 'Reforma Completa de Fachada (Novo & Premium)',
       description:
         'Buscamos profissional para reforma da fachada comercial, incluindo pintura e pequenos reparos estruturais.',
       type: 'fixed',
@@ -69,25 +76,14 @@ export const useJobStore = create<JobState>((set, get) => ({
       address: {},
       budget: 8500,
       ownerId: 'owner-1',
-      ownerName: 'Empresa XPTO',
+      ownerName: 'Construtora Tech Corp',
+      creatorPlan: 'Enterprise',
       status: 'open',
       createdAt: new Date(),
       publicationDate: new Date(),
       premiumType: 'category',
       regionCode: 'SP',
-      bids: [
-        {
-          id: 'bid-1',
-          jobId: 'job-1',
-          executorId: 'exec-1',
-          executorName: 'João Freelancer',
-          amount: 8000,
-          description:
-            'Posso realizar o serviço com qualidade e entrega rápida.',
-          executorReputation: 4.8,
-          createdAt: new Date(),
-        },
-      ],
+      bids: [],
     },
     {
       id: 'job-2',
@@ -98,13 +94,33 @@ export const useJobStore = create<JobState>((set, get) => ({
       location: 'Remoto',
       address: {},
       budget: 15000,
-      ownerId: 'owner-1',
-      ownerName: 'Admin Tech Corp',
-      status: 'in_progress',
+      ownerId: 'owner-2',
+      ownerName: 'Startup Alpha',
+      creatorPlan: 'Básico',
+      status: 'open',
       createdAt: new Date(Date.now() - 86400000 * 5),
       publicationDate: new Date(Date.now() - 86400000 * 5),
       premiumType: 'none',
       regionCode: 'BR',
+      bids: [],
+    },
+    {
+      id: 'job-3',
+      title: 'Design de Interface Web (UI/UX)',
+      description: 'Redesign completo de plataforma SaaS.',
+      type: 'fixed',
+      category: 'Design',
+      location: 'Remoto',
+      address: {},
+      budget: 4500,
+      ownerId: 'owner-3',
+      ownerName: 'Agência Criativa',
+      creatorPlan: 'Ouro',
+      status: 'open',
+      createdAt: new Date(Date.now() - 86400000 * 2), // Older than 24h
+      publicationDate: new Date(Date.now() - 86400000 * 2),
+      premiumType: 'region',
+      regionCode: 'RJ',
       bids: [],
     },
   ],

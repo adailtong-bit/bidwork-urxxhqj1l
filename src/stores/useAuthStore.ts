@@ -82,6 +82,7 @@ export interface User {
   }
   isPremium: boolean
   subscriptionTier: 'free' | 'pro' | 'business'
+  planName?: 'Básico' | 'Bronze' | 'Prata' | 'Ouro' | 'Premium' | 'Enterprise'
   constructionSubscription?: ConstructionSubscription
   credits: number
   isVerified: boolean
@@ -155,6 +156,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     let phone = '(11) 99999-9999'
     let constructionSubscription: ConstructionSubscription | undefined =
       undefined
+    let planName: User['planName'] = 'Básico'
+    let subscriptionTier: User['subscriptionTier'] = 'free'
 
     if (email.includes('executor')) {
       role = 'executor'
@@ -191,6 +194,8 @@ export const useAuthStore = create<AuthState>((set) => ({
       role = 'contractor'
       entityType = 'pj'
       teamRole = 'Admin'
+      planName = 'Enterprise'
+      subscriptionTier = 'business'
       constructionSubscription = {
         active: true,
         basePrice: 500,
@@ -209,75 +214,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           status: 'active',
           performance: 9.5,
         },
-        {
-          id: 't2',
-          name: 'Carlos Engenheiro',
-          role: 'Collaborator',
-          email: 'carlos@techcorp.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=11',
-          status: 'busy',
-          performance: 8.8,
-        },
-        {
-          id: 't3',
-          name: 'Roberto Mestre',
-          role: 'Collaborator',
-          email: 'roberto@techcorp.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=12',
-          status: 'active',
-          performance: 9.1,
-        },
-        {
-          id: 't4',
-          name: 'Julia Arquiteta',
-          role: 'Project Manager',
-          email: 'julia@techcorp.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=13',
-          status: 'active',
-          performance: 9.8,
-        },
-        {
-          id: 't5',
-          name: 'Marcos Contador',
-          role: 'Accountant',
-          email: 'marcos@techcorp.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=14',
-          status: 'inactive',
-          performance: 8.5,
-        },
       ]
-    }
-    // Accountant Team Member Logic
-    else if (email === 'accountant.pj@bidwork.app') {
-      name = 'Marcos Contador'
-      role = 'contractor' // Part of a contractor company
-      entityType = 'pj'
-      teamRole = 'Accountant' // RBAC Key
-      constructionSubscription = {
-        active: true,
-        basePrice: 500,
-        franchiseeMarkup: 50,
-        projectLimit: 10,
-        activeProjects: 3,
-      }
-    }
-    // Project Manager Team Member Logic
-    else if (email === 'manager.pj@bidwork.app') {
-      name = 'Ana Gerente'
-      role = 'contractor'
-      entityType = 'pj'
-      teamRole = 'Project Manager' // RBAC Key
-      constructionSubscription = {
-        active: true,
-        basePrice: 500,
-        franchiseeMarkup: 50,
-        projectLimit: 10,
-        activeProjects: 3,
-      }
     } else if (email === 'executor.pj@bidwork.app') {
       id = 'exec-pj-1'
       name = 'Soluções Rápidas Ltda'
@@ -285,57 +222,20 @@ export const useAuthStore = create<AuthState>((set) => ({
       taxId = '98.765.432/0001-10'
       role = 'executor'
       entityType = 'pj'
-      teamMembers = [
-        {
-          id: 't3',
-          name: 'Marcos Técnico',
-          role: 'Collaborator',
-          email: 'marcos@solucoes.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=12',
-          status: 'active',
-          performance: 9.2,
-        },
-        {
-          id: 't4',
-          name: 'Julia Assistente',
-          role: 'Collaborator',
-          email: 'julia@solucoes.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=13',
-          status: 'active',
-          performance: 9.0,
-        },
-      ]
-    } else if (email === 'partner@bidwork.app') {
-      name = 'Roberto Parceiro'
-      companyName = 'Parceiro Construções Ltda'
-      taxId = '45.678.901/0001-23'
-      role = 'partner'
-      entityType = 'pj'
+      planName = 'Premium'
+      subscriptionTier = 'pro'
     } else if (email === 'executor.pf@bidwork.app') {
       id = 'exec-1'
       name = 'João Freelancer'
       taxId = '123.456.789-00'
       role = 'executor'
       entityType = 'pf'
-    } else if (email === 'contractor.pf@bidwork.app') {
-      name = 'Maria Contratante'
-      taxId = '321.654.987-11'
-      role = 'contractor'
-      entityType = 'pf'
-      // Simulation: PF user usually doesn't have construction sub by default, but let's say they can buy
-      constructionSubscription = {
-        active: false,
-        basePrice: 200,
-        franchiseeMarkup: 20,
-        projectLimit: 2,
-        activeProjects: 0,
-      }
+      planName = 'Básico'
     } else if (email === 'admin@bidwork.app') {
       id = 'admin-1'
       name = 'Administrador do Sistema'
       role = 'admin'
+      planName = 'Enterprise'
     }
 
     set({
@@ -355,8 +255,9 @@ export const useAuthStore = create<AuthState>((set) => ({
         reputation: 4.8,
         serviceRadius: 50,
         location: 'São Paulo - SP',
-        isPremium: entityType === 'pj',
-        subscriptionTier: entityType === 'pj' ? 'business' : 'free',
+        isPremium: planName !== 'Básico',
+        subscriptionTier,
+        planName,
         constructionSubscription,
         credits: 100,
         isVerified: true,
@@ -378,15 +279,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           document: '12.345.678/0001-99',
         },
         loyaltyPoints: 1250,
-        loyaltyHistory: [
-          {
-            id: 'l1',
-            date: new Date(Date.now() - 86400000 * 2),
-            description: 'Job Finalizado com 5 estrelas',
-            points: 100,
-            type: 'earned',
-          },
-        ],
+        loyaltyHistory: [],
         teamMembers,
         badges,
       },
@@ -416,6 +309,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         location: `${data.address.city} - ${data.address.state}`,
         isPremium: false,
         subscriptionTier: 'free',
+        planName: 'Básico',
         credits: 0,
         isVerified: false,
         kycStatus: 'none',

@@ -73,6 +73,7 @@ export default function ManagePlans() {
       earlyAccessHours: 0,
       visibilityBoost: 1,
       skillMatchingRule: 'strict',
+      skillWeight: 1,
     })
     setFeatures([''])
     setIsEditOpen(true)
@@ -83,14 +84,15 @@ export default function ManagePlans() {
       !editForm.name ||
       editForm.price === undefined ||
       !editForm.targetAudience ||
-      !['executor', 'advertiser'].includes(editForm.targetAudience) ||
+      !['executor', 'advertiser', 'contractor'].includes(
+        editForm.targetAudience,
+      ) ||
       !editForm.billingCycle ||
       !editForm.validityDays
     ) {
       toast({
         variant: 'destructive',
-        title:
-          'Preencha todos os campos obrigatórios, incluindo o público-alvo válido.',
+        title: 'Preencha todos os campos obrigatórios.',
       })
       return
     }
@@ -123,6 +125,7 @@ export default function ManagePlans() {
   const getAudienceLabel = (val: string) => {
     if (val === 'executor') return 'Executor'
     if (val === 'advertiser') return 'Anunciante'
+    if (val === 'contractor') return 'Contratante'
     return val
   }
 
@@ -140,7 +143,7 @@ export default function ManagePlans() {
         <h1 className="text-3xl font-bold tracking-tight">Gestão de Planos</h1>
         <p className="text-muted-foreground">
           Crie e edite planos de assinatura, defina regras de notificação e
-          níveis de prioridade para Anunciantes e Executores.
+          níveis de prioridade.
         </p>
       </div>
 
@@ -279,7 +282,7 @@ export default function ManagePlans() {
                       <Select
                         value={
                           editForm.targetAudience &&
-                          ['executor', 'advertiser'].includes(
+                          ['executor', 'advertiser', 'contractor'].includes(
                             editForm.targetAudience,
                           )
                             ? editForm.targetAudience
@@ -295,6 +298,9 @@ export default function ManagePlans() {
                         <SelectContent>
                           <SelectItem value="advertiser">Anunciante</SelectItem>
                           <SelectItem value="executor">Executor</SelectItem>
+                          <SelectItem value="contractor">
+                            Contratante
+                          </SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -427,7 +433,9 @@ export default function ManagePlans() {
                     <h3 className="text-lg font-medium mb-1">
                       {editForm.targetAudience === 'executor'
                         ? 'Prioridade e Visibilidade do Executor'
-                        : 'Prioridade e Visibilidade do Anunciante'}
+                        : editForm.targetAudience === 'advertiser'
+                          ? 'Prioridade e Visibilidade do Anunciante'
+                          : 'Regras de Acesso'}
                     </h3>
                     <p className="text-sm text-muted-foreground mb-4">
                       Configure os privilégios na plataforma baseados neste
@@ -454,7 +462,9 @@ export default function ManagePlans() {
                             </p>
                           </div>
                           <div className="space-y-2">
-                            <Label>Acesso Antecipado (Horas)</Label>
+                            <Label>
+                              Acesso Antecipado / Antecedência (Horas)
+                            </Label>
                             <Input
                               type="number"
                               value={editForm.earlyAccessHours ?? 0}
@@ -466,8 +476,8 @@ export default function ManagePlans() {
                               }
                             />
                             <p className="text-xs text-muted-foreground">
-                              Tempo de acesso exclusivo antes de outros
-                              usuários.
+                              Tempo de acesso exclusivo antes de usuários Básico
+                              (Ex: 24h).
                             </p>
                           </div>
                         </div>
@@ -505,6 +515,28 @@ export default function ManagePlans() {
                             </SelectContent>
                           </Select>
                         </div>
+
+                        <div className="space-y-2">
+                          <Label>
+                            Peso da Habilidade (Skill Weight) [1 a 10]
+                          </Label>
+                          <Input
+                            type="number"
+                            min={1}
+                            max={10}
+                            value={editForm.skillWeight ?? 1}
+                            onChange={(e) =>
+                              setEditForm({
+                                ...editForm,
+                                skillWeight: Number(e.target.value),
+                              })
+                            }
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Fator multiplicador usado para rankear executors
+                            baseado nas habilidades.
+                          </p>
+                        </div>
                       </div>
                     )}
 
@@ -526,8 +558,7 @@ export default function ManagePlans() {
                           />
                           <p className="text-xs text-muted-foreground">
                             Anúncios criados por assinantes deste plano
-                            aparecerão primeiro nas listagens (maior boost =
-                            maior prioridade).
+                            aparecerão primeiro nas listagens.
                           </p>
                         </div>
                       </div>
@@ -581,11 +612,11 @@ export default function ManagePlans() {
                           />
                           <p className="text-xs text-muted-foreground">
                             Tempo em horas para enviar alertas sobre vencimentos
-                            ou oportunidades.
+                            ou oportunidades exclusivas.
                           </p>
                         </div>
                         <div className="space-y-2">
-                          <Label>Texto da Notificação</Label>
+                          <Label>Texto da Notificação (Template)</Label>
                           <Textarea
                             value={editForm.pushMessageText || ''}
                             onChange={(e) =>
@@ -598,7 +629,8 @@ export default function ManagePlans() {
                             className="min-h-[100px]"
                           />
                           <p className="text-xs text-muted-foreground">
-                            Conteúdo que será enviado via Push Notification.
+                            Conteúdo personalizado que será enviado via Push
+                            Notification para este nível.
                           </p>
                         </div>
                       </div>
