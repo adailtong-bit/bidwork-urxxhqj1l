@@ -1,10 +1,7 @@
 import { useState } from 'react'
-import { useAdStore, Ad } from '@/stores/useAdStore'
-import { useAdminPricingStore } from '@/stores/useAdminPricingStore'
-import { useLanguageStore } from '@/stores/useLanguageStore'
+import { useAdStore } from '@/stores/useAdStore'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
   Table,
@@ -14,77 +11,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from '@/components/ui/dialog'
-import { useToast } from '@/hooks/use-toast'
-import { format, differenceInMonths } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
-import {
-  MoreVertical,
-  PauseCircle,
-  XCircle,
-  CalendarPlus,
-  FileText,
-  HardHat,
-  Info,
-} from 'lucide-react'
+import { format } from 'date-fns'
+import { Info } from 'lucide-react'
+import { AdActionsMenu } from './components/AdActionsMenu'
+import AdCreateDialog from './components/AdCreateDialog'
+import PricingMatrixTab from './components/PricingMatrixTab'
 
 export default function ManageAds() {
-  const { ads, updateAdStatus, extendAd } = useAdStore()
-  const { plans } = useAdminPricingStore()
-  const { formatCurrency } = useLanguageStore()
-  const { toast } = useToast()
-
-  const [extendDialog, setExtendDialog] = useState<{
-    open: boolean
-    adId: string
-    newDate: string
-  }>({ open: false, adId: '', newDate: '' })
-
-  const getPlanDetails = (planName: string) =>
-    plans.find((p) => p.name === planName)
-
-  const calcBilling = (ad: Ad) => {
-    const plan = getPlanDetails(ad.planLevel)
-    if (!plan) return 0
-    let months = differenceInMonths(ad.endDate, ad.startDate)
-    if (months <= 0) months = 1
-    return months * plan.price
-  }
-
-  const handleStatusChange = (id: string, status: Ad['status']) => {
-    updateAdStatus(id, status)
-    toast({
-      title: 'Status Atualizado',
-      description: `O anúncio foi marcado como ${status}.`,
-    })
-  }
-
-  const handleExtend = () => {
-    if (!extendDialog.newDate) return
-    extendAd(extendDialog.adId, new Date(extendDialog.newDate))
-    setExtendDialog({ open: false, adId: '', newDate: '' })
-    toast({ title: 'Anúncio Estendido com Sucesso' })
-  }
-
-  const handleGenerateDoc = (ad: Ad) => {
-    const docName = ad.country === 'BR' ? 'Nota Fiscal (NF)' : 'Billing Note'
-    toast({
-      title: `${docName} Gerada`,
-      description: `Documento financeiro enviado para ${ad.advertiserName}.`,
-    })
-  }
+  const { ads } = useAdStore()
+  const [createOpen, setCreateOpen] = useState(false)
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -108,146 +43,96 @@ export default function ManageAds() {
           Gestão de Publicidade
         </h1>
         <p className="text-muted-foreground">
-          Gerencie o ciclo de vida, faturamento e documentação de anúncios.
+          Gerencie faturamento, matriz de preços e o ciclo de vida de anúncios.
         </p>
       </div>
 
-      <div className="rounded-md border bg-card overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Anunciante</TableHead>
-              <TableHead>Campanha</TableHead>
-              <TableHead>Plano / Regras</TableHead>
-              <TableHead>Período</TableHead>
-              <TableHead>Faturamento</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ads.map((ad) => {
-              const plan = getPlanDetails(ad.planLevel)
-              return (
-                <TableRow key={ad.id}>
-                  <TableCell className="font-medium">
-                    {ad.advertiserName}
-                    <div className="text-xs text-muted-foreground">
-                      {ad.country === 'BR' ? 'Brasil' : ad.country}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-2">
-                      {ad.isConstruction && (
-                        <HardHat className="h-4 w-4 text-orange-500" />
-                      )}
-                      <span>{ad.title}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-col gap-1 items-start">
-                      <Badge variant="outline">{ad.planLevel}</Badge>
-                      {plan && (
-                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
-                          <Info className="h-3 w-3" /> P:
-                          {plan.priorityWeight || 1} | A:
-                          {plan.earlyAccessHours || 0}h
-                        </span>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    <div>Início: {format(ad.startDate, 'dd/MM/yyyy')}</div>
-                    <div>Fim: {format(ad.endDate, 'dd/MM/yyyy')}</div>
-                  </TableCell>
-                  <TableCell className="font-bold text-primary">
-                    {formatCurrency(calcBilling(ad))}
-                  </TableCell>
-                  <TableCell>{getStatusBadge(ad.status)}</TableCell>
-                  <TableCell className="text-right">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleGenerateDoc(ad)}>
-                          <FileText className="mr-2 h-4 w-4" />
-                          Gerar {ad.country === 'BR' ? 'NF' : 'Billing Note'}
-                        </DropdownMenuItem>
-                        {ad.status === 'active' && (
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleStatusChange(ad.id, 'suspended')
-                            }
-                          >
-                            <PauseCircle className="mr-2 h-4 w-4" /> Suspender
-                          </DropdownMenuItem>
-                        )}
-                        {(ad.status === 'active' ||
-                          ad.status === 'suspended') && (
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() =>
-                              handleStatusChange(ad.id, 'canceled')
-                            }
-                          >
-                            <XCircle className="mr-2 h-4 w-4" /> Cancelar
-                          </DropdownMenuItem>
-                        )}
-                        <DropdownMenuItem
-                          onClick={() =>
-                            setExtendDialog({
-                              open: true,
-                              adId: ad.id,
-                              newDate: '',
-                            })
-                          }
-                        >
-                          <CalendarPlus className="mr-2 h-4 w-4" /> Estender
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              )
-            })}
-          </TableBody>
-        </Table>
-      </div>
+      <Tabs defaultValue="ads" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="ads">Anúncios</TabsTrigger>
+          <TabsTrigger value="matrix">Matriz de Preços</TabsTrigger>
+        </TabsList>
 
-      <Dialog
-        open={extendDialog.open}
-        onOpenChange={(val) => setExtendDialog((p) => ({ ...p, open: val }))}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Estender Anúncio</DialogTitle>
-          </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="space-y-2">
-              <Label>Nova Data de Expiração</Label>
-              <Input
-                type="date"
-                value={extendDialog.newDate}
-                onChange={(e) =>
-                  setExtendDialog((p) => ({ ...p, newDate: e.target.value }))
-                }
-              />
-            </div>
-            <p className="text-sm text-muted-foreground">
-              O faturamento será recalculado automaticamente com base no período
-              adicional e nas regras do plano ativo.
-            </p>
-          </div>
-          <DialogFooter>
-            <Button onClick={handleExtend} disabled={!extendDialog.newDate}>
-              Confirmar Extensão
+        <TabsContent value="ads" className="space-y-4">
+          <div className="flex justify-end">
+            <Button onClick={() => setCreateOpen(true)}>
+              Criar Novo Anúncio
             </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </div>
+
+          <div className="rounded-md border bg-card overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Anunciante</TableHead>
+                  <TableHead>Detalhes</TableHead>
+                  <TableHead>Nível / Matriz</TableHead>
+                  <TableHead>Período</TableHead>
+                  <TableHead>Faturamento</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ads.map((ad) => (
+                  <TableRow key={ad.id}>
+                    <TableCell className="font-medium">
+                      {ad.advertiserName}
+                      <div className="text-xs text-muted-foreground">
+                        {ad.country === 'BR' ? 'Brasil' : ad.country}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1">
+                        <span className="font-semibold">{ad.title}</span>
+                        <span className="text-xs text-muted-foreground">
+                          {ad.category} | {ad.region}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 items-start">
+                        <Badge variant="outline">{ad.planLevel}</Badge>
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Info className="h-3 w-3" /> Peso:{' '}
+                          {ad.skillWeight || 1}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-xs">
+                      <div>
+                        Início: {format(new Date(ad.startDate), 'dd/MM/yyyy')}
+                      </div>
+                      <div>
+                        Fim: {format(new Date(ad.endDate), 'dd/MM/yyyy')}
+                      </div>
+                    </TableCell>
+                    <TableCell className="font-bold text-primary">
+                      {new Intl.NumberFormat(
+                        ad.country === 'BR' ? 'pt-BR' : 'en-US',
+                        {
+                          style: 'currency',
+                          currency: ad.country === 'BR' ? 'BRL' : 'USD',
+                        },
+                      ).format(ad.calculatedPrice || 0)}
+                    </TableCell>
+                    <TableCell>{getStatusBadge(ad.status)}</TableCell>
+                    <TableCell className="text-right">
+                      <AdActionsMenu ad={ad} />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="matrix">
+          <PricingMatrixTab />
+        </TabsContent>
+      </Tabs>
+
+      <AdCreateDialog open={createOpen} onOpenChange={setCreateOpen} />
     </div>
   )
 }

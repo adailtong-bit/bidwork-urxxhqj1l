@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { differenceInDays, differenceInHours } from 'date-fns'
+import { usePricingMatrixStore } from './usePricingMatrixStore'
 
 export interface Ad {
   id: string
@@ -7,18 +9,21 @@ export interface Ad {
   type: 'regional' | 'segmented'
   segment: 'dashboard' | 'search' | 'profile' | 'home' | 'all'
   link: string
-  active: boolean // legacy
+  active: boolean
 
-  // New fields for billing & lifecycle
   advertiserName: string
   planLevel: string
+  category: string
+  region: string
   country: 'BR' | 'US' | 'Other'
   startDate: Date
   endDate: Date
   status: 'active' | 'suspended' | 'canceled' | 'expired'
   isConstruction: boolean
+  calculatedPrice: number
+  createdAt: Date
+  skillWeight: number
 
-  // Metrics
   views: number
   clicks: number
   likes: number
@@ -32,7 +37,7 @@ interface AdState {
   toggleAdStatus: (id: string) => void
   updateAdStatus: (id: string, status: Ad['status']) => void
   extendAd: (id: string, newEndDate: Date) => void
-  getAdsBySegment: (segment: string) => Ad[]
+  getAdsBySegment: (segment: string, isPaidUser?: boolean) => Ad[]
 }
 
 const mockAds: Ad[] = [
@@ -45,12 +50,17 @@ const mockAds: Ad[] = [
     link: '#',
     active: true,
     advertiserName: 'Construtora Alpha',
-    planLevel: 'Enterprise',
+    planLevel: 'Premium',
+    category: 'Construction',
+    region: 'BR',
     country: 'BR',
     startDate: new Date('2024-01-01'),
     endDate: new Date('2024-12-31'),
     status: 'active',
     isConstruction: true,
+    calculatedPrice: 1500,
+    createdAt: new Date('2024-01-01'),
+    skillWeight: 10,
     views: 1240,
     clicks: 85,
     likes: 12,
@@ -65,35 +75,20 @@ const mockAds: Ad[] = [
     link: '#',
     active: true,
     advertiserName: 'Tech School',
-    planLevel: 'Premium',
+    planLevel: 'Gold',
+    category: 'Technology',
+    region: 'US',
     country: 'US',
     startDate: new Date('2024-05-01'),
     endDate: new Date('2024-08-01'),
     status: 'active',
     isConstruction: false,
+    calculatedPrice: 800,
+    createdAt: new Date(),
+    skillWeight: 7,
     views: 980,
     clicks: 120,
     likes: 45,
-    dislikes: 1,
-  },
-  {
-    id: '3',
-    title: 'Ferramentas Premium',
-    imageUrl: 'https://img.usecurling.com/p/600/200?q=tools',
-    type: 'segmented',
-    segment: 'search',
-    link: '#',
-    active: false,
-    advertiserName: 'Tools BR',
-    planLevel: 'Ouro',
-    country: 'BR',
-    startDate: new Date('2023-01-01'),
-    endDate: new Date('2023-12-31'),
-    status: 'expired',
-    isConstruction: true,
-    views: 780,
-    clicks: 45,
-    likes: 8,
     dislikes: 1,
   },
 ]
@@ -107,10 +102,6 @@ export const useAdStore = create<AdState>((set, get) => ({
         {
           ...(ad as Ad),
           id: Math.random().toString(36).substr(2, 9),
-          views: 0,
-          clicks: 0,
-          likes: 0,
-          dislikes: 0,
         },
       ],
     })),
@@ -131,19 +122,63 @@ export const useAdStore = create<AdState>((set, get) => ({
       ),
     })),
   extendAd: (id, newEndDate) =>
-    set((state) => ({
-      ads: state.ads.map((ad) =>
-        ad.id === id
-          ? { ...ad, endDate: newEndDate, status: 'active', active: true }
-          : ad,
-      ),
-    })),
-  getAdsBySegment: (segment) => {
+    set((state) => {
+      const matrix = usePricingMatrixStore.getState()
+      return {
+        ads: state.ads.map((ad) => {
+          if (ad.id === id) {
+            const days = differenceInDays(newEndDate, new Date(ad.endDate))
+            let extra = 0
+            if (days > 0) {
+              extra = matrix.calculatePrice(
+                ad.planLevel,
+                ad.region,
+                ad.category,
+                days,
+              )
+            }
+            return {
+              ...ad,
+              endDate: newEndDate,
+              status: 'active',
+              active: true,
+              calculatedPrice: (ad.calculatedPrice || 0) + extra,
+            }
+          }
+          return ad
+        }),
+      }
+    }),
+  getAdsBySegment: (segment, isPaidUser = false) => {
     const { ads } = get()
-    const segmentAds = ads.filter(
-      (ad) => ad.active && (ad.segment === segment || ad.segment === 'all'),
+    const now = new Date()
+
+    const validAds = ads.filter(
+      (ad) =>
+        ad.active &&
+        ad.status === 'active' &&
+        new Date(ad.endDate) >= now &&
+        (ad.segment === segment || ad.segment === 'all'),
     )
-    const shuffled = [...segmentAds].sort(() => 0.5 - Math.random())
-    return shuffled.slice(0, 2)
+
+    // Time-Gate logic: 24h block for free users
+    const timeGatedAds = validAds.filter((ad) => {
+      if (!ad.createdAt) return true
+      const hours = differenceInHours(now, new Date(ad.createdAt))
+      if (hours < 24 && !isPaidUser) {
+        return false
+      }
+      return true
+    })
+
+    // Skill Matrix Priority: Sort by skill weight
+    const sorted = [...timeGatedAds].sort((a, b) => {
+      const wA = a.skillWeight || 1
+      const wB = b.skillWeight || 1
+      if (wA !== wB) return wB - wA
+      return 0.5 - Math.random() // randomized tie-break
+    })
+
+    return sorted.slice(0, 2)
   },
 }))
