@@ -2,8 +2,6 @@ import { useState } from 'react'
 import {
   useAdminPricingStore,
   SubscriptionPlan,
-  TargetAudience,
-  BillingCycle,
 } from '@/stores/useAdminPricingStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,13 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Dialog,
   DialogContent,
@@ -68,7 +60,6 @@ export default function ManagePlans() {
       name: '',
       description: '',
       price: 0,
-      targetAudience: 'executor',
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
@@ -82,12 +73,16 @@ export default function ManagePlans() {
       !editForm.name ||
       editForm.price === undefined ||
       !editForm.targetAudience ||
+      !['executor', 'advertiser', 'contractor'].includes(
+        editForm.targetAudience,
+      ) ||
       !editForm.billingCycle ||
       !editForm.validityDays
     ) {
       toast({
         variant: 'destructive',
-        title: 'Preencha todos os campos obrigatórios',
+        title:
+          'Preencha todos os campos obrigatórios, incluindo o público-alvo.',
       })
       return
     }
@@ -221,7 +216,9 @@ export default function ManagePlans() {
             <div className="space-y-6 py-4 pr-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Nome do Plano</Label>
+                  <Label>
+                    Nome do Plano <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     value={editForm.name || ''}
                     onChange={(e) =>
@@ -231,19 +228,28 @@ export default function ManagePlans() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Público-Alvo</Label>
+                  <Label>
+                    Público-Alvo <span className="text-destructive">*</span>
+                  </Label>
                   <Select
-                    value={editForm.targetAudience}
+                    value={
+                      editForm.targetAudience &&
+                      ['executor', 'advertiser', 'contractor'].includes(
+                        editForm.targetAudience,
+                      )
+                        ? editForm.targetAudience
+                        : undefined
+                    }
                     onValueChange={(val: any) =>
                       setEditForm({ ...editForm, targetAudience: val })
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Selecione o público" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="executor">Executor</SelectItem>
                       <SelectItem value="advertiser">Anunciante</SelectItem>
+                      <SelectItem value="executor">Executor</SelectItem>
                       <SelectItem value="contractor">Contratante</SelectItem>
                     </SelectContent>
                   </Select>
@@ -263,7 +269,9 @@ export default function ManagePlans() {
 
               <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label>Preço (R$)</Label>
+                  <Label>
+                    Preço (R$) <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     type="number"
                     value={editForm.price ?? 0}
@@ -276,7 +284,10 @@ export default function ManagePlans() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Ciclo de Cobrança</Label>
+                  <Label>
+                    Ciclo de Cobrança{' '}
+                    <span className="text-destructive">*</span>
+                  </Label>
                   <Select
                     value={editForm.billingCycle}
                     onValueChange={(val: any) =>
@@ -295,7 +306,9 @@ export default function ManagePlans() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Validade (Dias)</Label>
+                  <Label>
+                    Validade (Dias) <span className="text-destructive">*</span>
+                  </Label>
                   <Input
                     type="number"
                     value={editForm.validityDays ?? 30}

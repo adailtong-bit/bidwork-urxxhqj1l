@@ -28,12 +28,25 @@ export default function SubscriptionPlans() {
     })
   }
 
-  // Filter plans relevant to executors or advertisers
-  const availablePlans = plans.filter(
-    (p) =>
-      p.active &&
-      (p.targetAudience === 'executor' || p.targetAudience === 'advertiser'),
-  )
+  // Filter plans based on standardized target audience logic and user roles
+  const availablePlans = plans.filter((p) => {
+    if (!p.active) return false
+
+    if (user) {
+      if (user.role === 'executor') {
+        return p.targetAudience === 'executor'
+      } else if (user.role === 'contractor') {
+        return p.targetAudience === 'contractor'
+      } else if (user.role === 'partner') {
+        return p.targetAudience === 'advertiser'
+      } else if (user.role === 'admin') {
+        return true
+      }
+    }
+
+    // Default view for public visitors
+    return true
+  })
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto py-8 px-4">
