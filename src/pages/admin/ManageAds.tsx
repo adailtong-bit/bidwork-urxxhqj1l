@@ -1,251 +1,253 @@
 import { useState } from 'react'
 import { useAdStore, Ad } from '@/stores/useAdStore'
+import { useAdminPricingStore } from '@/stores/useAdminPricingStore'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from '@/components/ui/card'
-import { Switch } from '@/components/ui/switch'
+import { Label } from '@/components/ui/label'
 import { Badge } from '@/components/ui/badge'
 import {
-  Trash2,
-  ExternalLink,
-  Plus,
-  BarChart2,
-  MousePointer2,
-  ThumbsUp,
-  ThumbsDown,
-} from 'lucide-react'
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
 import { useToast } from '@/hooks/use-toast'
-import { Label } from '@/components/ui/label'
+import { format, differenceInMonths } from 'date-fns'
+import { ptBR } from 'date-fns/locale'
+import {
+  MoreVertical,
+  PauseCircle,
+  XCircle,
+  CalendarPlus,
+  FileText,
+  HardHat,
+  Info,
+} from 'lucide-react'
 
 export default function ManageAds() {
-  const { ads, addAd, removeAd, toggleAdStatus } = useAdStore()
+  const { ads, updateAdStatus, extendAd } = useAdStore()
+  const { plans } = useAdminPricingStore()
+  const { formatCurrency } = useLanguageStore()
   const { toast } = useToast()
 
-  const [newAd, setNewAd] = useState<Partial<Ad>>({
-    title: '',
-    imageUrl: '',
-    link: '',
-    type: 'regional',
-    segment: 'dashboard',
-    active: true,
-  })
+  const [extendDialog, setExtendDialog] = useState<{
+    open: boolean
+    adId: string
+    newDate: string
+  }>({ open: false, adId: '', newDate: '' })
 
-  const handleAdd = () => {
-    if (!newAd.title || !newAd.imageUrl || !newAd.link) {
-      toast({
-        variant: 'destructive',
-        title: 'Campos obrigatórios',
-        description: 'Preencha título, URL da imagem e Link de destino.',
-      })
-      return
-    }
+  const getPlanDetails = (planName: string) =>
+    plans.find((p) => p.name === planName)
 
-    addAd(newAd as Omit<Ad, 'id'>)
-    setNewAd({
-      title: '',
-      imageUrl: '',
-      link: '',
-      type: 'regional',
-      segment: 'dashboard',
-      active: true,
-    })
-    toast({ title: 'Anúncio criado com sucesso' })
+  const calcBilling = (ad: Ad) => {
+    const plan = getPlanDetails(ad.planLevel)
+    if (!plan) return 0
+    let months = differenceInMonths(ad.endDate, ad.startDate)
+    if (months <= 0) months = 1
+    return months * plan.price
   }
 
-  const handleDelete = (id: string) => {
-    if (confirm('Excluir este anúncio?')) {
-      removeAd(id)
-      toast({ title: 'Anúncio removido' })
+  const handleStatusChange = (id: string, status: Ad['status']) => {
+    updateAdStatus(id, status)
+    toast({
+      title: 'Status Atualizado',
+      description: `O anúncio foi marcado como ${status}.`,
+    })
+  }
+
+  const handleExtend = () => {
+    if (!extendDialog.newDate) return
+    extendAd(extendDialog.adId, new Date(extendDialog.newDate))
+    setExtendDialog({ open: false, adId: '', newDate: '' })
+    toast({ title: 'Anúncio Estendido com Sucesso' })
+  }
+
+  const handleGenerateDoc = (ad: Ad) => {
+    const docName = ad.country === 'BR' ? 'Nota Fiscal (NF)' : 'Billing Note'
+    toast({
+      title: `${docName} Gerada`,
+      description: `Documento financeiro enviado para ${ad.advertiserName}.`,
+    })
+  }
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'active':
+        return <Badge className="bg-green-500">Ativo</Badge>
+      case 'suspended':
+        return <Badge className="bg-amber-500">Suspenso</Badge>
+      case 'canceled':
+        return <Badge variant="destructive">Cancelado</Badge>
+      case 'expired':
+        return <Badge variant="secondary">Expirado</Badge>
+      default:
+        return <Badge>{status}</Badge>
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col gap-2">
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      <div>
         <h1 className="text-3xl font-bold tracking-tight">
           Gestão de Publicidade
         </h1>
         <p className="text-muted-foreground">
-          Gerencie banners, segmentação e acompanhe métricas de desempenho.
+          Gerencie o ciclo de vida, faturamento e documentação de anúncios.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <Card className="lg:col-span-1 h-fit">
-          <CardHeader>
-            <CardTitle>Novo Anúncio Segmentado</CardTitle>
-            <CardDescription>Crie campanhas direcionadas.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label>Título da Campanha</Label>
-              <Input
-                placeholder="Ex: Promoção de Ferramentas"
-                value={newAd.title}
-                onChange={(e) => setNewAd({ ...newAd, title: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>URL da Imagem (Banner)</Label>
-              <Input
-                placeholder="https://..."
-                value={newAd.imageUrl}
-                onChange={(e) =>
-                  setNewAd({ ...newAd, imageUrl: e.target.value })
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Link de Destino</Label>
-              <Input
-                placeholder="https://..."
-                value={newAd.link}
-                onChange={(e) => setNewAd({ ...newAd, link: e.target.value })}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Local de Exibição (Segmento)</Label>
-              <Select
-                value={newAd.segment}
-                onValueChange={(val: any) =>
-                  setNewAd({ ...newAd, segment: val })
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="dashboard">Dashboard</SelectItem>
-                  <SelectItem value="search">Busca de Jobs</SelectItem>
-                  <SelectItem value="profile">Perfil/Config</SelectItem>
-                  <SelectItem value="all">Todos</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Tipo de Target</Label>
-              <Select
-                value={newAd.type}
-                onValueChange={(val: any) => setNewAd({ ...newAd, type: val })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="regional">Regional (Geo)</SelectItem>
-                  <SelectItem value="segmented">Categoria/Interesse</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button onClick={handleAdd} className="w-full">
-              <Plus className="mr-2 h-4 w-4" /> Criar Campanha
-            </Button>
-          </CardContent>
-        </Card>
-
-        <div className="lg:col-span-2 space-y-4">
-          <h2 className="text-xl font-semibold">Anúncios Ativos e Métricas</h2>
-          {ads.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground border-2 border-dashed rounded-lg">
-              Nenhum anúncio cadastrado.
-            </div>
-          ) : (
-            <div className="grid gap-4">
-              {ads.map((ad) => (
-                <Card key={ad.id} className="overflow-hidden">
-                  <div className="flex flex-col sm:flex-row h-full">
-                    <div className="w-full sm:w-48 bg-muted relative">
-                      <img
-                        src={ad.imageUrl}
-                        alt={ad.title}
-                        className="w-full h-full object-cover absolute inset-0"
-                      />
+      <div className="rounded-md border bg-card overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Anunciante</TableHead>
+              <TableHead>Campanha</TableHead>
+              <TableHead>Plano / Regras</TableHead>
+              <TableHead>Período</TableHead>
+              <TableHead>Faturamento</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right">Ações</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {ads.map((ad) => {
+              const plan = getPlanDetails(ad.planLevel)
+              return (
+                <TableRow key={ad.id}>
+                  <TableCell className="font-medium">
+                    {ad.advertiserName}
+                    <div className="text-xs text-muted-foreground">
+                      {ad.country === 'BR' ? 'Brasil' : ad.country}
                     </div>
-                    <div className="flex-1 p-4 flex flex-col gap-3">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-bold flex items-center gap-2 text-lg">
-                            {ad.title}
-                            <Badge variant="outline">{ad.segment}</Badge>
-                          </h3>
-                          <a
-                            href={ad.link}
-                            target="_blank"
-                            className="text-xs text-primary hover:underline flex items-center gap-1 mt-1"
-                          >
-                            {ad.link} <ExternalLink className="h-3 w-3" />
-                          </a>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            id={`switch-${ad.id}`}
-                            checked={ad.active}
-                            onCheckedChange={() => toggleAdStatus(ad.id)}
-                          />
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-4 gap-2 py-2 border-y bg-muted/20 rounded-md px-2">
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <BarChart2 className="h-3 w-3" /> Views
-                          </span>
-                          <span className="font-bold">{ad.views}</span>
-                        </div>
-                        <div className="flex flex-col items-center">
-                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                            <MousePointer2 className="h-3 w-3" /> Clicks
-                          </span>
-                          <span className="font-bold">{ad.clicks}</span>
-                        </div>
-                        <div className="flex flex-col items-center text-green-600">
-                          <span className="text-xs flex items-center gap-1">
-                            <ThumbsUp className="h-3 w-3" /> Likes
-                          </span>
-                          <span className="font-bold">{ad.likes}</span>
-                        </div>
-                        <div className="flex flex-col items-center text-red-600">
-                          <span className="text-xs flex items-center gap-1">
-                            <ThumbsDown className="h-3 w-3" /> Dislikes
-                          </span>
-                          <span className="font-bold">{ad.dislikes}</span>
-                        </div>
-                      </div>
-
-                      <div className="flex justify-between items-center mt-auto">
-                        <Badge variant="secondary" className="capitalize">
-                          Target: {ad.type}
-                        </Badge>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-destructive hover:bg-destructive/10 h-8"
-                          onClick={() => handleDelete(ad.id)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" /> Excluir
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      {ad.isConstruction && (
+                        <HardHat className="h-4 w-4 text-orange-500" />
+                      )}
+                      <span>{ad.title}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1 items-start">
+                      <Badge variant="outline">{ad.planLevel}</Badge>
+                      {plan && (
+                        <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                          <Info className="h-3 w-3" /> P:
+                          {plan.priorityWeight || 1} | A:
+                          {plan.earlyAccessHours || 0}h
+                        </span>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-xs">
+                    <div>Início: {format(ad.startDate, 'dd/MM/yyyy')}</div>
+                    <div>Fim: {format(ad.endDate, 'dd/MM/yyyy')}</div>
+                  </TableCell>
+                  <TableCell className="font-bold text-primary">
+                    {formatCurrency(calcBilling(ad))}
+                  </TableCell>
+                  <TableCell>{getStatusBadge(ad.status)}</TableCell>
+                  <TableCell className="text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreVertical className="h-4 w-4" />
                         </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          )}
-        </div>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleGenerateDoc(ad)}>
+                          <FileText className="mr-2 h-4 w-4" />
+                          Gerar {ad.country === 'BR' ? 'NF' : 'Billing Note'}
+                        </DropdownMenuItem>
+                        {ad.status === 'active' && (
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleStatusChange(ad.id, 'suspended')
+                            }
+                          >
+                            <PauseCircle className="mr-2 h-4 w-4" /> Suspender
+                          </DropdownMenuItem>
+                        )}
+                        {(ad.status === 'active' ||
+                          ad.status === 'suspended') && (
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() =>
+                              handleStatusChange(ad.id, 'canceled')
+                            }
+                          >
+                            <XCircle className="mr-2 h-4 w-4" /> Cancelar
+                          </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setExtendDialog({
+                              open: true,
+                              adId: ad.id,
+                              newDate: '',
+                            })
+                          }
+                        >
+                          <CalendarPlus className="mr-2 h-4 w-4" /> Estender
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
       </div>
+
+      <Dialog
+        open={extendDialog.open}
+        onOpenChange={(val) => setExtendDialog((p) => ({ ...p, open: val }))}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Estender Anúncio</DialogTitle>
+          </DialogHeader>
+          <div className="py-4 space-y-4">
+            <div className="space-y-2">
+              <Label>Nova Data de Expiração</Label>
+              <Input
+                type="date"
+                value={extendDialog.newDate}
+                onChange={(e) =>
+                  setExtendDialog((p) => ({ ...p, newDate: e.target.value }))
+                }
+              />
+            </div>
+            <p className="text-sm text-muted-foreground">
+              O faturamento será recalculado automaticamente com base no período
+              adicional e nas regras do plano ativo.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleExtend} disabled={!extendDialog.newDate}>
+              Confirmar Extensão
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
