@@ -2,6 +2,21 @@ import { create } from 'zustand'
 import { differenceInDays, differenceInHours } from 'date-fns'
 import { usePricingMatrixStore } from './usePricingMatrixStore'
 
+export interface AdvertiserDetails {
+  legalAddress: string
+  taxId: string
+  billingContact: {
+    name: string
+    email: string
+    phone: string
+  }
+  adContact: {
+    name: string
+    email: string
+    phone: string
+  }
+}
+
 export interface Ad {
   id: string
   title: string
@@ -12,6 +27,7 @@ export interface Ad {
   active: boolean
 
   advertiserName: string
+  advertiserDetails?: AdvertiserDetails
   planLevel: string
   category: string
   region: string
@@ -38,7 +54,14 @@ interface AdState {
   updateAdStatus: (id: string, status: Ad['status']) => void
   extendAd: (id: string, newEndDate: Date) => void
   getAdsBySegment: (segment: string, isPaidUser?: boolean) => Ad[]
+  checkExpirations: () => Ad[]
 }
+
+const now = new Date()
+const nextMonth = new Date(now)
+nextMonth.setMonth(now.getMonth() + 1)
+const yesterday = new Date(now)
+yesterday.setDate(now.getDate() - 1)
 
 const mockAds: Ad[] = [
   {
@@ -50,16 +73,30 @@ const mockAds: Ad[] = [
     link: '#',
     active: true,
     advertiserName: 'Construtora Alpha',
+    advertiserDetails: {
+      legalAddress: 'Av. Paulista, 1000 - SP',
+      taxId: '12.345.678/0001-90',
+      billingContact: {
+        name: 'João Silva',
+        email: 'financeiro@alpha.com.br',
+        phone: '(11) 99999-9999',
+      },
+      adContact: {
+        name: 'Maria Souza',
+        email: 'marketing@alpha.com.br',
+        phone: '(11) 98888-8888',
+      },
+    },
     planLevel: 'Premium',
     category: 'Construction',
     region: 'BR',
     country: 'BR',
-    startDate: new Date('2024-01-01'),
-    endDate: new Date('2024-12-31'),
+    startDate: new Date(now.getFullYear(), 0, 1),
+    endDate: nextMonth,
     status: 'active',
     isConstruction: true,
     calculatedPrice: 1500,
-    createdAt: new Date('2024-01-01'),
+    createdAt: new Date(now.getFullYear(), 0, 1),
     skillWeight: 10,
     views: 1240,
     clicks: 85,
@@ -75,12 +112,26 @@ const mockAds: Ad[] = [
     link: '#',
     active: true,
     advertiserName: 'Tech School',
+    advertiserDetails: {
+      legalAddress: '123 Tech Lane, Silicon Valley',
+      taxId: '12-3456789',
+      billingContact: {
+        name: 'John Doe',
+        email: 'billing@techschool.com',
+        phone: '+1 555 123 4567',
+      },
+      adContact: {
+        name: 'Jane Doe',
+        email: 'ads@techschool.com',
+        phone: '+1 555 987 6543',
+      },
+    },
     planLevel: 'Gold',
     category: 'Technology',
     region: 'US',
     country: 'US',
-    startDate: new Date('2024-05-01'),
-    endDate: new Date('2024-08-01'),
+    startDate: new Date(now.getFullYear(), 0, 1),
+    endDate: yesterday,
     status: 'active',
     isConstruction: false,
     calculatedPrice: 800,
@@ -180,5 +231,25 @@ export const useAdStore = create<AdState>((set, get) => ({
     })
 
     return sorted.slice(0, 2)
+  },
+  checkExpirations: () => {
+    const { ads } = get()
+    const now = new Date()
+    const expiredAds: Ad[] = []
+
+    const newAds = ads.map((ad) => {
+      if (ad.status === 'active' && new Date(ad.endDate) < now) {
+        const expiredAd = { ...ad, status: 'expired' as const, active: false }
+        expiredAds.push(expiredAd)
+        return expiredAd
+      }
+      return ad
+    })
+
+    if (expiredAds.length > 0) {
+      set({ ads: newAds })
+    }
+
+    return expiredAds
   },
 }))

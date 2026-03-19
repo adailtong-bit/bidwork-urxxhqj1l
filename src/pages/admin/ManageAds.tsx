@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useAdStore } from '@/stores/useAdStore'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Button } from '@/components/ui/button'
@@ -16,10 +16,33 @@ import { Info } from 'lucide-react'
 import { AdActionsMenu } from './components/AdActionsMenu'
 import AdCreateDialog from './components/AdCreateDialog'
 import PricingMatrixTab from './components/PricingMatrixTab'
+import { useToast } from '@/hooks/use-toast'
 
 export default function ManageAds() {
-  const { ads } = useAdStore()
+  const { ads, checkExpirations } = useAdStore()
   const [createOpen, setCreateOpen] = useState(false)
+  const { toast } = useToast()
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const expired = useAdStore.getState().checkExpirations()
+      if (expired.length > 0) {
+        expired.forEach((ad) => {
+          const docName =
+            ad.country === 'BR' ? 'Nota Fiscal (NF)' : 'Billing Note'
+          const email =
+            ad.advertiserDetails?.billingContact.email ||
+            'o email de faturamento'
+          toast({
+            title: `Anúncio Expirado: ${ad.title}`,
+            description: `A validade do anúncio expirou. ${docName} gerada e enviada automaticamente para ${email}.`,
+            duration: 8000,
+          })
+        })
+      }
+    }, 1000)
+    return () => clearTimeout(timer)
+  }, [toast])
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -78,8 +101,18 @@ export default function ManageAds() {
                   <TableRow key={ad.id}>
                     <TableCell className="font-medium">
                       {ad.advertiserName}
-                      <div className="text-xs text-muted-foreground">
-                        {ad.country === 'BR' ? 'Brasil' : ad.country}
+                      <div className="text-[11px] text-muted-foreground flex flex-col mt-0.5">
+                        <span>
+                          {ad.country === 'BR' ? 'Brasil' : ad.country}
+                        </span>
+                        {ad.advertiserDetails?.taxId && (
+                          <span>Doc: {ad.advertiserDetails.taxId}</span>
+                        )}
+                        {ad.advertiserDetails?.billingContact.email && (
+                          <span>
+                            {ad.advertiserDetails.billingContact.email}
+                          </span>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>

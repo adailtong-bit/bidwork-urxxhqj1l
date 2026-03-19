@@ -32,9 +32,11 @@ export function AdActionsMenu({ ad }: { ad: Ad }) {
 
   const handleGenerateDoc = () => {
     const docName = ad.country === 'BR' ? 'Nota Fiscal (NF)' : 'Billing Note'
+    const email =
+      ad.advertiserDetails?.billingContact.email || ad.advertiserName
     toast({
       title: `${docName} Gerada`,
-      description: `Documento enviado para ${ad.advertiserName}.`,
+      description: `Documento de faturamento enviado com sucesso para ${email}.`,
     })
   }
 
