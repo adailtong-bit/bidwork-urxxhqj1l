@@ -389,7 +389,8 @@ export default function ProjectDetail() {
                 <div>
                   <CardTitle>{t('proj.detail.partners')}</CardTitle>
                   <CardDescription>
-                    {t('proj.partners.desc') || 'Gestão de parceiros'}
+                    {t('proj.partners.desc') ||
+                      'Gestão de parceiros, equipes e contratos associados.'}
                   </CardDescription>
                 </div>
               </div>
@@ -407,12 +408,22 @@ export default function ProjectDetail() {
                           <h3 className="font-bold text-xl text-primary">
                             {partner.companyName}
                           </h3>
+                          <div className="text-sm font-medium mt-1">
+                            {partner.email || 'Email não cadastrado'} •{' '}
+                            {partner.phone || 'Telefone não cadastrado'}
+                          </div>
                           <p className="text-sm text-muted-foreground mt-1">
                             {partner.address
                               ? `${partner.address.street}, ${partner.address.city} - ${partner.address.state}`
                               : 'Sem endereço cadastrado'}
                           </p>
-                          <div className="flex items-center gap-2 mt-2">
+                          <div className="flex items-center gap-2 mt-3">
+                            <Badge
+                              variant="secondary"
+                              className="bg-primary/10 text-primary hover:bg-primary/20"
+                            >
+                              {partner.specialty || 'Especialidade Geral'}
+                            </Badge>
                             <Badge variant="outline">
                               {t('proj.partner.stage')}:{' '}
                               {t(

@@ -32,6 +32,9 @@ export function PartnerEditModal({
   const { t } = useLanguageStore()
 
   const [companyName, setCompanyName] = useState(partner.companyName)
+  const [email, setEmail] = useState(partner.email || '')
+  const [phone, setPhone] = useState(partner.phone || '')
+  const [specialty, setSpecialty] = useState(partner.specialty || '')
   const [address, setAddress] = useState(
     partner.address || {
       street: '',
@@ -48,8 +51,16 @@ export function PartnerEditModal({
   })
 
   const handleUpdate = () => {
-    updatePartner(projectId, partner.id, { companyName, address })
-    toast({ title: t('partner.edit.updated') })
+    updatePartner(projectId, partner.id, {
+      companyName,
+      address,
+      email,
+      phone,
+      specialty,
+    })
+    toast({
+      title: t('partner.edit.updated') || 'Perfil do parceiro atualizado.',
+    })
     onClose()
   }
 
@@ -57,33 +68,66 @@ export function PartnerEditModal({
     if (partner.contacts.length >= 3) {
       toast({
         variant: 'destructive',
-        title: t('partner.edit.limit_reached'),
-        description: t('partner.edit.limit_desc'),
+        title: t('partner.edit.limit_reached') || 'Limite atingido',
       })
       return
     }
     if (!newContact.name || !newContact.email) {
-      toast({ variant: 'destructive', title: t('partner.edit.incomplete') })
+      toast({
+        variant: 'destructive',
+        title: t('partner.edit.incomplete') || 'Preencha os campos.',
+      })
       return
     }
     addPartnerContact(projectId, partner.id, newContact)
     setNewContact({ name: '', email: '', phone: '', role: '' })
-    toast({ title: t('partner.edit.added') })
+    toast({ title: t('partner.edit.added') || 'Contato adicionado.' })
   }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t('partner.edit.title')}</DialogTitle>
+          <DialogTitle>
+            {t('partner.edit.title') || 'Editar Parceiro'}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-6 py-4">
           <div className="grid gap-2">
-            <Label>{t('partner.edit.company_name')}</Label>
+            <Label>{t('partner.edit.company_name') || 'Nome / Empresa'}</Label>
             <Input
               value={companyName}
               onChange={(e) => setCompanyName(e.target.value)}
+            />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                placeholder="email@empresa.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label>Telefone</Label>
+              <Input
+                placeholder="(00) 00000-0000"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="grid gap-2">
+            <Label>Especialidade</Label>
+            <Input
+              placeholder="Ex: Engenharia Elétrica, Hidráulica, Acabamento..."
+              value={specialty}
+              onChange={(e) => setSpecialty(e.target.value)}
             />
           </div>
 
@@ -123,7 +167,8 @@ export function PartnerEditModal({
 
           <div className="border-t pt-4">
             <h4 className="font-semibold mb-4">
-              {t('partner.edit.contacts')} ({partner.contacts.length}/3)
+              {t('partner.edit.contacts') || 'Contatos'} (
+              {partner.contacts.length}/3)
             </h4>
             <div className="space-y-3 mb-4">
               {partner.contacts.map((contact) => (
@@ -148,14 +193,14 @@ export function PartnerEditModal({
               <div className="grid gap-3 border p-3 rounded-lg bg-card">
                 <div className="grid grid-cols-2 gap-3">
                   <Input
-                    placeholder={t('partner.edit.name')}
+                    placeholder={t('partner.edit.name') || 'Nome do Contato'}
                     value={newContact.name}
                     onChange={(e) =>
                       setNewContact({ ...newContact, name: e.target.value })
                     }
                   />
                   <Input
-                    placeholder={t('partner.edit.role')}
+                    placeholder={t('partner.edit.role') || 'Cargo'}
                     value={newContact.role}
                     onChange={(e) =>
                       setNewContact({ ...newContact, role: e.target.value })
@@ -164,14 +209,14 @@ export function PartnerEditModal({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <Input
-                    placeholder={t('partner.edit.email')}
+                    placeholder="Email do contato"
                     value={newContact.email}
                     onChange={(e) =>
                       setNewContact({ ...newContact, email: e.target.value })
                     }
                   />
                   <Input
-                    placeholder={t('partner.edit.phone')}
+                    placeholder="Telefone"
                     value={newContact.phone}
                     onChange={(e) =>
                       setNewContact({ ...newContact, phone: e.target.value })
@@ -180,7 +225,7 @@ export function PartnerEditModal({
                 </div>
                 <Button variant="outline" size="sm" onClick={handleAddContact}>
                   <Plus className="mr-2 h-4 w-4" />{' '}
-                  {t('partner.edit.add_contact')}
+                  {t('partner.edit.add_contact') || 'Adicionar Contato'}
                 </Button>
               </div>
             )}
@@ -188,7 +233,9 @@ export function PartnerEditModal({
         </div>
 
         <DialogFooter>
-          <Button onClick={handleUpdate}>{t('partner.edit.save')}</Button>
+          <Button onClick={handleUpdate}>
+            {t('partner.edit.save') || 'Salvar Alterações'}
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

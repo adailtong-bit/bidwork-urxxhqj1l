@@ -86,6 +86,9 @@ export interface PartnerTeamMember {
 export interface ProjectPartner {
   id: string
   companyName: string
+  email: string
+  phone: string
+  specialty: string
   stageId: string
   agreedPrice: number
   contractUrl?: string
@@ -347,8 +350,15 @@ interface ProjectState {
     projectId: string,
     partner: Omit<
       ProjectPartner,
-      'id' | 'contacts' | 'team' | 'performanceScore'
-    >,
+      | 'id'
+      | 'email'
+      | 'phone'
+      | 'specialty'
+      | 'contacts'
+      | 'team'
+      | 'performanceScore'
+    > &
+      Partial<Pick<ProjectPartner, 'email' | 'phone' | 'specialty'>>,
   ) => void
   updatePartner: (
     projectId: string,
@@ -543,6 +553,9 @@ const mockProjects: Project[] = [
       {
         id: 'partner-1',
         companyName: 'Parceiro Construções Ltda',
+        email: 'contato@parceiro.com',
+        phone: '(11) 99999-9999',
+        specialty: 'Engenharia Civil e Estrutural',
         stageId: 'st-2',
         agreedPrice: 50000,
         address: {
@@ -1055,6 +1068,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               {
                 ...partner,
                 id: Math.random().toString(36).substr(2, 9),
+                email: partner.email || '',
+                phone: partner.phone || '',
+                specialty: partner.specialty || '',
                 contacts: [],
                 team: [],
                 employees: [],
@@ -1486,16 +1502,63 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     })),
   updateQuoteStatus: (projectId, quoteId, status) =>
     set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              quotes: (p.quotes || []).map((q) =>
-                q.id === quoteId ? { ...q, status } : q,
-              ),
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const quotes = (p.quotes || []).map((q) =>
+            q.id === quoteId ? { ...q, status } : q,
+          )
+
+          let invoices = p.invoices || []
+          let allocatedCosts = p.allocatedCosts || []
+          let totalSpent = p.totalSpent || 0
+
+          if (status === 'approved') {
+            const quote = quotes.find((q) => q.id === quoteId)
+            if (quote && !invoices.some((i) => i.quoteId === quote.id)) {
+              const partner = p.partners?.find(
+                (pt) => pt.id === quote.partnerId,
+              )
+
+              const invoice: ProjectInvoice = {
+                id: Math.random().toString(36).substr(2, 9),
+                quoteId: quote.id,
+                partnerId: quote.partnerId,
+                contractorName: p.ownerId || 'Contractor',
+                partnerName: partner?.companyName || 'Partner',
+                description: `Fatura automática - Orçamento #${quote.id.substring(0, 4)}`,
+                totalAmount: quote.totalAmount,
+                date: new Date(),
+                status: 'generated',
+              }
+
+              const costItem: CostItem = {
+                id: Math.random().toString(36).substr(2, 9),
+                description: `Pagamento Orçamento ${partner?.companyName || 'Parceiro'}`,
+                amount: quote.totalAmount,
+                type: 'actual',
+                category: 'other',
+                costClass: 'capex',
+                date: new Date(),
+                stageId: quote.stageId,
+              }
+
+              invoices = [...invoices, invoice]
+              allocatedCosts = [...allocatedCosts, costItem]
+
+              const stagesSpent = (p.stages || []).reduce(
+                (acc, s) => acc + s.actualMaterial + s.actualLabor,
+                0,
+              )
+              totalSpent =
+                stagesSpent +
+                allocatedCosts.reduce((acc, c) => acc + c.amount, 0)
             }
-          : p,
-      ),
+          }
+
+          return { ...p, quotes, invoices, allocatedCosts, totalSpent }
+        }
+        return p
+      }),
     })),
   updateQuoteContract: (projectId, quoteId, url) =>
     set((state) => ({

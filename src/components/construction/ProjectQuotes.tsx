@@ -1,9 +1,5 @@
 import { useState } from 'react'
-import {
-  useProjectStore,
-  QuoteItem,
-  ProjectInvoice,
-} from '@/stores/useProjectStore'
+import { useProjectStore, QuoteItem } from '@/stores/useProjectStore'
 import {
   Card,
   CardContent,
@@ -49,16 +45,12 @@ import {
   FileSignature,
   Trash2,
   Receipt,
+  Upload,
 } from 'lucide-react'
 
 export function ProjectQuotes({ projectId }: { projectId: string }) {
-  const {
-    getProject,
-    addQuote,
-    updateQuoteStatus,
-    generateInvoiceFromQuote,
-    updateQuoteContract,
-  } = useProjectStore()
+  const { getProject, addQuote, updateQuoteStatus, updateQuoteContract } =
+    useProjectStore()
   const { toast } = useToast()
   const { t, formatCurrency, formatDate } = useLanguageStore()
   const project = getProject(projectId)
@@ -110,20 +102,24 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
     toast({ title: 'Orçamento enviado com sucesso!' })
   }
 
-  const handleGenerateInvoice = (quoteId: string) => {
-    generateInvoiceFromQuote(projectId, quoteId)
-    toast({
-      title: 'Fatura Gerada',
-      description: 'Custo adicionado automaticamente no Financeiro.',
-    })
-  }
-
-  const handleGenerateContract = (quoteId: string) => {
-    updateQuoteContract(projectId, quoteId, 'https://example.com/contract.pdf')
-    toast({
-      title: 'Contrato Gerado',
-      description: 'Termo associado ao orçamento com sucesso.',
-    })
+  const handleUploadContract = (quoteId: string) => {
+    // Simulated upload
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.pdf,.doc,.docx'
+    input.onchange = () => {
+      updateQuoteContract(
+        projectId,
+        quoteId,
+        'https://example.com/contract.pdf',
+      )
+      toast({
+        title: 'Contrato Anexado',
+        description:
+          'O contrato digital foi vinculado a esta fase com sucesso.',
+      })
+    }
+    input.click()
   }
 
   const getPartnerName = (id: string) =>
@@ -136,9 +132,10 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
       <Card>
         <CardHeader className="flex flex-row justify-between items-center">
           <div>
-            <CardTitle>Orçamentos de Parceiros</CardTitle>
+            <CardTitle>Propostas e Orçamentos</CardTitle>
             <CardDescription>
-              Aprovação de propostas para fases específicas.
+              Aprovação de propostas submetidas por parceiros para fases
+              específicas.
             </CardDescription>
           </div>
           <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -261,9 +258,6 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
               <TableBody>
                 {project.quotes && project.quotes.length > 0 ? (
                   project.quotes.map((quote) => {
-                    const isInvoiceGenerated = project.invoices?.some(
-                      (i) => i.quoteId === quote.id,
-                    )
                     return (
                       <TableRow key={quote.id}>
                         <TableCell>
@@ -305,14 +299,19 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
                                 <Button
                                   variant="ghost"
                                   size="icon"
-                                  onClick={() =>
+                                  onClick={() => {
                                     updateQuoteStatus(
                                       project.id,
                                       quote.id,
                                       'approved',
                                     )
-                                  }
-                                  title="Aprovar"
+                                    toast({
+                                      title: 'Orçamento Aprovado',
+                                      description:
+                                        'Fatura gerada e custo alocado automaticamente no Financeiro.',
+                                    })
+                                  }}
+                                  title="Aprovar e Gerar Fatura"
                                 >
                                   <CheckCircle2 className="h-4 w-4 text-green-500" />
                                 </Button>
@@ -333,34 +332,11 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
                               </>
                             )}
                             {quote.status === 'approved' && (
-                              <>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    handleGenerateContract(quote.id)
-                                  }
-                                  title="Gerar Contrato Básico"
-                                  disabled={!!quote.contractUrl}
-                                >
-                                  <FileSignature
-                                    className={`h-4 w-4 ${quote.contractUrl ? 'text-green-500' : 'text-blue-500'}`}
-                                  />
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    handleGenerateInvoice(quote.id)
-                                  }
-                                  title="Gerar Fatura e Alocar Custo"
-                                  disabled={isInvoiceGenerated}
-                                >
-                                  <Receipt
-                                    className={`h-4 w-4 ${isInvoiceGenerated ? 'text-green-500' : 'text-purple-500'}`}
-                                  />
-                                </Button>
-                              </>
+                              <div className="flex gap-2 items-center">
+                                <Badge className="bg-green-100 text-green-800 text-[10px]">
+                                  Fatura Gerada
+                                </Badge>
+                              </div>
                             )}
                           </div>
                         </TableCell>
@@ -385,9 +361,10 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Faturas e Contratos Gerados</CardTitle>
+          <CardTitle>Faturas e Contratos Ativos</CardTitle>
           <CardDescription>
-            Documentos emitidos com base nos orçamentos aprovados.
+            Documentos e cobranças gerados automaticamente a partir de
+            orçamentos aprovados.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -397,39 +374,82 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
                 <TableRow>
                   <TableHead>Data</TableHead>
                   <TableHead>Descrição</TableHead>
-                  <TableHead>Parceiro</TableHead>
-                  <TableHead className="text-right">Valor</TableHead>
-                  <TableHead className="text-right">Ação</TableHead>
+                  <TableHead>Fase / Parceiro</TableHead>
+                  <TableHead className="text-right">Valor Alocado</TableHead>
+                  <TableHead className="text-right">Documentos</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {project.invoices && project.invoices.length > 0 ? (
-                  project.invoices.map((inv) => (
-                    <TableRow key={inv.id}>
-                      <TableCell>
-                        {formatDate(inv.date, 'dd/MM/yyyy')}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        {inv.description}
-                      </TableCell>
-                      <TableCell>{inv.partnerName}</TableCell>
-                      <TableCell className="text-right font-bold text-primary">
-                        {formatCurrency(inv.totalAmount)}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">
-                          <FileText className="h-4 w-4 mr-2" /> PDF
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  project.invoices.map((inv) => {
+                    const quote = project.quotes?.find(
+                      (q) => q.id === inv.quoteId,
+                    )
+                    const phaseName =
+                      project.stages.find((s) => s.id === quote?.stageId)
+                        ?.name || 'Geral'
+
+                    return (
+                      <TableRow key={inv.id}>
+                        <TableCell>
+                          {formatDate(inv.date, 'dd/MM/yyyy')}
+                        </TableCell>
+                        <TableCell className="font-medium">
+                          {inv.description}
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm font-medium">
+                            {inv.partnerName}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            {phaseName}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-right font-bold text-primary">
+                          {formatCurrency(inv.totalAmount)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2 items-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Baixar Fatura"
+                            >
+                              <Receipt className="h-4 w-4 mr-2 text-purple-500" />{' '}
+                              Fatura
+                            </Button>
+                            {quote?.contractUrl ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                title="Visualizar Contrato"
+                              >
+                                <FileSignature className="h-4 w-4 mr-2 text-blue-500" />{' '}
+                                Contrato
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleUploadContract(quote!.id)}
+                                title="Anexar Contrato PDF"
+                              >
+                                <Upload className="h-4 w-4 mr-2 text-muted-foreground" />{' '}
+                                Anexar
+                              </Button>
+                            )}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
                 ) : (
                   <TableRow>
                     <TableCell
                       colSpan={5}
                       className="text-center py-6 text-muted-foreground"
                     >
-                      Nenhuma fatura gerada.
+                      Nenhuma fatura gerada ou contrato anexado.
                     </TableCell>
                   </TableRow>
                 )}
