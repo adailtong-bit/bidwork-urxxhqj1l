@@ -32,6 +32,8 @@ export interface CostItem {
   costClass?: 'capex' | 'soft_cost'
   date: Date
   sourceId?: string
+  stageId?: string
+  budgetItemId?: string
 }
 
 export interface CheckingAccount {
@@ -51,6 +53,8 @@ export interface FinancialMovement {
   type: 'in' | 'out'
   date: Date
   category?: string
+  stageId?: string
+  budgetItemId?: string
 }
 
 export interface BimFile {
@@ -501,7 +505,7 @@ const mockProjects: Project[] = [
       {
         id: 'st-2',
         name: '6. Execução Física',
-        status: 'in_progress',
+        status: 'delayed',
         startDate: new Date(Date.now() - 86400000 * 4),
         endDate: new Date(Date.now() + 86400000 * 45),
         budgetMaterial: 150000,
@@ -517,7 +521,7 @@ const mockProjects: Project[] = [
             startDate: new Date(Date.now() - 86400000 * 4),
             endDate: new Date(Date.now() + 86400000 * 10),
             progress: 70,
-            status: 'in_progress',
+            status: 'delayed',
             assignedTeamMemberId: 'member-1',
           },
         ],
@@ -555,6 +559,8 @@ const mockProjects: Project[] = [
         category: 'material',
         costClass: 'capex',
         date: new Date(Date.now() - 86400000 * 5),
+        budgetItemId: 'b-1',
+        stageId: 'st-2',
       },
       {
         id: 'cost-2',
@@ -564,6 +570,7 @@ const mockProjects: Project[] = [
         category: 'other',
         costClass: 'soft_cost',
         date: new Date(Date.now() - 86400000 * 10),
+        budgetItemId: 'b-2',
       },
     ],
     checkingAccounts: [
@@ -600,6 +607,17 @@ const mockProjects: Project[] = [
         amount: 50000,
         type: 'out',
         date: new Date(Date.now() - 86400000 * 15),
+        stageId: 'st-1',
+      },
+      {
+        id: 'mov-3',
+        accountId: 'acc-1',
+        description: 'Compra de Materiais Diversos',
+        amount: 25000,
+        type: 'out',
+        date: new Date(Date.now() - 86400000 * 5),
+        stageId: 'st-2',
+        budgetItemId: 'b-1',
       },
     ],
     constructionItems: [],

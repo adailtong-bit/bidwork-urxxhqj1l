@@ -71,8 +71,8 @@ export default function ProjectDetail() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     toast({
-      title: t('proj.import.simulation'),
-      description: t('proj.import.success'),
+      title: t('proj.import.simulation') || 'Simulação',
+      description: t('proj.import.success') || 'Upload feito com sucesso.',
     })
     setIsImportOpen(false)
   }
@@ -134,14 +134,14 @@ export default function ProjectDetail() {
       </div>
 
       <Tabs
-        defaultValue="estimation"
+        defaultValue="financial"
         className="w-full flex flex-col items-center"
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
           <TabsList className="w-full max-w-5xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
-            <TabsTrigger value="estimation" className="flex-1">
-              {t('est.tab.title')}
+            <TabsTrigger value="financial" className="flex-1">
+              Financeiro Integrado
             </TabsTrigger>
             <TabsTrigger value="stages" className="flex-1">
               {t('proj.detail.schedule')}
@@ -149,11 +149,11 @@ export default function ProjectDetail() {
             <TabsTrigger value="budget" className="flex-1">
               {t('proj.budget.title')}
             </TabsTrigger>
+            <TabsTrigger value="estimation" className="flex-1">
+              {t('est.tab.title')}
+            </TabsTrigger>
             <TabsTrigger value="execution" className="flex-1">
               {t('proj.detail.financial_execution') || 'Execução'}
-            </TabsTrigger>
-            <TabsTrigger value="financial" className="flex-1">
-              Financeiro
             </TabsTrigger>
             <TabsTrigger value="partners" className="flex-1">
               {t('proj.detail.partners')}
@@ -167,6 +167,11 @@ export default function ProjectDetail() {
           </TabsList>
         </div>
 
+        {/* Financial Tab (Integrated View) */}
+        <TabsContent value="financial" className="w-full animate-fade-in">
+          <ProjectFinance projectId={project.id} />
+        </TabsContent>
+
         <TabsContent
           value="estimation"
           className="w-full animate-fade-in space-y-6"
@@ -175,7 +180,9 @@ export default function ProjectDetail() {
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div className="space-y-1">
                 <CardTitle>{t('est.tab.title')}</CardTitle>
-                <CardDescription>{t('est.desc')}</CardDescription>
+                <CardDescription>
+                  {t('est.desc') || 'Planejamento e estimativa de custos.'}
+                </CardDescription>
               </div>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-2 border rounded-md p-1 mr-4">
@@ -213,7 +220,8 @@ export default function ProjectDetail() {
                     {t('est.template.select')}
                   </h3>
                   <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                    {t('est.empty.desc')}
+                    {t('est.empty.desc') ||
+                      'Comece selecionando um modelo padrão.'}
                   </p>
                   <Button onClick={() => setIsTemplateSelectorOpen(true)}>
                     {t('est.template.select')}
@@ -284,7 +292,9 @@ export default function ProjectDetail() {
                           className={
                             stage.status === 'completed'
                               ? 'bg-green-50 text-green-700'
-                              : ''
+                              : stage.status === 'delayed'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : ''
                           }
                         >
                           {t(`status.${stage.status}`)}
@@ -356,11 +366,6 @@ export default function ProjectDetail() {
           <ProjectExecution projectId={project.id} />
         </TabsContent>
 
-        {/* Financial Tab */}
-        <TabsContent value="financial" className="w-full animate-fade-in">
-          <ProjectFinance projectId={project.id} />
-        </TabsContent>
-
         {/* Partners Tab */}
         <TabsContent value="partners" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
@@ -368,7 +373,9 @@ export default function ProjectDetail() {
               <div className="flex justify-between items-center">
                 <div>
                   <CardTitle>{t('proj.detail.partners')}</CardTitle>
-                  <CardDescription>{t('proj.partners.desc')}</CardDescription>
+                  <CardDescription>
+                    {t('proj.partners.desc') || 'Gestão de parceiros'}
+                  </CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -470,7 +477,7 @@ export default function ProjectDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
-                  {t('proj.partners.empty')}
+                  {t('proj.partners.empty') || 'Nenhum parceiro adicionado'}
                 </div>
               )}
             </CardContent>

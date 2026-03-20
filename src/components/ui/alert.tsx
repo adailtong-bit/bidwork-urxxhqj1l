@@ -1,4 +1,3 @@
-/* Alert Component primitives - A component that displays an alert - from shadcn/ui (exposes Alert, AlertTitle, AlertDescription) */
 import * as React from 'react'
 import { cva, type VariantProps } from 'class-variance-authority'
 

@@ -36,6 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { CurrencyInput } from '@/components/CurrencyInput'
 import {
   Building2,
@@ -45,7 +46,11 @@ import {
   DollarSign,
   WalletCards,
   PieChart,
+  AlertCircle,
+  TrendingDown,
+  TrendingUp,
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 export function ProjectFinance({ projectId }: { projectId: string }) {
   const {
@@ -76,6 +81,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
     amount: 0,
     type: 'out',
     date: new Date().toISOString().split('T')[0],
+    stageId: 'none',
+    budgetItemId: 'none',
   })
 
   // Allocated Cost Dialog State
@@ -85,6 +92,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
     category: 'material',
     amount: 0,
     date: new Date().toISOString().split('T')[0],
+    stageId: 'none',
+    budgetItemId: 'none',
   })
 
   const [filterAcc, setFilterAcc] = useState('all')
@@ -92,37 +101,43 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
   const accounts = project?.checkingAccounts || []
   const movements = project?.financialMovements || []
   const allocated = project?.allocatedCosts || []
+  const stages = project?.stages || []
+  const budgetItemsList = project?.budgetItems || []
 
-  // Metric Box Calculations
-  const budgetItems = project?.budgetItems || []
-  const estCapex =
-    budgetItems
-      .filter((i) => i.costClass === 'capex' || !i.costClass)
-      .reduce((a, b) => a + b.totalCost, 0) +
-    (project?.stages || []).reduce(
-      (a, s) => a + s.budgetMaterial + s.budgetLabor,
-      0,
-    )
+  // Calculated Metrics for the unified dashboard
+  const totalBudgetItems = budgetItemsList.reduce(
+    (acc, item) => acc + item.totalCost,
+    0,
+  )
+  const totalStagesBudget = stages.reduce(
+    (acc, s) => acc + s.budgetMaterial + s.budgetLabor,
+    0,
+  )
+  const calculatedTotalBudget = totalBudgetItems + totalStagesBudget
 
-  const actCapex =
-    allocated
-      .filter((c) => c.costClass === 'capex' || !c.costClass)
-      .reduce((a, b) => a + b.amount, 0) +
-    (project?.stages || []).reduce(
-      (a, s) => a + s.actualMaterial + s.actualLabor,
-      0,
-    ) +
-    (project?.laborAdjustments?.reduce((a, adj) => a + adj.amount, 0) || 0)
+  const totalOutflows = movements
+    .filter((m) => m.type === 'out')
+    .reduce((acc, m) => acc + m.amount, 0)
 
-  const estSoft = budgetItems
-    .filter((i) => i.costClass === 'soft_cost')
-    .reduce((a, b) => a + b.totalCost, 0)
+  const overallProgress =
+    stages.length > 0
+      ? stages.reduce((acc, s) => acc + s.progress, 0) / stages.length
+      : 0
 
-  const actSoft = allocated
-    .filter((c) => c.costClass === 'soft_cost')
-    .reduce((a, b) => a + b.amount, 0)
+  const earnedValue = calculatedTotalBudget * (overallProgress / 100)
+  const financialVariance = earnedValue - totalOutflows
 
-  const totalAct = actCapex + actSoft
+  // Delay impact calculation
+  let delayedCount = 0
+  stages.forEach((s) => {
+    if (s.status === 'delayed') delayedCount++
+    s.subStages.forEach((sub) => {
+      if (sub.status === 'delayed') delayedCount++
+    })
+  })
+
+  const estimatedDelayImpactPerTask = 500 // Mock soft cost penalty per delayed task
+  const totalDelayImpact = delayedCount * estimatedDelayImpactPerTask
 
   const accountBalances = useMemo(() => {
     return accounts.map((acc) => {
@@ -174,6 +189,9 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
       amount: movData.amount,
       type: movData.type as 'in' | 'out',
       date: new Date(movData.date + 'T12:00:00'),
+      stageId: movData.stageId !== 'none' ? movData.stageId : undefined,
+      budgetItemId:
+        movData.budgetItemId !== 'none' ? movData.budgetItemId : undefined,
     })
     setIsAddMovOpen(false)
     setMovData({
@@ -183,6 +201,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
       amount: 0,
       type: 'out',
       date: new Date().toISOString().split('T')[0],
+      stageId: 'none',
+      budgetItemId: 'none',
     })
   }
 
@@ -193,6 +213,9 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
       amount: costData.amount,
       type: 'actual',
       date: new Date(costData.date + 'T12:00:00'),
+      stageId: costData.stageId !== 'none' ? costData.stageId : undefined,
+      budgetItemId:
+        costData.budgetItemId !== 'none' ? costData.budgetItemId : undefined,
     })
     setIsAddCostOpen(false)
     setCostData({
@@ -200,64 +223,106 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
       category: 'material',
       amount: 0,
       date: new Date().toISOString().split('T')[0],
+      stageId: 'none',
+      budgetItemId: 'none',
     })
   }
+
+  const isOverBudget = financialVariance < 0
 
   return (
     <Card className="w-full">
       <CardHeader className="pb-4">
-        <CardTitle>Painel Financeiro</CardTitle>
+        <CardTitle>Painel Financeiro Integrado</CardTitle>
         <CardDescription>
-          Acompanhe o orçamento, custos alocados e fluxo das contas correntes do
-          projeto.
+          Acompanhamento centralizado: Orçamento vs. Despesas e Impacto do
+          Cronograma.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Persistent Summary Boxes */}
+        {/* Unified Financial Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
-            <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
-              CAPEX (Obra Física)
+          <div className="bg-blue-50/50 dark:bg-blue-950/20 p-5 rounded-xl border border-blue-100 dark:border-blue-900/50">
+            <p className="text-sm text-muted-foreground font-medium mb-1">
+              Orçamento Total (Planejado)
             </p>
-            <div className="flex items-center gap-2 mt-2">
-              <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              <span className="text-2xl font-bold text-blue-700 dark:text-blue-100">
-                {formatCurrency(actCapex)}
+            <div className="flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-blue-500" />
+              <span className="text-2xl font-bold text-foreground">
+                {formatCurrency(calculatedTotalBudget)}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Orçado: {formatCurrency(estCapex)}
-            </p>
           </div>
-          <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-xl border border-purple-100 dark:border-purple-900/50">
-            <p className="text-sm text-purple-800 dark:text-purple-300 font-medium">
-              Soft Costs (Taxas/Serviços)
+
+          <div className="bg-purple-50/50 dark:bg-purple-950/20 p-5 rounded-xl border border-purple-100 dark:border-purple-900/50">
+            <p className="text-sm text-muted-foreground font-medium mb-1">
+              Despesas Reais (Conta Corrente)
             </p>
-            <div className="flex items-center gap-2 mt-2">
-              <PieChart className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-              <span className="text-2xl font-bold text-purple-700 dark:text-purple-100">
-                {formatCurrency(actSoft)}
+            <div className="flex items-center gap-2">
+              <WalletCards className="h-5 w-5 text-purple-500" />
+              <span className="text-2xl font-bold text-foreground">
+                {formatCurrency(totalOutflows)}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Orçado: {formatCurrency(estSoft)}
-            </p>
           </div>
-          <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
-            <p className="text-sm text-green-800 dark:text-green-300 font-medium">
-              Total Realizado
+
+          <div
+            className={cn(
+              'p-5 rounded-xl border',
+              isOverBudget
+                ? 'bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-900/50'
+                : 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/50',
+            )}
+          >
+            <p className="text-sm text-muted-foreground font-medium mb-1">
+              Variância Financeira (Planejado vs Realizado)
             </p>
-            <div className="flex items-center gap-2 mt-2">
-              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
-              <span className="text-2xl font-bold text-green-700 dark:text-green-100">
-                {formatCurrency(totalAct)}
+            <div className="flex items-center gap-2">
+              {isOverBudget ? (
+                <TrendingDown className="h-5 w-5 text-red-600" />
+              ) : (
+                <TrendingUp className="h-5 w-5 text-green-600" />
+              )}
+              <span
+                className={cn(
+                  'text-2xl font-bold',
+                  isOverBudget
+                    ? 'text-red-700 dark:text-red-400'
+                    : 'text-green-700 dark:text-green-400',
+                )}
+              >
+                {isOverBudget ? '' : '+'}
+                {formatCurrency(financialVariance)}
               </span>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              Orçamento Total: {formatCurrency(project.totalBudget)}
+            <p
+              className={cn(
+                'text-xs mt-1 font-medium',
+                isOverBudget ? 'text-red-600/80' : 'text-green-600/80',
+              )}
+            >
+              {isOverBudget
+                ? 'Acima do orçamento para o progresso atual'
+                : 'Dentro do orçamento previsto'}
             </p>
           </div>
         </div>
+
+        {delayedCount > 0 && (
+          <Alert
+            variant="destructive"
+            className="mb-6 bg-red-50 text-red-900 border-red-200 dark:bg-red-950/40 dark:text-red-200 dark:border-red-900"
+          >
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Alerta de Impacto no Custo (Atrasos)</AlertTitle>
+            <AlertDescription>
+              O cronograma possui <strong>{delayedCount}</strong> marcos/tarefas
+              em atraso. O impacto estimado nos custos indiretos (Soft Costs) é
+              de <strong>{formatCurrency(totalDelayImpact)}</strong>, aumentando
+              o consumo do orçamento.
+            </AlertDescription>
+          </Alert>
+        )}
 
         <Tabs defaultValue="visao_geral">
           <TabsList className="mb-6 w-full max-w-[500px] grid grid-cols-2">
@@ -265,7 +330,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
               value="visao_geral"
               className="flex items-center gap-2"
             >
-              <PieChart className="w-4 h-4" /> Visão Geral
+              <PieChart className="w-4 h-4" /> Custos Alocados
             </TabsTrigger>
             <TabsTrigger
               value="conta_corrente"
@@ -275,12 +340,11 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
             </TabsTrigger>
           </TabsList>
 
-          {/* VISÃO GERAL TAB */}
+          {/* CUSTOS ALOCADOS TAB */}
           <TabsContent
             value="visao_geral"
             className="space-y-8 animate-fade-in"
           >
-            {/* Custos Alocados Section */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">
                 <div>
@@ -288,7 +352,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                     Custos Alocados
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Despesas operacionais aplicadas ao custo real do projeto.
+                    Associe despesas às etapas do cronograma e itens do
+                    orçamento.
                   </p>
                 </div>
                 <Dialog open={isAddCostOpen} onOpenChange={setIsAddCostOpen}>
@@ -350,6 +415,56 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                           />
                         </div>
                       </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="grid gap-2">
+                          <Label>Etapa do Cronograma</Label>
+                          <Select
+                            value={costData.stageId}
+                            onValueChange={(val) =>
+                              setCostData({ ...costData, stageId: val })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Opcional" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                Geral (Nenhuma)
+                              </SelectItem>
+                              {stages.map((s) => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  {s.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label>Item do Orçamento</Label>
+                          <Select
+                            value={costData.budgetItemId}
+                            onValueChange={(val) =>
+                              setCostData({ ...costData, budgetItemId: val })
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Opcional" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">
+                                Geral (Nenhum)
+                              </SelectItem>
+                              {budgetItemsList.map((b) => (
+                                <SelectItem key={b.id} value={b.id}>
+                                  {b.description}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
                       <div className="grid gap-2">
                         <Label>Data</Label>
                         <Input
@@ -381,6 +496,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                         <TableHead>Data</TableHead>
                         <TableHead>Descrição</TableHead>
                         <TableHead>Categoria</TableHead>
+                        <TableHead>Etapa Relacionada</TableHead>
+                        <TableHead>Item do Orçamento</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -409,6 +526,19 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                                 {t(`proj.budget.${cost.category}`) ||
                                   cost.category}
                               </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              {cost.stageId
+                                ? stages.find((s) => s.id === cost.stageId)
+                                    ?.name || '-'
+                                : '-'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              {cost.budgetItemId
+                                ? budgetItemsList.find(
+                                    (b) => b.id === cost.budgetItemId,
+                                  )?.description || '-'
+                                : '-'}
                             </TableCell>
                             <TableCell className="text-right font-medium">
                               {formatCurrency(cost.amount)}
@@ -576,7 +706,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                     Histórico de Movimentações
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    Extrato detalhado de entradas e saídas.
+                    Extrato detalhado, linkado ao cronograma e orçamento.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
@@ -653,6 +783,57 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                             />
                           </div>
                         </div>
+
+                        {/* New link to Schedule/Budget */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="grid gap-2">
+                            <Label>Etapa do Cronograma</Label>
+                            <Select
+                              value={movData.stageId}
+                              onValueChange={(val) =>
+                                setMovData({ ...movData, stageId: val })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Opcional" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  Geral (Nenhuma)
+                                </SelectItem>
+                                {stages.map((s) => (
+                                  <SelectItem key={s.id} value={s.id}>
+                                    {s.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label>Item do Orçamento</Label>
+                            <Select
+                              value={movData.budgetItemId}
+                              onValueChange={(val) =>
+                                setMovData({ ...movData, budgetItemId: val })
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Opcional" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="none">
+                                  Geral (Nenhum)
+                                </SelectItem>
+                                {budgetItemsList.map((b) => (
+                                  <SelectItem key={b.id} value={b.id}>
+                                    {b.description}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
                         <div className="grid grid-cols-2 gap-4">
                           <div className="grid gap-2">
                             <Label>Tipo</Label>
@@ -711,7 +892,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                     <TableRow>
                       <TableHead>Data</TableHead>
                       <TableHead>Descrição</TableHead>
-                      <TableHead>Categoria</TableHead>
+                      <TableHead>Etapa Relacionada</TableHead>
                       <TableHead>Conta</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
@@ -724,16 +905,19 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                           <TableCell className="text-muted-foreground text-sm">
                             {formatDate(new Date(mov.date), 'dd/MM/yyyy')}
                           </TableCell>
-                          <TableCell className="font-medium">
-                            {mov.description}
-                          </TableCell>
                           <TableCell>
-                            <Badge
-                              variant="outline"
-                              className="font-normal text-[10px]"
-                            >
-                              {mov.category || 'Geral'}
-                            </Badge>
+                            <div className="font-medium">{mov.description}</div>
+                            {mov.category && (
+                              <div className="text-[10px] text-muted-foreground">
+                                {mov.category}
+                              </div>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground text-xs">
+                            {mov.stageId
+                              ? stages.find((s) => s.id === mov.stageId)
+                                  ?.name || '-'
+                              : '-'}
                           </TableCell>
                           <TableCell className="text-muted-foreground text-sm">
                             {accounts.find((a) => a.id === mov.accountId)
