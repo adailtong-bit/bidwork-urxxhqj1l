@@ -32,6 +32,14 @@ export function PartnerEditModal({
   const { t } = useLanguageStore()
 
   const [companyName, setCompanyName] = useState(partner.companyName)
+  const [address, setAddress] = useState(
+    partner.address || {
+      street: '',
+      city: '',
+      state: '',
+      zipCode: '',
+    },
+  )
   const [newContact, setNewContact] = useState({
     name: '',
     email: '',
@@ -40,7 +48,7 @@ export function PartnerEditModal({
   })
 
   const handleUpdate = () => {
-    updatePartner(projectId, partner.id, { companyName })
+    updatePartner(projectId, partner.id, { companyName, address })
     toast({ title: t('partner.edit.updated') })
     onClose()
   }
@@ -79,6 +87,40 @@ export function PartnerEditModal({
             />
           </div>
 
+          <div className="grid gap-2">
+            <Label>Endereço Físico</Label>
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                placeholder="Rua, Número"
+                value={address.street}
+                onChange={(e) =>
+                  setAddress({ ...address, street: e.target.value })
+                }
+              />
+              <Input
+                placeholder="Cidade"
+                value={address.city}
+                onChange={(e) =>
+                  setAddress({ ...address, city: e.target.value })
+                }
+              />
+              <Input
+                placeholder="Estado"
+                value={address.state}
+                onChange={(e) =>
+                  setAddress({ ...address, state: e.target.value })
+                }
+              />
+              <Input
+                placeholder="CEP"
+                value={address.zipCode}
+                onChange={(e) =>
+                  setAddress({ ...address, zipCode: e.target.value })
+                }
+              />
+            </div>
+          </div>
+
           <div className="border-t pt-4">
             <h4 className="font-semibold mb-4">
               {t('partner.edit.contacts')} ({partner.contacts.length}/3)
@@ -89,10 +131,10 @@ export function PartnerEditModal({
                   key={contact.id}
                   className="flex justify-between items-center bg-muted p-2 rounded"
                 >
-                  <div className="text-sm">
+                  <div className="text-sm flex-1">
                     <p className="font-medium">{contact.name}</p>
                     <p className="text-muted-foreground">
-                      {contact.email} - {contact.phone}
+                      {contact.email} • {contact.phone}
                     </p>
                   </div>
                   <Button variant="ghost" size="sm" disabled>

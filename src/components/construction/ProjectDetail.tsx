@@ -25,6 +25,7 @@ import {
   Users,
   HardHat,
   Link2,
+  MessageSquare,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -46,6 +47,8 @@ import { ProjectEstimationTable } from '@/components/construction/ProjectEstimat
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
 import { ProjectExecution } from '@/components/construction/ProjectExecution'
 import { ProjectFinance } from '@/components/construction/ProjectFinance'
+import { ProjectQuotes } from '@/components/construction/ProjectQuotes'
+import { ProjectChat } from '@/components/construction/ProjectChat'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -63,6 +66,7 @@ export default function ProjectDetail() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false)
   const [isSyncOpen, setIsSyncOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Estimation State
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
@@ -127,6 +131,14 @@ export default function ProjectDetail() {
           >
             <Link2 className="h-4 w-4" />
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsChatOpen(true)}
+            title="Chat do Projeto"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
           <Button variant="outline" onClick={() => setIsTeamManagerOpen(true)}>
             <HardHat className="mr-2 h-4 w-4" /> {t('proj.team.btn')}
           </Button>
@@ -157,6 +169,9 @@ export default function ProjectDetail() {
             </TabsTrigger>
             <TabsTrigger value="partners" className="flex-1">
               {t('proj.detail.partners')}
+            </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex-1">
+              Orçamentos & Faturas
             </TabsTrigger>
             <TabsTrigger value="approvals" className="flex-1">
               {t('proj.approvals.title')}
@@ -392,7 +407,12 @@ export default function ProjectDetail() {
                           <h3 className="font-bold text-xl text-primary">
                             {partner.companyName}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {partner.address
+                              ? `${partner.address.street}, ${partner.address.city} - ${partner.address.state}`
+                              : 'Sem endereço cadastrado'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-2">
                             <Badge variant="outline">
                               {t('proj.partner.stage')}:{' '}
                               {t(
@@ -430,9 +450,14 @@ export default function ProjectDetail() {
                                   className="text-sm flex justify-between items-center bg-muted/30 p-2 rounded"
                                 >
                                   <span className="font-medium">{c.name}</span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {c.phone}
-                                  </span>
+                                  <div className="text-right">
+                                    <span className="text-xs text-muted-foreground block">
+                                      {c.email}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground block">
+                                      {c.phone}
+                                    </span>
+                                  </div>
                                 </li>
                               ))}
                             </ul>
@@ -482,6 +507,11 @@ export default function ProjectDetail() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Quotes & Invoices Tab */}
+        <TabsContent value="quotes" className="w-full animate-fade-in">
+          <ProjectQuotes projectId={project.id} />
         </TabsContent>
 
         {/* Reports Tab */}
@@ -548,6 +578,13 @@ export default function ProjectDetail() {
       <ExternalIntegrationDialog
         open={isSyncOpen}
         onClose={() => setIsSyncOpen(false)}
+        projectId={project.id}
+      />
+
+      {/* Integrated Chat Drawer */}
+      <ProjectChat
+        open={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
         projectId={project.id}
       />
     </div>

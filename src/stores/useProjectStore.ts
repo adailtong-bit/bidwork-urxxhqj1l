@@ -94,6 +94,12 @@ export interface ProjectPartner {
   contacts: PartnerContact[]
   team: PartnerTeamMember[]
   performanceScore: number
+  address?: {
+    street: string
+    city: string
+    state: string
+    zipCode: string
+  }
   employees: {
     id: string
     name: string
@@ -191,6 +197,44 @@ export interface LaborAdjustment {
   date: Date
 }
 
+export interface QuoteItem {
+  id: string
+  description: string
+  amount: number
+}
+
+export interface Quote {
+  id: string
+  partnerId: string
+  stageId: string
+  totalAmount: number
+  items: QuoteItem[]
+  status: 'pending' | 'approved' | 'rejected'
+  createdAt: Date
+  contractUrl?: string
+}
+
+export interface ProjectInvoice {
+  id: string
+  quoteId: string
+  partnerId: string
+  contractorName: string
+  partnerName: string
+  description: string
+  totalAmount: number
+  date: Date
+  status: 'generated' | 'paid'
+}
+
+export interface ProjectMessage {
+  id: string
+  senderId: string
+  senderName: string
+  text: string
+  timestamp: Date
+  type: 'internal' | 'external'
+}
+
 export interface Project {
   id: string
   ownerId: string
@@ -217,6 +261,9 @@ export interface Project {
   laborAdjustments?: LaborAdjustment[]
   inspections: Inspection[]
   dailyLogs: DailyLog[]
+  quotes: Quote[]
+  invoices: ProjectInvoice[]
+  messages: ProjectMessage[]
 }
 
 interface ProjectState {
@@ -235,6 +282,9 @@ interface ProjectState {
       | 'financialMovements'
       | 'constructionItems'
       | 'laborAdjustments'
+      | 'quotes'
+      | 'invoices'
+      | 'messages'
     >,
   ) => void
   updateProject: (id: string, data: Partial<Project>) => void
@@ -381,6 +431,21 @@ interface ProjectState {
     data: Partial<Inspection>,
   ) => void
   addDailyLog: (projectId: string, log: Omit<DailyLog, 'id'>) => void
+  addQuote: (
+    projectId: string,
+    quote: Omit<Quote, 'id' | 'createdAt' | 'status'>,
+  ) => void
+  updateQuoteStatus: (
+    projectId: string,
+    quoteId: string,
+    status: Quote['status'],
+  ) => void
+  updateQuoteContract: (projectId: string, quoteId: string, url: string) => void
+  generateInvoiceFromQuote: (projectId: string, quoteId: string) => void
+  addProjectMessage: (
+    projectId: string,
+    message: Omit<ProjectMessage, 'id' | 'timestamp'>,
+  ) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -480,8 +545,22 @@ const mockProjects: Project[] = [
         companyName: 'Parceiro Construções Ltda',
         stageId: 'st-2',
         agreedPrice: 50000,
+        address: {
+          street: 'Rua das Obras, 123',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01000-000',
+        },
         employees: [],
-        contacts: [],
+        contacts: [
+          {
+            id: 'c1',
+            name: 'Carlos Mendes',
+            email: 'carlos@parceiro.com',
+            phone: '11999999999',
+            role: 'Gerente',
+          },
+        ],
         team: [],
         performanceScore: 4.5,
       },
@@ -622,6 +701,30 @@ const mockProjects: Project[] = [
     ],
     constructionItems: [],
     laborAdjustments: [],
+    quotes: [
+      {
+        id: 'q1',
+        partnerId: 'partner-1',
+        stageId: 'st-2',
+        status: 'pending',
+        createdAt: new Date(),
+        totalAmount: 15000,
+        items: [
+          { id: 'i1', description: 'Mão de obra pilares', amount: 15000 },
+        ],
+      },
+    ],
+    invoices: [],
+    messages: [
+      {
+        id: 'm1',
+        senderId: 'partner-1',
+        senderName: 'Carlos Mendes',
+        text: 'Bom dia, enviamos o orçamento para a próxima fase.',
+        timestamp: new Date(Date.now() - 1000 * 60 * 60),
+        type: 'external',
+      },
+    ],
     inspections: [
       {
         id: 'i1',
@@ -687,6 +790,9 @@ const mockProjects: Project[] = [
     financialMovements: [],
     constructionItems: [],
     laborAdjustments: [],
+    quotes: [],
+    invoices: [],
+    messages: [],
     inspections: [
       { id: 'u1', name: 'Footing', status: 'pending', evidenceUrls: [] },
       { id: 'u2', name: 'Framing', status: 'pending', evidenceUrls: [] },
@@ -728,6 +834,9 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           financialMovements: [],
           constructionItems: [],
           laborAdjustments: [],
+          quotes: [],
+          invoices: [],
+          messages: [],
         },
       ],
     })),
@@ -1355,5 +1464,118 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         }
         return p
       }),
+    })),
+  addQuote: (projectId, quote) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              quotes: [
+                ...(p.quotes || []),
+                {
+                  ...quote,
+                  id: Math.random().toString(36).substr(2, 9),
+                  createdAt: new Date(),
+                  status: 'pending',
+                },
+              ],
+            }
+          : p,
+      ),
+    })),
+  updateQuoteStatus: (projectId, quoteId, status) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              quotes: (p.quotes || []).map((q) =>
+                q.id === quoteId ? { ...q, status } : q,
+              ),
+            }
+          : p,
+      ),
+    })),
+  updateQuoteContract: (projectId, quoteId, url) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              quotes: (p.quotes || []).map((q) =>
+                q.id === quoteId ? { ...q, contractUrl: url } : q,
+              ),
+            }
+          : p,
+      ),
+    })),
+  generateInvoiceFromQuote: (projectId, quoteId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const quote = p.quotes?.find((q) => q.id === quoteId)
+          if (!quote) return p
+          const partner = p.partners?.find((pt) => pt.id === quote.partnerId)
+
+          const invoice: ProjectInvoice = {
+            id: Math.random().toString(36).substr(2, 9),
+            quoteId: quote.id,
+            partnerId: quote.partnerId,
+            contractorName: p.ownerId || 'Contractor',
+            partnerName: partner?.companyName || 'Partner',
+            description: `Fatura referente ao Orçamento #${quote.id.substring(0, 4)}`,
+            totalAmount: quote.totalAmount,
+            date: new Date(),
+            status: 'generated',
+          }
+
+          const costItem: CostItem = {
+            id: Math.random().toString(36).substr(2, 9),
+            description: `Pagamento Fatura ${partner?.companyName || 'Parceiro'}`,
+            amount: quote.totalAmount,
+            type: 'actual',
+            category: 'other',
+            costClass: 'capex',
+            date: new Date(),
+            stageId: quote.stageId,
+          }
+
+          const stagesSpent = (p.stages || []).reduce(
+            (acc, s) => acc + s.actualMaterial + s.actualLabor,
+            0,
+          )
+          const totalAllocated = [...(p.allocatedCosts || []), costItem].reduce(
+            (acc, c) => acc + c.amount,
+            0,
+          )
+
+          return {
+            ...p,
+            invoices: [...(p.invoices || []), invoice],
+            allocatedCosts: [...(p.allocatedCosts || []), costItem],
+            totalSpent: stagesSpent + totalAllocated,
+          }
+        }
+        return p
+      }),
+    })),
+  addProjectMessage: (projectId, message) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              messages: [
+                ...(p.messages || []),
+                {
+                  ...message,
+                  id: Math.random().toString(36).substr(2, 9),
+                  timestamp: new Date(),
+                },
+              ],
+            }
+          : p,
+      ),
     })),
 }))
