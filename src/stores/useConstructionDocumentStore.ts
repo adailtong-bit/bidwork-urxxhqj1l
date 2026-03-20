@@ -1,23 +1,22 @@
 import { create } from 'zustand'
 
-export type DocumentType =
-  | 'Permit'
-  | 'Insurance'
-  | 'License'
-  | 'Water'
-  | 'Electric'
-  | 'Sewage'
+export type DocumentStatus =
+  | 'Pending'
+  | 'In Progress'
+  | 'Approved'
+  | 'Expired'
+  | 'Rejected'
 
 export interface ConstructionDocument {
   id: string
   projectId: string
-  type: DocumentType
+  type: string
   name: string
   requestDate: Date
   approvalDate?: Date
   validity?: Date
-  partnerId?: string // Linked partner
-  status: 'Pending' | 'Approved' | 'Expired' | 'Rejected'
+  partnerId?: string
+  status: DocumentStatus
   url?: string
 }
 
@@ -33,8 +32,8 @@ const mockDocuments: ConstructionDocument[] = [
   {
     id: 'doc-1',
     projectId: 'proj-1',
-    type: 'Permit',
-    name: 'Alvará de Construção',
+    type: 'Alvará de Construção',
+    name: 'Alvará Municipal',
     requestDate: new Date('2023-01-10'),
     approvalDate: new Date('2023-01-25'),
     validity: new Date('2025-01-25'),
@@ -47,7 +46,7 @@ const mockDocuments: ConstructionDocument[] = [
     name: 'Seguro de Obra Civil',
     requestDate: new Date('2023-02-01'),
     approvalDate: new Date('2023-02-05'),
-    validity: new Date('2024-02-05'), // Expired
+    validity: new Date('2024-02-05'),
     status: 'Expired',
   },
 ]
@@ -76,3 +75,4 @@ export const useConstructionDocumentStore = create<ConstructionDocumentState>(
       get().documents.filter((d) => d.projectId === projectId),
   }),
 )
+

@@ -16,12 +16,20 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { useToast } from '@/hooks/use-toast'
 import {
   ArrowLeft,
   Loader2,
   Calendar as CalendarIcon,
   MapPin,
+  Globe,
 } from 'lucide-react'
 import { format, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
@@ -45,6 +53,7 @@ export default function NewProject() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    region: 'BR' as 'BR' | 'US',
     startDate: new Date(),
     endDate: addDays(new Date(), 180),
     totalBudget: 0,
@@ -89,7 +98,7 @@ export default function NewProject() {
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1000))
 
-    // Create 11 stages based on template
+    // Create stages based on template
     const stages: Stage[] = DEFAULT_STAGES_TEMPLATE.map((t, idx) => ({
       id: Math.random().toString(36).substr(2, 9),
       name: t.name,
@@ -102,13 +111,39 @@ export default function NewProject() {
       actualMaterial: 0,
       actualLabor: 0,
       bimFiles: [],
+      progress: 0,
+      subStages: [],
     }))
 
     const formattedLocation = `${formData.address.city} - ${formData.address.state}`
 
+    const brInspections = [
+      'Vistoria de Bombeiros',
+      'Vigilância Sanitária',
+      'Inspeção Bancária (Caixa)',
+    ]
+    const usInspections = [
+      'Footing',
+      'Framing',
+      'Rough-in (Electric/Plumbing)',
+      'Insulation',
+      'Drywall',
+      'Final Inspection',
+    ]
+
+    const defaultInspections = (
+      formData.region === 'US' ? usInspections : brInspections
+    ).map((name) => ({
+      id: Math.random().toString(36).substr(2, 9),
+      name,
+      status: 'pending' as const,
+      evidenceUrls: [],
+    }))
+
     addProject({
       name: formData.name,
       description: formData.description,
+      region: formData.region,
       location: formattedLocation,
       address: formData.address,
       startDate: formData.startDate,
@@ -117,18 +152,20 @@ export default function NewProject() {
       ownerId: 'current-user-id', // Mock ID
       status: 'planning',
       stages,
+      inspections: defaultInspections,
+      dailyLogs: [],
     })
 
     setLoading(false)
     toast({
       title: 'Projeto Iniciado!',
-      description: 'Estrutura de 11 etapas criada com sucesso.',
+      description: 'Estrutura do projeto criada com sucesso.',
     })
     navigate('/construction/dashboard')
   }
 
   return (
-    <div className="space-y-6 max-w-3xl mx-auto py-8">
+    <div className="space-y-6 max-w-3xl mx-auto py-8 px-4">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4" />
@@ -138,7 +175,7 @@ export default function NewProject() {
             Novo Projeto de Obra
           </h1>
           <p className="text-muted-foreground">
-            Inicialize o fluxo de construção completo (11 Etapas).
+            Inicialize o fluxo de construção e defina a região.
           </p>
         </div>
       </div>
@@ -152,16 +189,37 @@ export default function NewProject() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="name">Nome do Projeto</Label>
-              <Input
-                id="name"
-                placeholder="Ex: Residencial Flores"
-                value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
-              />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="space-y-2 md:col-span-2">
+                <Label htmlFor="name">Nome do Projeto</Label>
+                <Input
+                  id="name"
+                  placeholder="Ex: Residencial Flores"
+                  value={formData.name}
+                  onChange={(e) =>
+                    setFormData({ ...formData, name: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Globe className="h-4 w-4 text-primary" /> Região / País
+                </Label>
+                <Select
+                  value={formData.region}
+                  onValueChange={(val: 'BR' | 'US') =>
+                    setFormData({ ...formData, region: val })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BR">Brasil</SelectItem>
+                    <SelectItem value="US">USA (Florida/Orlando)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
 
             <div className="border rounded-lg p-4 bg-muted/20 space-y-4">
@@ -172,10 +230,14 @@ export default function NewProject() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="zipCode">CEP</Label>
+                  <Label htmlFor="zipCode">
+                    {formData.region === 'BR' ? 'CEP' : 'Zip Code'}
+                  </Label>
                   <Input
                     id="zipCode"
-                    placeholder="00000-000"
+                    placeholder={
+                      formData.region === 'BR' ? '00000-000' : '12345'
+                    }
                     value={formData.address.zipCode}
                     onChange={(e) =>
                       handleAddressChange('zipCode', e.target.value)
@@ -183,7 +245,9 @@ export default function NewProject() {
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
-                  <Label htmlFor="street">Logradouro (Rua, Av.)</Label>
+                  <Label htmlFor="street">
+                    {formData.region === 'BR' ? 'Logradouro' : 'Street'}
+                  </Label>
                   <Input
                     id="street"
                     placeholder="Endereço"
@@ -222,7 +286,7 @@ export default function NewProject() {
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="neighborhood">Bairro</Label>
+                  <Label htmlFor="neighborhood">Bairro / District</Label>
                   <Input
                     id="neighborhood"
                     placeholder="Bairro"
@@ -244,10 +308,10 @@ export default function NewProject() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="state">Estado (UF)</Label>
+                  <Label htmlFor="state">Estado / State</Label>
                   <Input
                     id="state"
-                    placeholder="UF"
+                    placeholder={formData.region === 'BR' ? 'SP' : 'FL'}
                     maxLength={2}
                     value={formData.address.state}
                     onChange={(e) =>
@@ -348,8 +412,8 @@ export default function NewProject() {
             </div>
 
             <div className="bg-muted/50 p-4 rounded-lg space-y-2">
-              <Label className="font-semibold">
-                Workflow Padrão (11 Etapas)
+              <Label className="font-semibold flex items-center gap-2">
+                Workflow Padrão ({DEFAULT_STAGES_TEMPLATE.length} Etapas Macro)
               </Label>
               <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
                 {DEFAULT_STAGES_TEMPLATE.slice(0, 5).map((s, i) => (
@@ -374,3 +438,4 @@ export default function NewProject() {
     </div>
   )
 }
+

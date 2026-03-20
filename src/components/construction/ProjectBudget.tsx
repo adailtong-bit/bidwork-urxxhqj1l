@@ -23,6 +23,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Trash2, Plus } from 'lucide-react'
@@ -40,6 +41,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
   const [newItem, setNewItem] = useState({
     description: '',
     category: 'material',
+    costClass: 'capex',
     unitCost: 0,
     quantity: 1,
   })
@@ -52,6 +54,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
     addBudgetItem(projectId, {
       description: newItem.description,
       category: newItem.category as any,
+      costClass: newItem.costClass as any,
       unitCost: newItem.unitCost,
       quantity: newItem.quantity,
       totalCost: newItem.unitCost * newItem.quantity,
@@ -59,6 +62,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
     setNewItem({
       description: '',
       category: 'material',
+      costClass: 'capex',
       unitCost: 0,
       quantity: 1,
     })
@@ -89,7 +93,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
         <div className="space-y-6">
           {/* Add Item Form */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-end bg-muted/30 p-4 rounded-lg">
-            <div className="md:col-span-4 space-y-2">
+            <div className="md:col-span-3 space-y-2">
               <label className="text-xs font-medium">
                 {t('proj.budget.item')}
               </label>
@@ -100,6 +104,23 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                   setNewItem({ ...newItem, description: e.target.value })
                 }
               />
+            </div>
+            <div className="md:col-span-2 space-y-2">
+              <label className="text-xs font-medium">Classe (CAPEX/Soft)</label>
+              <Select
+                value={newItem.costClass}
+                onValueChange={(val) =>
+                  setNewItem({ ...newItem, costClass: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="capex">CAPEX (Obra)</SelectItem>
+                  <SelectItem value="soft_cost">Soft Cost (Taxas)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="md:col-span-2 space-y-2">
               <label className="text-xs font-medium">
@@ -127,7 +148,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="md:col-span-2 space-y-2">
+            <div className="md:col-span-1 space-y-2">
               <label className="text-xs font-medium">
                 {t('proj.budget.quantity')}
               </label>
@@ -165,6 +186,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('proj.budget.item')}</TableHead>
+                  <TableHead>Classe</TableHead>
                   <TableHead>{t('proj.budget.category')}</TableHead>
                   <TableHead className="text-right">
                     {t('proj.budget.quantity')}
@@ -184,6 +206,11 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
                         {item.description}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={item.costClass === 'soft_cost' ? 'border-purple-200 bg-purple-50 text-purple-700' : 'border-blue-200 bg-blue-50 text-blue-700'}>
+                          {item.costClass === 'soft_cost' ? 'Soft Cost' : 'CAPEX'}
+                        </Badge>
                       </TableCell>
                       <TableCell className="capitalize">
                         {t(`proj.budget.${item.category}`)}
@@ -212,7 +239,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={6}
+                      colSpan={7}
                       className="text-center py-8 text-muted-foreground"
                     >
                       {t('inventory.empty')}
@@ -227,3 +254,4 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
     </Card>
   )
 }
+

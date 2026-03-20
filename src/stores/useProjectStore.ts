@@ -1,11 +1,31 @@
 import { create } from 'zustand'
 
+export interface Inspection {
+  id: string
+  name: string
+  status: 'pending' | 'in_progress' | 'approved' | 'rejected'
+  date?: Date
+  notes?: string
+  evidenceUrls: string[]
+}
+
+export interface DailyLog {
+  id: string
+  date: Date
+  weather: 'sunny' | 'cloudy' | 'rainy' | 'snow'
+  teamSize: number
+  equipment: string
+  occurrences: string
+  photos: string[]
+}
+
 export interface CostItem {
   id: string
   description: string
   amount: number
   type: 'estimated' | 'actual'
   category: 'material' | 'labor' | 'equipment' | 'logistics' | 'other'
+  costClass?: 'capex' | 'soft_cost'
   date: Date
   sourceId?: string
 }
@@ -100,6 +120,7 @@ export interface BudgetItem {
   id: string
   description: string
   category: 'material' | 'labor' | 'other'
+  costClass?: 'capex' | 'soft_cost'
   unitCost: number
   quantity: number
   totalCost: number
@@ -149,6 +170,7 @@ export interface Project {
   name: string
   description: string
   location: string
+  region: 'BR' | 'US'
   address: ProjectAddress
   startDate: Date
   endDate: Date
@@ -164,6 +186,8 @@ export interface Project {
   sqFt?: number
   constructionItems: ConstructionItem[]
   laborAdjustments?: LaborAdjustment[]
+  inspections: Inspection[]
+  dailyLogs: DailyLog[]
 }
 
 interface ProjectState {
@@ -312,16 +336,46 @@ interface ProjectState {
     projectId: string,
     adjustment: Omit<LaborAdjustment, 'id'>,
   ) => void
+  updateInspection: (
+    projectId: string,
+    inspectionId: string,
+    data: Partial<Inspection>,
+  ) => void
+  addDailyLog: (projectId: string, log: Omit<DailyLog, 'id'>) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
   {
-    name: 'stage.land_purchase',
-    description: 'stage.land_purchase_desc',
+    name: '1. Pré-viabilidade e Aquisição',
+    description: 'Due diligence, Zoneamento.',
   },
   {
-    name: 'stage.planning',
-    description: 'stage.planning_desc',
+    name: '2. Planejamento Pré-construção',
+    description: 'Escopo, Orçamento, Estudos preliminares.',
+  },
+  {
+    name: '3. Projetos e Compatibilização',
+    description: 'Arquitetura, MEP, Estrutural.',
+  },
+  {
+    name: '4. Licenças e Aprovações',
+    description: 'Aprovações em órgãos públicos.',
+  },
+  {
+    name: '5. Mobilização',
+    description: 'Instalação do canteiro, Planos de segurança (OSHA/PCMAT).',
+  },
+  {
+    name: '6. Execução Física',
+    description: 'Fundações, Estrutura, Instalações, Acabamentos.',
+  },
+  {
+    name: '7. Inspeções e Certificações',
+    description: 'Vistorias oficiais.',
+  },
+  {
+    name: '8. Entrega e Pós-obra',
+    description: 'Desmobilização, Habite-se/CO, Handover.',
   },
 ]
 
@@ -364,6 +418,7 @@ const mockProjects: Project[] = [
     description:
       'Construção de residência de alto padrão com 4 suítes e área de lazer.',
     location: 'Barueri - SP',
+    region: 'BR',
     address: {
       zipCode: '06454-000',
       street: 'Alameda Rio Negro',
@@ -395,7 +450,7 @@ const mockProjects: Project[] = [
     stages: [
       {
         id: 'st-1',
-        name: '4. Preparação do Terreno',
+        name: '1. Pré-viabilidade e Aquisição',
         status: 'completed',
         startDate: new Date(Date.now() - 86400000 * 30),
         endDate: new Date(Date.now() - 86400000 * 5),
@@ -410,7 +465,7 @@ const mockProjects: Project[] = [
       },
       {
         id: 'st-2',
-        name: '5. Construção Estrutural',
+        name: '6. Execução Física',
         status: 'in_progress',
         startDate: new Date(Date.now() - 86400000 * 4),
         endDate: new Date(Date.now() + 86400000 * 45),
@@ -439,126 +494,104 @@ const mockProjects: Project[] = [
         id: 'b-1',
         description: 'Cimento CP II (Saco 50kg)',
         category: 'material',
+        costClass: 'capex',
         unitCost: 35.5,
         quantity: 500,
         totalCost: 17750,
       },
       {
         id: 'b-2',
-        description: 'Mão de Obra (Pedreiro - Hora)',
-        category: 'labor',
-        unitCost: 25.0,
-        quantity: 1200,
-        totalCost: 30000,
+        description: 'Taxa de Alvará da Prefeitura',
+        category: 'other',
+        costClass: 'soft_cost',
+        unitCost: 5000,
+        quantity: 1,
+        totalCost: 5000,
       },
     ],
-    approvalLogs: [
-      {
-        id: 'app-1',
-        type: 'invoice',
-        referenceId: 'inv-001',
-        description: 'Pagamento 1ª Parcela - Concretagem',
-        status: 'pending',
-        date: new Date(),
-        history: [],
-      },
-      {
-        id: 'app-2',
-        type: 'document',
-        referenceId: 'doc-005',
-        description: 'Alvará de Construção Atualizado',
-        status: 'approved',
-        date: new Date(Date.now() - 86400000 * 2),
-        history: [
-          {
-            date: new Date(Date.now() - 86400000 * 2),
-            status: 'approved',
-            user: 'Eng. Roberto',
-          },
-        ],
-      },
-    ],
-    integrations: [
-      { platform: 'trello', connected: false },
-      { platform: 'asana', connected: true, lastSync: new Date() },
-      { platform: 'jira', connected: false },
-    ],
+    approvalLogs: [],
+    integrations: [],
     allocatedCosts: [],
-    constructionItems: [
+    constructionItems: [],
+    laborAdjustments: [],
+    inspections: [
       {
-        id: 'ci-1',
-        name: 'est.item.excavation',
-        stage: 'M1',
-        startDate: new Date(Date.now() - 86400000 * 30),
-        endDate: new Date(Date.now() - 86400000 * 25),
-        pricePerSqFt: 5,
-        totalPrice: 12500,
+        id: 'i1',
+        name: 'Vistoria de Bombeiros',
+        status: 'pending',
+        evidenceUrls: [],
       },
       {
-        id: 'ci-2',
-        name: 'est.item.foundation_pouring',
-        stage: 'M1',
-        startDate: new Date(Date.now() - 86400000 * 20),
-        endDate: new Date(Date.now() - 86400000 * 10),
-        totalPrice: 25000,
+        id: 'i2',
+        name: 'Inspeção Bancária (Caixa)',
+        status: 'approved',
+        evidenceUrls: ['https://img.usecurling.com/p/200/200?q=inspection'],
+        date: new Date(),
+        notes: 'Aprovado 1ª medição',
       },
     ],
-    laborAdjustments: [
+    dailyLogs: [
       {
-        id: 'adj-1',
-        description: 'Horas extras concretagem',
-        amount: 3500,
-        date: new Date(Date.now() - 86400000 * 3),
+        id: 'd1',
+        date: new Date(),
+        weather: 'sunny',
+        teamSize: 12,
+        equipment: 'Betoneira, Retroescavadeira',
+        occurrences: 'Concretagem dos pilares do térreo iniciada sem atrasos.',
+        photos: ['https://img.usecurling.com/p/400/300?q=construction'],
       },
     ],
   },
   {
     id: 'proj-2',
     ownerId: 'owner-1',
-    name: 'Edifício Comercial Omega',
-    description:
-      'Construção de prédio comercial de 5 andares com laje protendida.',
-    location: 'São Paulo - SP',
+    name: 'Orlando Vacation Home',
+    description: 'Construction of a 5-bedroom vacation home near Disney.',
+    location: 'Kissimmee - FL',
+    region: 'US',
     address: {
-      zipCode: '01001-000',
-      street: 'Praça da Sé',
-      number: '100',
+      zipCode: '34747',
+      street: 'Magic Way',
+      number: '123',
       complement: '',
-      neighborhood: 'Centro',
-      city: 'São Paulo',
-      state: 'SP',
-      country: 'BR',
+      neighborhood: 'Resort Area',
+      city: 'Kissimmee',
+      state: 'FL',
+      country: 'US',
     },
     startDate: new Date(Date.now() + 86400000 * 10),
     endDate: new Date(Date.now() + 86400000 * 365),
     status: 'planning',
-    totalBudget: 5000000,
+    totalBudget: 850000,
     totalSpent: 10000,
-    sqFt: 15000,
+    sqFt: 3500,
     partners: [],
-    stages: [
-      {
-        id: 'st-2-1',
-        name: '1. Projetos e Licenças',
-        status: 'in_progress',
-        startDate: new Date(Date.now() - 86400000 * 5),
-        endDate: new Date(Date.now() + 86400000 * 20),
-        budgetMaterial: 5000,
-        budgetLabor: 45000,
-        actualMaterial: 1000,
-        actualLabor: 9000,
-        description: 'Aprovação na prefeitura e projetos complementares.',
-        progress: 20,
-        subStages: [],
-        bimFiles: [],
-      },
-    ],
+    stages: [],
     budgetItems: [],
     approvalLogs: [],
     integrations: [],
     allocatedCosts: [],
     constructionItems: [],
     laborAdjustments: [],
+    inspections: [
+      { id: 'u1', name: 'Footing', status: 'pending', evidenceUrls: [] },
+      { id: 'u2', name: 'Framing', status: 'pending', evidenceUrls: [] },
+      {
+        id: 'u3',
+        name: 'Rough-in (Electric/Plumbing)',
+        status: 'pending',
+        evidenceUrls: [],
+      },
+      { id: 'u4', name: 'Insulation', status: 'pending', evidenceUrls: [] },
+      { id: 'u5', name: 'Drywall', status: 'pending', evidenceUrls: [] },
+      {
+        id: 'u6',
+        name: 'Final Inspection',
+        status: 'pending',
+        evidenceUrls: [],
+      },
+    ],
+    dailyLogs: [],
   },
 ]
 
@@ -1148,4 +1181,34 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return p
       }),
     })),
+  updateInspection: (projectId, inspectionId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            inspections: p.inspections.map((i) =>
+              i.id === inspectionId ? { ...i, ...data } : i,
+            ),
+          }
+        }
+        return p
+      }),
+    })),
+  addDailyLog: (projectId, log) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            dailyLogs: [
+              ...p.dailyLogs,
+              { ...log, id: Math.random().toString(36).substr(2, 9) },
+            ],
+          }
+        }
+        return p
+      }),
+    })),
 }))
+

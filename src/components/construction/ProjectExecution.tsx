@@ -26,7 +26,7 @@ import {
   TrendingUp,
   Plus,
   CalendarDays,
-  DollarSign,
+  FileText,
 } from 'lucide-react'
 import { CurrencyInput } from '@/components/CurrencyInput'
 import { cn } from '@/lib/utils'
@@ -45,54 +45,48 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
 
   if (!project) return null
 
-  // Cost Aggregations
+  const receiptLabel = project.region === 'US' ? 'Invoices / Receipts' : 'Notas Fiscais / Recibos';
+
+  // Cost Aggregations (Separating CAPEX and Soft Costs)
+  const budgetItems = project.budgetItems || [];
+  const allocatedCosts = project.allocatedCosts || [];
+
+  const estCapex = budgetItems.filter(i => i.costClass === 'capex' || !i.costClass).reduce((a, b) => a + b.totalCost, 0) + project.stages.reduce((a, s) => a + s.budgetMaterial + s.budgetLabor, 0);
+  const actCapex = allocatedCosts.filter(c => c.costClass === 'capex' || !c.costClass).reduce((a, b) => a + b.amount, 0) + project.stages.reduce((a, s) => a + s.actualMaterial + s.actualLabor, 0) + (project.laborAdjustments?.reduce((a, adj) => a + adj.amount, 0) || 0);
+
+  const estSoft = budgetItems.filter(i => i.costClass === 'soft_cost').reduce((a, b) => a + b.totalCost, 0);
+  const actSoft = allocatedCosts.filter(c => c.costClass === 'soft_cost').reduce((a, b) => a + b.amount, 0);
+
   const estMat =
     project.stages.reduce((acc, s) => acc + s.budgetMaterial, 0) +
-    (project.budgetItems
-      ?.filter((i) => i.category === 'material')
-      .reduce((acc, i) => acc + i.totalCost, 0) || 0)
+    (project.budgetItems?.filter((i) => i.category === 'material').reduce((acc, i) => acc + i.totalCost, 0) || 0)
   const actMat =
     project.stages.reduce((acc, s) => acc + s.actualMaterial, 0) +
-    (project.allocatedCosts
-      ?.filter((c) => c.category === 'material')
-      .reduce((acc, c) => acc + c.amount, 0) || 0)
+    (project.allocatedCosts?.filter((c) => c.category === 'material').reduce((acc, c) => acc + c.amount, 0) || 0)
 
   const estLab =
     project.stages.reduce((acc, s) => acc + s.budgetLabor, 0) +
-    (project.budgetItems
-      ?.filter((i) => i.category === 'labor')
-      .reduce((acc, i) => acc + i.totalCost, 0) || 0)
+    (project.budgetItems?.filter((i) => i.category === 'labor').reduce((acc, i) => acc + i.totalCost, 0) || 0)
   const labAdjs =
     project.laborAdjustments?.reduce((acc, a) => acc + a.amount, 0) || 0
   const actLab =
     project.stages.reduce((acc, s) => acc + s.actualLabor, 0) +
-    (project.allocatedCosts
-      ?.filter((c) => c.category === 'labor')
-      .reduce((acc, c) => acc + c.amount, 0) || 0) +
+    (project.allocatedCosts?.filter((c) => c.category === 'labor').reduce((acc, c) => acc + c.amount, 0) || 0) +
     labAdjs
 
   const estOth =
-    project.budgetItems
-      ?.filter((i) => i.category === 'other')
-      .reduce((acc, i) => acc + i.totalCost, 0) || 0
+    project.budgetItems?.filter((i) => i.category === 'other').reduce((acc, i) => acc + i.totalCost, 0) || 0
   const actOth =
-    project.allocatedCosts
-      ?.filter((c) => c.category !== 'material' && c.category !== 'labor')
-      .reduce((acc, c) => acc + c.amount, 0) || 0
+    project.allocatedCosts?.filter((c) => c.category !== 'material' && c.category !== 'labor').reduce((acc, c) => acc + c.amount, 0) || 0
 
   const categories = [
-    {
-      id: 'material',
-      name: t('proj.budget.material'),
-      est: estMat,
-      act: actMat,
-    },
+    { id: 'material', name: t('proj.budget.material'), est: estMat, act: actMat },
     { id: 'labor', name: t('proj.budget.labor'), est: estLab, act: actLab },
     { id: 'other', name: t('proj.budget.other'), est: estOth, act: actOth },
   ]
 
-  const totalEst = estMat + estLab + estOth
-  const totalAct = actMat + actLab + actOth
+  const totalEst = estCapex + estSoft
+  const totalAct = actCapex + actSoft
 
   // Timeline & Budget Correlation
   const start = new Date(project.startDate).getTime()
@@ -102,8 +96,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
   const totalDays = Math.max(1, (end - start) / 86400000)
   const elapsedDays = Math.max(0, (now - start) / 86400000)
   const timeElapsedPct = Math.min(100, (elapsedDays / totalDays) * 100)
-  const budgetSpentPct =
-    totalEst > 0 ? Math.min(100, (totalAct / totalEst) * 100) : 0
+  const budgetSpentPct = totalEst > 0 ? Math.min(100, (totalAct / totalEst) * 100) : 0
 
   const progress =
     project.stages.length > 0
@@ -132,8 +125,8 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card className="border-t-4 border-t-primary">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card className="border-t-4 border-t-primary md:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <TrendingUp className="h-5 w-5 text-primary" />
@@ -177,6 +170,32 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                 )}
               />
             </div>
+            
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+               <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <p className="text-xs text-blue-800 font-semibold mb-1">CAPEX (Obra Física)</p>
+                  <div className="flex justify-between text-sm mt-1">
+                    <span className="text-muted-foreground">Plan:</span>
+                    <span className="font-medium">{formatCurrency(estCapex)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Real:</span>
+                    <span className={cn("font-medium", actCapex > estCapex && "text-red-600")}>{formatCurrency(actCapex)}</span>
+                  </div>
+               </div>
+               <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                  <p className="text-xs text-purple-800 font-semibold mb-1">Soft Costs (Taxas/Docs)</p>
+                  <div className="flex justify-between text-sm mt-1">
+                    <span className="text-muted-foreground">Plan:</span>
+                    <span className="font-medium">{formatCurrency(estSoft)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Real:</span>
+                    <span className={cn("font-medium", actSoft > estSoft && "text-red-600")}>{formatCurrency(actSoft)}</span>
+                  </div>
+               </div>
+            </div>
+
           </CardContent>
         </Card>
 
@@ -184,13 +203,13 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <Clock className="h-5 w-5 text-blue-500" />
-              {t('proj.execution.planned_completion')}
+              Previsão Final
             </CardTitle>
             <CardDescription>
               {t('proj.execution.projected_completion')}
             </CardDescription>
           </CardHeader>
-          <CardContent className="pt-4 grid grid-cols-2 gap-4">
+          <CardContent className="pt-4 flex flex-col gap-4">
             <div className="bg-muted/50 p-3 rounded-lg border">
               <p className="text-xs text-muted-foreground mb-1">
                 {t('proj.execution.planned_completion')}
@@ -328,9 +347,9 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
         <CardHeader>
           <div className="flex justify-between items-start gap-4 flex-col sm:flex-row">
             <div>
-              <CardTitle>{t('proj.execution.labor_monitoring')}</CardTitle>
+              <CardTitle>Pagamentos e Ajustes Extra</CardTitle>
               <CardDescription>
-                {t('proj.execution.labor_adjustments')}
+                Registre {receiptLabel} ou ajustes de mão de obra.
               </CardDescription>
             </div>
             <div className="flex gap-4 items-center bg-muted/30 p-3 rounded-lg border">
@@ -392,6 +411,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                     <TableHead className="text-right">
                       {t('finance.value')}
                     </TableHead>
+                    <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -403,6 +423,11 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                       <TableCell>{adj.description}</TableCell>
                       <TableCell className="text-right font-medium text-red-600">
                         +{formatCurrency(adj.amount)}
+                      </TableCell>
+                      <TableCell>
+                         <Button variant="ghost" size="icon" title={`Anexar ${receiptLabel}`}>
+                           <FileText className="h-4 w-4 text-muted-foreground" />
+                         </Button>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -419,3 +444,4 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
     </div>
   )
 }
+

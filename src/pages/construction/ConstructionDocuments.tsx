@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   useConstructionDocumentStore,
-  DocumentType,
+  DocumentStatus,
 } from '@/stores/useConstructionDocumentStore'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -12,7 +12,6 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from '@/components/ui/card'
 import {
   Select,
@@ -48,8 +47,24 @@ import {
   Link as LinkIcon,
   Trash2,
 } from 'lucide-react'
-import { format, differenceInDays, isBefore, addDays } from 'date-fns'
+import { differenceInDays, isBefore } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
+
+const BR_DOCS = [
+  'Matrícula',
+  'Certidões Negativas',
+  'Projetos (ART/RRT)',
+  'Alvará de Construção',
+  'Habite-se',
+]
+const US_DOCS = [
+  'Survey',
+  'Zoning Approval',
+  'Signed Plans',
+  'Building Permit',
+  'Notice of Commencement',
+  'Certificate of Occupancy',
+]
 
 export default function ConstructionDocuments() {
   const { documents, addDocument, deleteDocument } =
@@ -61,15 +76,15 @@ export default function ConstructionDocuments() {
   const [selectedProjectId, setSelectedProjectId] = useState<string>('')
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [newDoc, setNewDoc] = useState({
-    type: 'Permit' as DocumentType,
+    type: '',
     name: '',
     requestDate: '',
     approvalDate: '',
     validity: '',
     partnerId: 'none',
+    status: 'Pending' as DocumentStatus,
   })
 
-  // Helper to get active projects for selection
   const activeProjects = projects.filter(
     (p) => p.status === 'in_progress' || p.status === 'planning',
   )
@@ -86,12 +101,12 @@ export default function ConstructionDocuments() {
       !selectedProjectId ||
       !newDoc.name ||
       !newDoc.requestDate ||
-      !newDoc.validity
+      !newDoc.type
     ) {
       toast({
         variant: 'destructive',
         title: 'Campos Obrigatórios',
-        description: 'Preencha o projeto, nome e datas.',
+        description: 'Preencha o projeto, nome, tipo e data de solicitação.',
       })
       return
     }
@@ -104,25 +119,26 @@ export default function ConstructionDocuments() {
       approvalDate: newDoc.approvalDate
         ? new Date(newDoc.approvalDate)
         : undefined,
-      validity: new Date(newDoc.validity),
+      validity: newDoc.validity ? new Date(newDoc.validity) : undefined,
       partnerId: newDoc.partnerId === 'none' ? undefined : newDoc.partnerId,
-      status: newDoc.approvalDate ? 'Approved' : 'Pending',
+      status: newDoc.status,
     })
 
     setIsAddOpen(false)
     setNewDoc({
-      type: 'Permit',
+      type: '',
       name: '',
       requestDate: '',
       approvalDate: '',
       validity: '',
       partnerId: 'none',
+      status: 'Pending',
     })
     toast({ title: 'Documento Adicionado' })
   }
 
   const getStatusBadge = (doc: any) => {
-    if (doc.status === 'Expired' || isBefore(doc.validity, new Date())) {
+    if (doc.status === 'Expired' || (doc.validity && isBefore(doc.validity, new Date()))) {
       return (
         <Badge variant="destructive" className="flex gap-1">
           <AlertTriangle className="h-3 w-3" /> {t('docs.expired')}
@@ -136,12 +152,26 @@ export default function ConstructionDocuments() {
         </Badge>
       )
     }
+    if (doc.status === 'In Progress') {
+      return (
+        <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
+          <Clock className="h-3 w-3 mr-1" /> Em Andamento
+        </Badge>
+      )
+    }
     return (
       <Badge className="bg-green-500">
         <CheckCircle className="h-3 w-3 mr-1" /> {t('status.completed')}
       </Badge>
     )
   }
+
+  const docTypes =
+    selectedProject?.region === 'US'
+      ? US_DOCS
+      : selectedProject?.region === 'BR'
+        ? BR_DOCS
+        : [...BR_DOCS, ...US_DOCS, 'Insurance', 'Water', 'Electric', 'Sewage']
 
   return (
     <div className="space-y-6">
@@ -151,7 +181,7 @@ export default function ConstructionDocuments() {
             Documentação de Obra
           </h1>
           <p className="text-muted-foreground">
-            Permissões, licenças, seguros e contratos regulatórios.
+            Permissões, licenças e documentos regionais.
           </p>
         </div>
         <div className="flex items-center gap-4">
@@ -187,31 +217,18 @@ export default function ConstructionDocuments() {
                   <Select
                     value={newDoc.type}
                     onValueChange={(val) =>
-                      setNewDoc({ ...newDoc, type: val as DocumentType })
+                      setNewDoc({ ...newDoc, type: val })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Permit">
-                        {t('docs.type.permit')}
-                      </SelectItem>
-                      <SelectItem value="License">
-                        {t('docs.type.license')}
-                      </SelectItem>
-                      <SelectItem value="Insurance">
-                        {t('docs.type.insurance')}
-                      </SelectItem>
-                      <SelectItem value="Water">
-                        {t('docs.type.water')}
-                      </SelectItem>
-                      <SelectItem value="Electric">
-                        {t('docs.type.electric')}
-                      </SelectItem>
-                      <SelectItem value="Sewage">
-                        {t('docs.type.sewage')}
-                      </SelectItem>
+                      {docTypes.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -226,6 +243,36 @@ export default function ConstructionDocuments() {
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
+                    <Label>Status</Label>
+                    <Select
+                      value={newDoc.status}
+                      onValueChange={(val) =>
+                        setNewDoc({ ...newDoc, status: val as DocumentStatus })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pendente</SelectItem>
+                        <SelectItem value="In Progress">Em Andamento</SelectItem>
+                        <SelectItem value="Approved">Aprovado</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Validade (Opcional)</Label>
+                    <Input
+                      type="date"
+                      value={newDoc.validity}
+                      onChange={(e) =>
+                        setNewDoc({ ...newDoc, validity: e.target.value })
+                      }
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div className="grid gap-2">
                     <Label>Data Solicitação</Label>
                     <Input
                       type="date"
@@ -236,7 +283,7 @@ export default function ConstructionDocuments() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Data Aprovação</Label>
+                    <Label>Data Aprovação (Opcional)</Label>
                     <Input
                       type="date"
                       value={newDoc.approvalDate}
@@ -245,16 +292,6 @@ export default function ConstructionDocuments() {
                       }
                     />
                   </div>
-                </div>
-                <div className="grid gap-2">
-                  <Label>Validade (Vencimento)</Label>
-                  <Input
-                    type="date"
-                    value={newDoc.validity}
-                    onChange={(e) =>
-                      setNewDoc({ ...newDoc, validity: e.target.value })
-                    }
-                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>Vincular Parceiro (Opcional)</Label>
@@ -321,16 +358,14 @@ export default function ConstructionDocuments() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">
-                          {t(`docs.type.${doc.type.toLowerCase()}`)}
-                        </Badge>
+                        <Badge variant="outline">{doc.type}</Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {project?.name}
                       </TableCell>
                       <TableCell>
                         {partner ? (
-                          <div className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
+                          <div className="flex items-center gap-1 text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded w-fit">
                             <LinkIcon className="h-3 w-3" />
                             {partner.companyName}
                           </div>
@@ -390,3 +425,4 @@ export default function ConstructionDocuments() {
     </div>
   )
 }
+
