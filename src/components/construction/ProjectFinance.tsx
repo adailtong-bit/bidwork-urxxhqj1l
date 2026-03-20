@@ -73,14 +73,12 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
 
   const [filterAcc, setFilterAcc] = useState('all')
 
-  if (!project) return null
-
-  const accounts = project.checkingAccounts || []
-  const movements = project.financialMovements || []
-  const allocated = project.allocatedCosts || []
+  const accounts = project?.checkingAccounts || []
+  const movements = project?.financialMovements || []
+  const allocated = project?.allocatedCosts || []
 
   const realTotalSpent =
-    project.totalSpent + allocated.reduce((acc, c) => acc + c.amount, 0)
+    (project?.totalSpent || 0) + allocated.reduce((acc, c) => acc + c.amount, 0)
 
   const accountBalances = useMemo(() => {
     return accounts.map((acc) => {
@@ -104,6 +102,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
     if (filterAcc === 'all') return movements
     return movements.filter((m) => m.accountId === filterAcc)
   }, [movements, filterAcc])
+
+  if (!project) return null
 
   const handleAddAccount = () => {
     addCheckingAccount(projectId, accData)
