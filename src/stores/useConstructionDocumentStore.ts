@@ -75,4 +75,3 @@ export const useConstructionDocumentStore = create<ConstructionDocumentState>(
       get().documents.filter((d) => d.projectId === projectId),
   }),
 )
-

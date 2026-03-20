@@ -7,12 +7,7 @@ import { useProjectStore } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -138,7 +133,10 @@ export default function ConstructionDocuments() {
   }
 
   const getStatusBadge = (doc: any) => {
-    if (doc.status === 'Expired' || (doc.validity && isBefore(doc.validity, new Date()))) {
+    if (
+      doc.status === 'Expired' ||
+      (doc.validity && isBefore(doc.validity, new Date()))
+    ) {
       return (
         <Badge variant="destructive" className="flex gap-1">
           <AlertTriangle className="h-3 w-3" /> {t('docs.expired')}
@@ -154,7 +152,10 @@ export default function ConstructionDocuments() {
     }
     if (doc.status === 'In Progress') {
       return (
-        <Badge variant="outline" className="border-blue-300 text-blue-700 bg-blue-50">
+        <Badge
+          variant="outline"
+          className="border-blue-300 text-blue-700 bg-blue-50"
+        >
           <Clock className="h-3 w-3 mr-1" /> Em Andamento
         </Badge>
       )
@@ -216,9 +217,7 @@ export default function ConstructionDocuments() {
                   <Label>Tipo</Label>
                   <Select
                     value={newDoc.type}
-                    onValueChange={(val) =>
-                      setNewDoc({ ...newDoc, type: val })
-                    }
+                    onValueChange={(val) => setNewDoc({ ...newDoc, type: val })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -255,7 +254,9 @@ export default function ConstructionDocuments() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="Pending">Pendente</SelectItem>
-                        <SelectItem value="In Progress">Em Andamento</SelectItem>
+                        <SelectItem value="In Progress">
+                          Em Andamento
+                        </SelectItem>
                         <SelectItem value="Approved">Aprovado</SelectItem>
                       </SelectContent>
                     </Select>
@@ -425,4 +426,3 @@ export default function ConstructionDocuments() {
     </div>
   )
 }
-

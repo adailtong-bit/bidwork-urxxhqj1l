@@ -208,8 +208,17 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
                         {item.description}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className={item.costClass === 'soft_cost' ? 'border-purple-200 bg-purple-50 text-purple-700' : 'border-blue-200 bg-blue-50 text-blue-700'}>
-                          {item.costClass === 'soft_cost' ? 'Soft Cost' : 'CAPEX'}
+                        <Badge
+                          variant="outline"
+                          className={
+                            item.costClass === 'soft_cost'
+                              ? 'border-purple-200 bg-purple-50 text-purple-700'
+                              : 'border-blue-200 bg-blue-50 text-blue-700'
+                          }
+                        >
+                          {item.costClass === 'soft_cost'
+                            ? 'Soft Cost'
+                            : 'CAPEX'}
                         </Badge>
                       </TableCell>
                       <TableCell className="capitalize">
@@ -254,4 +263,3 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
     </Card>
   )
 }
-
