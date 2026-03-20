@@ -17,6 +17,10 @@ export interface DailyLog {
   equipment: string
   occurrences: string
   photos: string[]
+  stamp?: {
+    date: string
+    coords: string
+  }
 }
 
 export interface CostItem {
@@ -538,7 +542,11 @@ const mockProjects: Project[] = [
         teamSize: 12,
         equipment: 'Betoneira, Retroescavadeira',
         occurrences: 'Concretagem dos pilares do térreo iniciada sem atrasos.',
-        photos: ['https://img.usecurling.com/p/400/300?q=construction'],
+        photos: ['https://img.usecurling.com/p/400/300?q=construction%20site'],
+        stamp: {
+          date: new Date().toISOString(),
+          coords: '-23.5023, -46.8456',
+        },
       },
     ],
   },

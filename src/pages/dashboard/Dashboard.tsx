@@ -1,5 +1,7 @@
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useJobStore } from '@/stores/useJobStore'
+import { useProjectStore } from '@/stores/useProjectStore'
+import { useConstructionDocumentStore } from '@/stores/useConstructionDocumentStore'
 import {
   Card,
   CardContent,
@@ -8,6 +10,7 @@ import {
   CardDescription,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
+import { Badge } from '@/components/ui/badge'
 import {
   Plus,
   Search,
@@ -19,6 +22,10 @@ import {
   Users,
   Briefcase,
   HardHat,
+  AlertTriangle,
+  Clock,
+  Activity,
+  FileText,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
@@ -26,11 +33,14 @@ import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { AINotifications } from '@/components/AINotifications'
 import { AdSection } from '@/components/AdSection'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { differenceInDays, isBefore } from 'date-fns'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
   const { jobs } = useJobStore()
-  const { t, formatCurrency } = useLanguageStore()
+  const { projects } = useProjectStore()
+  const { documents } = useConstructionDocumentStore()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
 
   const isAdmin = user?.role === 'admin'
   const isContractor = user?.role === 'contractor'
@@ -108,6 +118,64 @@ export default function Dashboard() {
     )
   }
 
+  // --- Contractor Specific KPIs (SPI/CPI) ---
+  const isPJWithConstruction =
+    isContractor && user?.entityType === 'pj' && user.isPremium
+
+  // Calculate Global SPI and CPI for active projects
+  const activeProjects = projects.filter((p) => p.status === 'in_progress')
+
+  let globalSPI = 0
+  let globalCPI = 0
+
+  if (activeProjects.length > 0) {
+    let totalEV = 0 // Earned Value
+    let totalPV = 0 // Planned Value
+    let totalAC = 0 // Actual Cost
+
+    activeProjects.forEach((p) => {
+      // EV = Total Budget * (Overall Progress / 100)
+      const progress =
+        p.stages.length > 0
+          ? p.stages.reduce((acc, s) => acc + s.progress, 0) / p.stages.length
+          : 0
+      const ev = p.totalBudget * (progress / 100)
+
+      // AC = Total Spent
+      const ac = p.totalSpent
+
+      // PV = Total Budget * (Time Elapsed / Total Time)
+      const start = new Date(p.startDate).getTime()
+      const end = new Date(p.endDate).getTime()
+      const now = new Date().getTime()
+      const totalDays = Math.max(1, (end - start) / 86400000)
+      const elapsedDays = Math.max(0, (now - start) / 86400000)
+      const expectedProgress = Math.min(1, elapsedDays / totalDays)
+      const pv = p.totalBudget * expectedProgress
+
+      totalEV += ev
+      totalAC += ac
+      totalPV += pv
+    })
+
+    globalSPI = totalPV > 0 ? totalEV / totalPV : 1
+    globalCPI = totalAC > 0 ? totalEV / totalAC : 1
+  }
+
+  // Smart Alerts
+  const docsExpiringSoon = documents.filter((d) => {
+    if (!d.validity) return false
+    const daysLeft = differenceInDays(new Date(d.validity), new Date())
+    return daysLeft > 0 && daysLeft <= 30
+  })
+
+  const pendingInspections = activeProjects.flatMap((p) =>
+    p.inspections
+      .filter((i) => i.status === 'pending' || i.status === 'rejected')
+      .map((i) => ({ ...i, projectName: p.name })),
+  )
+
+  // --- General Dashboard Logic ---
   const activeJobs = isContractor
     ? jobs.filter((j) => j.ownerId === user?.id && j.status === 'in_progress')
         .length
@@ -153,7 +221,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
@@ -192,6 +260,137 @@ export default function Dashboard() {
 
       <AdSection segment="dashboard" />
 
+      {/* Corporate / Construction Executive KPIs */}
+      {isPJWithConstruction && activeProjects.length > 0 && (
+        <div className="grid gap-4 md:grid-cols-2 mb-6">
+          <Card className="border-t-4 border-t-primary shadow-sm bg-gradient-to-br from-card to-muted/20">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Clock className="h-4 w-4" /> {t('dashboard.kpi.spi')}
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-4xl font-bold">
+                    {globalSPI.toFixed(2)}
+                  </span>
+                  <Badge
+                    variant={globalSPI >= 1 ? 'default' : 'destructive'}
+                    className={globalSPI >= 1 ? 'bg-green-500' : ''}
+                  >
+                    {globalSPI >= 1 ? 'Adiantado' : 'Atrasado'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t('dashboard.kpi.spi_desc')}
+                </p>
+              </div>
+              <Activity
+                className={`h-16 w-16 opacity-20 ${globalSPI >= 1 ? 'text-green-500' : 'text-red-500'}`}
+              />
+            </CardContent>
+          </Card>
+
+          <Card className="border-t-4 border-t-blue-500 shadow-sm bg-gradient-to-br from-card to-muted/20">
+            <CardContent className="p-6 flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                  <Wallet className="h-4 w-4" /> {t('dashboard.kpi.cpi')}
+                </p>
+                <div className="flex items-baseline gap-2 mt-2">
+                  <span className="text-4xl font-bold">
+                    {globalCPI.toFixed(2)}
+                  </span>
+                  <Badge
+                    variant={globalCPI >= 1 ? 'default' : 'destructive'}
+                    className={globalCPI >= 1 ? 'bg-green-500' : ''}
+                  >
+                    {globalCPI >= 1 ? 'No Orçamento' : 'Sobre Custo'}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  {t('dashboard.kpi.cpi_desc')}
+                </p>
+              </div>
+              <Wallet
+                className={`h-16 w-16 opacity-20 ${globalCPI >= 1 ? 'text-green-500' : 'text-red-500'}`}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Smart Alerts for Construction */}
+      {isPJWithConstruction &&
+        (docsExpiringSoon.length > 0 || pendingInspections.length > 0) && (
+          <Card className="border-orange-200 bg-orange-50/30">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2 text-orange-800">
+                <AlertTriangle className="h-5 w-5" />{' '}
+                {t('dashboard.alerts.title')}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {docsExpiringSoon.length > 0 && (
+                <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
+                  <h4 className="font-semibold text-sm text-orange-800 flex items-center gap-1 mb-2">
+                    <FileText className="h-4 w-4" />{' '}
+                    {t('dashboard.alerts.docs')}
+                  </h4>
+                  <ul className="space-y-2">
+                    {docsExpiringSoon.map((doc) => (
+                      <li
+                        key={doc.id}
+                        className="text-xs flex justify-between items-center"
+                      >
+                        <span className="truncate pr-2">{doc.name}</span>
+                        <Badge variant="destructive" className="shrink-0">
+                          {formatDate(new Date(doc.validity!), 'dd/MM/yy')}
+                        </Badge>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {pendingInspections.length > 0 && (
+                <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
+                  <h4 className="font-semibold text-sm text-orange-800 flex items-center gap-1 mb-2">
+                    <ShieldCheck className="h-4 w-4" />{' '}
+                    {t('dashboard.alerts.inspections')}
+                  </h4>
+                  <ul className="space-y-2">
+                    {pendingInspections.map((insp) => (
+                      <li
+                        key={insp.id}
+                        className="text-xs flex flex-col gap-0.5"
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-medium">{insp.name}</span>
+                          <Badge
+                            variant="outline"
+                            className={
+                              insp.status === 'rejected'
+                                ? 'text-red-600 bg-red-50 border-red-200'
+                                : 'text-yellow-600 bg-yellow-50 border-yellow-200'
+                            }
+                          >
+                            {insp.status === 'rejected'
+                              ? 'Reprovada'
+                              : 'Pendente'}
+                          </Badge>
+                        </div>
+                        <span className="text-muted-foreground truncate">
+                          Obra: {insp.projectName}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+      {/* General Stats */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -265,6 +464,7 @@ export default function Dashboard() {
         )}
       </div>
 
+      {/* General Charts */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
           <CardHeader>

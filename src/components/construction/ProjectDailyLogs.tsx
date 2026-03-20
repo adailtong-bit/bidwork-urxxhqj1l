@@ -36,25 +36,55 @@ import {
   Truck,
   Camera,
   Plus,
+  MapPin,
+  Clock,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
 export function ProjectDailyLogs({ projectId }: { projectId: string }) {
   const { getProject, addDailyLog } = useProjectStore()
   const project = getProject(projectId)
-  const { formatDate } = useLanguageStore()
+  const { formatDate, t } = useLanguageStore()
   const { toast } = useToast()
 
   const [open, setOpen] = useState(false)
+  const [isGettingLocation, setIsGettingLocation] = useState(false)
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     weather: 'sunny' as DailyLog['weather'],
     teamSize: '',
     equipment: '',
     occurrences: '',
+    coords: '',
   })
 
   if (!project) return null
+
+  const handleGetLocation = () => {
+    setIsGettingLocation(true)
+    if ('geolocation' in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setFormData((prev) => ({
+            ...prev,
+            coords: `${position.coords.latitude.toFixed(5)}, ${position.coords.longitude.toFixed(5)}`,
+          }))
+          setIsGettingLocation(false)
+          toast({ title: 'Localização obtida com sucesso.' })
+        },
+        () => {
+          // Mock location if failed
+          setFormData((prev) => ({ ...prev, coords: '-23.5023, -46.8456' }))
+          setIsGettingLocation(false)
+          toast({ title: 'Localização simulada aplicada.' })
+        },
+      )
+    } else {
+      // Mock if not supported
+      setFormData((prev) => ({ ...prev, coords: '-23.5023, -46.8456' }))
+      setIsGettingLocation(false)
+    }
+  }
 
   const handleSubmit = () => {
     if (!formData.date || !formData.teamSize || !formData.occurrences) {
@@ -72,6 +102,12 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
       equipment: formData.equipment,
       occurrences: formData.occurrences,
       photos: ['https://img.usecurling.com/p/400/300?q=construction%20site'], // Mock
+      stamp: formData.coords
+        ? {
+            date: new Date().toISOString(),
+            coords: formData.coords,
+          }
+        : undefined,
     })
 
     setOpen(false)
@@ -82,6 +118,7 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
       teamSize: '',
       equipment: '',
       occurrences: '',
+      coords: '',
     })
   }
 
@@ -110,7 +147,7 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
         <div>
           <CardTitle>Diário de Obra</CardTitle>
           <CardDescription>
-            Registro diário de clima, efetivo e ocorrências.
+            Registro diário georreferenciado e evidências fotográficas.
           </CardDescription>
         </div>
         <Dialog open={open} onOpenChange={setOpen}>
@@ -123,7 +160,7 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
             <DialogHeader>
               <DialogTitle>Novo Registro no Diário</DialogTitle>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
+            <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Data</Label>
@@ -187,6 +224,40 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
                   }
                 />
               </div>
+
+              <div className="space-y-2 border-t pt-4">
+                <Label className="flex items-center gap-2">
+                  <Camera className="h-4 w-4" /> Anexos e Geotagging
+                </Label>
+                <div className="flex flex-col gap-3">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={handleGetLocation}
+                    disabled={isGettingLocation}
+                  >
+                    <MapPin className="mr-2 h-4 w-4" />
+                    {formData.coords ? 'Atualizar GPS' : 'Capturar GPS e Hora'}
+                  </Button>
+                  {formData.coords && (
+                    <div className="text-xs bg-muted p-2 rounded-md font-mono flex flex-col gap-1">
+                      <span>
+                        {t('log.stamp.coord')} {formData.coords}
+                      </span>
+                      <span>
+                        {t('log.stamp.date')} {formatDate(new Date(), 'PPpp')}
+                      </span>
+                    </div>
+                  )}
+                  <div className="border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center text-center hover:bg-muted/50 transition-colors cursor-pointer">
+                    <Camera className="h-8 w-8 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium">Anexar Fotos</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      As imagens receberão carimbo digital automático.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
             <DialogFooter>
               <Button onClick={handleSubmit}>Salvar Registro</Button>
@@ -220,16 +291,16 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
                       <h4 className="font-semibold text-lg">
                         {formatDate(log.date, 'EEEE')}
                       </h4>
-                      <div className="flex gap-4 mt-2">
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
                           {getWeatherIcon(log.weather)} {log.weather}
                         </span>
-                        <span className="flex items-center gap-1 text-sm text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-                          <Users className="h-4 w-4" /> {log.teamSize} op.
+                        <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                          <Users className="h-3 w-3" /> {log.teamSize} op.
                         </span>
                         {log.equipment && (
-                          <span className="flex items-center gap-1 text-sm text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
-                            <Truck className="h-4 w-4" /> {log.equipment}
+                          <span className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded">
+                            <Truck className="h-3 w-3" /> {log.equipment}
                           </span>
                         )}
                       </div>
@@ -248,14 +319,30 @@ export function ProjectDailyLogs({ projectId }: { projectId: string }) {
                       <h5 className="text-sm font-semibold mb-2 flex items-center gap-2">
                         <Camera className="h-4 w-4" /> Anexos Visuais:
                       </h5>
-                      <div className="flex gap-2 overflow-x-auto pb-2">
+                      <div className="flex gap-4 overflow-x-auto pb-2">
                         {log.photos.map((photo, idx) => (
-                          <img
+                          <div
                             key={idx}
-                            src={photo}
-                            alt="Evidência"
-                            className="h-24 w-32 object-cover rounded-md border"
-                          />
+                            className="relative group shrink-0 rounded-md border overflow-hidden w-64"
+                          >
+                            <img
+                              src={photo}
+                              alt="Evidência"
+                              className="h-36 w-full object-cover"
+                            />
+                            {log.stamp && (
+                              <div className="absolute bottom-0 left-0 right-0 bg-black/70 text-white p-1.5 text-[10px] font-mono leading-tight">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="h-2.5 w-2.5" />
+                                  {formatDate(new Date(log.stamp.date), 'PPpp')}
+                                </div>
+                                <div className="flex items-center gap-1 text-green-400">
+                                  <MapPin className="h-2.5 w-2.5" />
+                                  {log.stamp.coords}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         ))}
                       </div>
                     </div>
