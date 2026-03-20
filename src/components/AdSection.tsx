@@ -11,16 +11,21 @@ interface AdSectionProps {
 }
 
 export function AdSection({ segment }: AdSectionProps) {
-  const { getAdsBySegment, trackView, trackClick, rateAd } = useAdStore()
-  const ads = getAdsBySegment(segment)
+  const adStore = useAdStore() || {}
+  const { getAdsBySegment, trackView, trackClick, rateAd } = adStore
+  const ads =
+    typeof getAdsBySegment === 'function' ? getAdsBySegment(segment) : []
   const { t } = useLanguageStore()
 
   useEffect(() => {
     // Simulate impression tracking
-    ads.forEach((ad) => trackView(ad.id))
+    if (typeof trackView === 'function' && Array.isArray(ads)) {
+      ads.forEach((ad) => trackView(ad.id))
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [segment]) // Simple dependency to re-track on segment change
 
-  if (ads.length === 0) return null
+  if (!Array.isArray(ads) || ads.length === 0) return null
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 my-6">
@@ -38,7 +43,7 @@ export function AdSection({ segment }: AdSectionProps) {
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  rateAd(ad.id, 'like')
+                  if (typeof rateAd === 'function') rateAd(ad.id, 'like')
                 }}
               >
                 <ThumbsUp className="h-3 w-3" />
@@ -51,7 +56,7 @@ export function AdSection({ segment }: AdSectionProps) {
                 onClick={(e) => {
                   e.preventDefault()
                   e.stopPropagation()
-                  rateAd(ad.id, 'dislike')
+                  if (typeof rateAd === 'function') rateAd(ad.id, 'dislike')
                 }}
               >
                 <ThumbsDown className="h-3 w-3" />
@@ -96,7 +101,9 @@ export function AdSection({ segment }: AdSectionProps) {
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-xs font-semibold text-primary hover:text-primary/80 transition-colors hover:underline"
-                  onClick={() => trackClick(ad.id)}
+                  onClick={() => {
+                    if (typeof trackClick === 'function') trackClick(ad.id)
+                  }}
                 >
                   {t('ad.visit')} <ExternalLink className="h-3 w-3" />
                 </a>
