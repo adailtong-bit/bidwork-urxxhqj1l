@@ -34,6 +34,25 @@ export interface CostItem {
   sourceId?: string
 }
 
+export interface CheckingAccount {
+  id: string
+  name: string
+  bankName: string
+  agency: string
+  accountNumber: string
+  initialBalance: number
+}
+
+export interface FinancialMovement {
+  id: string
+  accountId: string
+  description: string
+  amount: number
+  type: 'in' | 'out'
+  date: Date
+  category?: string
+}
+
 export interface BimFile {
   id: string
   name: string
@@ -187,6 +206,8 @@ export interface Project {
   approvalLogs: ApprovalLog[]
   integrations: Integration[]
   allocatedCosts?: CostItem[]
+  checkingAccounts?: CheckingAccount[]
+  financialMovements?: FinancialMovement[]
   sqFt?: number
   constructionItems: ConstructionItem[]
   laborAdjustments?: LaborAdjustment[]
@@ -206,6 +227,8 @@ interface ProjectState {
       | 'approvalLogs'
       | 'integrations'
       | 'allocatedCosts'
+      | 'checkingAccounts'
+      | 'financialMovements'
       | 'constructionItems'
       | 'laborAdjustments'
     >,
@@ -324,6 +347,14 @@ interface ProjectState {
     platform: Integration['platform'],
   ) => void
   addAllocatedCost: (projectId: string, cost: Omit<CostItem, 'id'>) => void
+  addCheckingAccount: (
+    projectId: string,
+    account: Omit<CheckingAccount, 'id'>,
+  ) => void
+  addFinancialMovement: (
+    projectId: string,
+    movement: Omit<FinancialMovement, 'id'>,
+  ) => void
   setProjectSqFt: (projectId: string, sqFt: number) => void
   applyTemplate: (projectId: string, items: ConstructionItem[]) => void
   addConstructionItem: (
@@ -516,6 +547,42 @@ const mockProjects: Project[] = [
     approvalLogs: [],
     integrations: [],
     allocatedCosts: [],
+    checkingAccounts: [
+      {
+        id: 'acc-1',
+        name: 'Conta Principal Obra',
+        bankName: 'Itaú',
+        agency: '0001',
+        accountNumber: '12345-6',
+        initialBalance: 0,
+      },
+      {
+        id: 'acc-2',
+        name: 'Fundo de Reserva',
+        bankName: 'Bradesco',
+        agency: '9999',
+        accountNumber: '88888-8',
+        initialBalance: 150000,
+      },
+    ],
+    financialMovements: [
+      {
+        id: 'mov-1',
+        accountId: 'acc-1',
+        description: 'Aporte Inicial do Cliente',
+        amount: 500000,
+        type: 'in',
+        date: new Date(Date.now() - 86400000 * 30),
+      },
+      {
+        id: 'mov-2',
+        accountId: 'acc-1',
+        description: 'Pagamento Empreiteira - Fundação',
+        amount: 50000,
+        type: 'out',
+        date: new Date(Date.now() - 86400000 * 15),
+      },
+    ],
     constructionItems: [],
     laborAdjustments: [],
     inspections: [
@@ -579,6 +646,8 @@ const mockProjects: Project[] = [
     approvalLogs: [],
     integrations: [],
     allocatedCosts: [],
+    checkingAccounts: [],
+    financialMovements: [],
     constructionItems: [],
     laborAdjustments: [],
     inspections: [
@@ -618,6 +687,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           approvalLogs: [],
           integrations: [],
           allocatedCosts: [],
+          checkingAccounts: [],
+          financialMovements: [],
           constructionItems: [],
           laborAdjustments: [],
         },
@@ -1118,6 +1189,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             ...p,
             allocatedCosts: newAllocatedCosts,
             totalSpent: stagesSpent + totalAllocated,
+          }
+        }
+        return p
+      }),
+    })),
+  addCheckingAccount: (projectId, account) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            checkingAccounts: [
+              ...(p.checkingAccounts || []),
+              { ...account, id: Math.random().toString(36).substr(2, 9) },
+            ],
+          }
+        }
+        return p
+      }),
+    })),
+  addFinancialMovement: (projectId, movement) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            financialMovements: [
+              ...(p.financialMovements || []),
+              { ...movement, id: Math.random().toString(36).substr(2, 9) },
+            ],
           }
         }
         return p
