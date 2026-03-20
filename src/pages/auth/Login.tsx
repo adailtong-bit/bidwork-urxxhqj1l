@@ -142,7 +142,7 @@ export default function Login() {
       </Button>
 
       <div className="text-center text-sm">
-        {t('general.none')} account?{' '}
+        {t('auth.no_account')}{' '}
         <Link
           to="/register"
           className="font-semibold text-primary hover:underline"
@@ -155,3 +155,4 @@ export default function Login() {
     </div>
   )
 }
+

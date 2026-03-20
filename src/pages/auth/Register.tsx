@@ -589,7 +589,7 @@ export default function Register() {
         </Form>
       </ScrollArea>
       <div className="text-center text-sm pt-4 shrink-0">
-        Already has account?{' '}
+        {t('auth.has_account')}{' '}
         <Link
           to="/login"
           className="font-semibold text-primary hover:underline"
@@ -600,3 +600,4 @@ export default function Register() {
     </div>
   )
 }
+
