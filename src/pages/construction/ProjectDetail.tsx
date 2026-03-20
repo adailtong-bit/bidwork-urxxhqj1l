@@ -25,9 +25,6 @@ import {
   Users,
   HardHat,
   Link2,
-  TrendingDown,
-  TrendingUp,
-  DollarSign,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -47,12 +44,13 @@ import {
 } from '@/components/ui/dialog'
 import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
+import { ProjectFinance } from '@/components/construction/ProjectFinance'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const { getProject, setProjectSqFt } = useProjectStore()
   const { toast } = useToast()
-  const { t, formatDate, formatCurrency, currentLanguage } = useLanguageStore()
+  const { t, formatDate, currentLanguage } = useLanguageStore()
 
   const csvInputRef = useRef<HTMLInputElement>(null)
   const project = getProject(id!)
@@ -77,11 +75,6 @@ export default function ProjectDetail() {
     })
     setIsImportOpen(false)
   }
-
-  // Finance Inline Calculations
-  const allocated =
-    project.allocatedCosts?.reduce((acc, c) => acc + c.amount, 0) || 0
-  const realTotalSpent = project.totalSpent + allocated
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10 px-4">
@@ -155,6 +148,9 @@ export default function ProjectDetail() {
             <TabsTrigger value="budget" className="flex-1">
               {t('proj.budget.title')}
             </TabsTrigger>
+            <TabsTrigger value="financial" className="flex-1">
+              Financeiro
+            </TabsTrigger>
             <TabsTrigger value="partners" className="flex-1">
               {t('proj.detail.partners')}
             </TabsTrigger>
@@ -163,9 +159,6 @@ export default function ProjectDetail() {
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1">
               {t('proj.reports.title')}
-            </TabsTrigger>
-            <TabsTrigger value="financial" className="flex-1">
-              {t('proj.detail.finance')}
             </TabsTrigger>
           </TabsList>
         </div>
@@ -357,6 +350,11 @@ export default function ProjectDetail() {
           <ProjectBudget projectId={project.id} />
         </TabsContent>
 
+        {/* Financial Tab */}
+        <TabsContent value="financial" className="w-full animate-fade-in">
+          <ProjectFinance projectId={project.id} />
+        </TabsContent>
+
         {/* Partners Tab */}
         <TabsContent value="partners" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
@@ -483,112 +481,6 @@ export default function ProjectDetail() {
         {/* Approvals Tab */}
         <TabsContent value="approvals" className="w-full animate-fade-in">
           <ProjectApprovalWorkflow projectId={project.id} />
-        </TabsContent>
-
-        {/* Inline Financial Tab */}
-        <TabsContent value="financial" className="w-full animate-fade-in">
-          <div className="space-y-6">
-            <Card className="max-w-4xl mx-auto border-t-4 border-t-primary">
-              <CardHeader>
-                <CardTitle>{t('proj.finance.title')}</CardTitle>
-                <CardDescription>
-                  Resumo financeiro direto e custos alocados.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                  <div className="bg-green-50 p-4 rounded-lg border border-green-100">
-                    <p className="text-sm text-green-800 font-medium">
-                      {t('proj.finance.inflow')}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <TrendingUp className="h-5 w-5 text-green-600" />
-                      <span className="text-2xl font-bold text-green-700">
-                        {formatCurrency(project.totalBudget)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('proj.finance.approved_budget')}
-                    </p>
-                  </div>
-                  <div className="bg-red-50 p-4 rounded-lg border border-red-100">
-                    <p className="text-sm text-red-800 font-medium">
-                      {t('proj.finance.outflow')}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <TrendingDown className="h-5 w-5 text-red-600" />
-                      <span className="text-2xl font-bold text-red-700">
-                        {formatCurrency(realTotalSpent)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('proj.finance.costs_allocated')}
-                    </p>
-                  </div>
-                  <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                    <p className="text-sm text-blue-800 font-medium">
-                      {t('proj.finance.balance')}
-                    </p>
-                    <div className="flex items-center gap-2 mt-2">
-                      <DollarSign className="h-5 w-5 text-blue-600" />
-                      <span className="text-2xl font-bold text-blue-700">
-                        {formatCurrency(project.totalBudget - realTotalSpent)}
-                      </span>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t('proj.finance.available')}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-semibold text-lg">
-                    {t('proj.finance.allocated_costs')}
-                  </h3>
-                  <div className="border rounded-md">
-                    {project.allocatedCosts &&
-                    project.allocatedCosts.length > 0 ? (
-                      <table className="w-full text-sm text-left">
-                        <thead className="bg-muted/50 border-b">
-                          <tr>
-                            <th className="p-3 font-medium">
-                              {t('finance.description')}
-                            </th>
-                            <th className="p-3 font-medium">
-                              {t('market.category')}
-                            </th>
-                            <th className="p-3 font-medium text-right">
-                              {t('dashboard.chart.label.value')}
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {project.allocatedCosts.map((cost) => (
-                            <tr
-                              key={cost.id}
-                              className="border-b last:border-0"
-                            >
-                              <td className="p-3">{cost.description}</td>
-                              <td className="p-3 capitalize">
-                                {cost.category}
-                              </td>
-                              <td className="p-3 text-right">
-                                {formatCurrency(cost.amount)}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    ) : (
-                      <div className="p-8 text-center text-muted-foreground italic">
-                        {t('proj.finance.no_allocated')}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
         </TabsContent>
       </Tabs>
 

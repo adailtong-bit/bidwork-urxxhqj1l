@@ -42,8 +42,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Plus,
-  TrendingUp,
-  TrendingDown,
   DollarSign,
   WalletCards,
   PieChart,
@@ -95,8 +93,36 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
   const movements = project?.financialMovements || []
   const allocated = project?.allocatedCosts || []
 
-  // `totalSpent` already includes allocated costs inside the store
-  const realTotalSpent = project?.totalSpent || 0
+  // Metric Box Calculations
+  const budgetItems = project?.budgetItems || []
+  const estCapex =
+    budgetItems
+      .filter((i) => i.costClass === 'capex' || !i.costClass)
+      .reduce((a, b) => a + b.totalCost, 0) +
+    (project?.stages || []).reduce(
+      (a, s) => a + s.budgetMaterial + s.budgetLabor,
+      0,
+    )
+
+  const actCapex =
+    allocated
+      .filter((c) => c.costClass === 'capex' || !c.costClass)
+      .reduce((a, b) => a + b.amount, 0) +
+    (project?.stages || []).reduce(
+      (a, s) => a + s.actualMaterial + s.actualLabor,
+      0,
+    ) +
+    (project?.laborAdjustments?.reduce((a, adj) => a + adj.amount, 0) || 0)
+
+  const estSoft = budgetItems
+    .filter((i) => i.costClass === 'soft_cost')
+    .reduce((a, b) => a + b.totalCost, 0)
+
+  const actSoft = allocated
+    .filter((c) => c.costClass === 'soft_cost')
+    .reduce((a, b) => a + b.amount, 0)
+
+  const totalAct = actCapex + actSoft
 
   const accountBalances = useMemo(() => {
     return accounts.map((acc) => {
@@ -121,7 +147,6 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
     if (filterAcc !== 'all') {
       movs = movs.filter((m) => m.accountId === filterAcc)
     }
-    // Sort by date descending
     return movs.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     )
@@ -188,10 +213,59 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="fluxo">
+        {/* Persistent Summary Boxes */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
+            <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
+              CAPEX (Obra Física)
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <Building2 className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              <span className="text-2xl font-bold text-blue-700 dark:text-blue-100">
+                {formatCurrency(actCapex)}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Orçado: {formatCurrency(estCapex)}
+            </p>
+          </div>
+          <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-xl border border-purple-100 dark:border-purple-900/50">
+            <p className="text-sm text-purple-800 dark:text-purple-300 font-medium">
+              Soft Costs (Taxas/Serviços)
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <PieChart className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              <span className="text-2xl font-bold text-purple-700 dark:text-purple-100">
+                {formatCurrency(actSoft)}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Orçado: {formatCurrency(estSoft)}
+            </p>
+          </div>
+          <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
+            <p className="text-sm text-green-800 dark:text-green-300 font-medium">
+              Total Realizado
+            </p>
+            <div className="flex items-center gap-2 mt-2">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+              <span className="text-2xl font-bold text-green-700 dark:text-green-100">
+                {formatCurrency(totalAct)}
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              Orçamento Total: {formatCurrency(project.totalBudget)}
+            </p>
+          </div>
+        </div>
+
+        <Tabs defaultValue="visao_geral">
           <TabsList className="mb-6 w-full max-w-[500px] grid grid-cols-2">
-            <TabsTrigger value="fluxo" className="flex items-center gap-2">
-              <PieChart className="w-4 h-4" /> Fluxo Financeiro
+            <TabsTrigger
+              value="visao_geral"
+              className="flex items-center gap-2"
+            >
+              <PieChart className="w-4 h-4" /> Visão Geral
             </TabsTrigger>
             <TabsTrigger
               value="conta_corrente"
@@ -201,54 +275,11 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
             </TabsTrigger>
           </TabsList>
 
-          {/* FLUXO FINANCEIRO TAB */}
-          <TabsContent value="fluxo" className="space-y-8 animate-fade-in">
-            {/* Resumo Boxes */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-xl border border-green-100 dark:border-green-900/50">
-                <p className="text-sm text-green-800 dark:text-green-300 font-medium">
-                  {t('proj.finance.inflow')}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  <span className="text-2xl font-bold text-green-700 dark:text-green-100">
-                    {formatCurrency(project.totalBudget)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('proj.finance.approved_budget')}
-                </p>
-              </div>
-              <div className="bg-red-50 dark:bg-red-950/30 p-4 rounded-xl border border-red-100 dark:border-red-900/50">
-                <p className="text-sm text-red-800 dark:text-red-300 font-medium">
-                  {t('proj.finance.outflow')}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-400" />
-                  <span className="text-2xl font-bold text-red-700 dark:text-red-100">
-                    {formatCurrency(realTotalSpent)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('proj.finance.costs_allocated')}
-                </p>
-              </div>
-              <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-xl border border-blue-100 dark:border-blue-900/50">
-                <p className="text-sm text-blue-800 dark:text-blue-300 font-medium">
-                  {t('proj.finance.balance')}
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                  <DollarSign className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                  <span className="text-2xl font-bold text-blue-700 dark:text-blue-100">
-                    {formatCurrency(project.totalBudget - realTotalSpent)}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t('proj.finance.available')}
-                </p>
-              </div>
-            </div>
-
+          {/* VISÃO GERAL TAB */}
+          <TabsContent
+            value="visao_geral"
+            className="space-y-8 animate-fade-in"
+          >
             {/* Custos Alocados Section */}
             <div className="space-y-4">
               <div className="flex justify-between items-center">

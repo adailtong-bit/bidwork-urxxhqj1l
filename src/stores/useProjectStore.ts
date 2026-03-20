@@ -546,7 +546,26 @@ const mockProjects: Project[] = [
     ],
     approvalLogs: [],
     integrations: [],
-    allocatedCosts: [],
+    allocatedCosts: [
+      {
+        id: 'cost-1',
+        description: 'Compra de Cimento CP II',
+        amount: 15000,
+        type: 'actual',
+        category: 'material',
+        costClass: 'capex',
+        date: new Date(Date.now() - 86400000 * 5),
+      },
+      {
+        id: 'cost-2',
+        description: 'Taxa de Licenciamento',
+        amount: 2500,
+        type: 'actual',
+        category: 'other',
+        costClass: 'soft_cost',
+        date: new Date(Date.now() - 86400000 * 10),
+      },
+    ],
     checkingAccounts: [
       {
         id: 'acc-1',
