@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -68,7 +68,7 @@ import { getCountryValidation } from '@/lib/validation'
 import { PremiumConstructionModal } from '@/components/PremiumConstructionModal'
 
 export default function PostJob() {
-  const { addJob } = useJobStore()
+  const { addJob, getJob, updateJob } = useJobStore()
   const { user } = useAuthStore()
   const { categories } = useCategoryStore()
   const { projects, updateStageActuals } = useProjectStore()
@@ -77,16 +77,25 @@ export default function PostJob() {
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
 
-  const [photos, setPhotos] = useState<string[]>([])
-  const [photoInput, setPhotoInput] = useState('')
-  const [isUploading, setIsUploading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
-  const typeParam = searchParams.get('type') || 'job'
 
-  const [linkToProject, setLinkToProject] = useState(!!preProjectId)
+  const editId = searchParams.get('edit') || ''
+  const editingJob = editId ? getJob(editId) : undefined
+  const isEditing = !!editingJob
+
+  const typeParam = isEditing
+    ? editingJob.listingType || 'job'
+    : searchParams.get('type') || 'job'
+
+  const [photos, setPhotos] = useState<string[]>(editingJob?.photos || [])
+  const [photoInput, setPhotoInput] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [linkToProject, setLinkToProject] = useState(
+    isEditing ? !!editingJob?.projectId : !!preProjectId,
+  )
   const [openProject, setOpenProject] = useState(false)
   const [openStage, setOpenStage] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
@@ -122,9 +131,11 @@ export default function PostJob() {
     rentalRate: z.number().optional(),
     rentalRateType: z.enum(['daily', 'monthly']).optional(),
     // General
-    maxExecutionDeadline: z.date({
-      required_error: t('val.required'),
-    }),
+    maxExecutionDeadline: z
+      .date({
+        required_error: t('val.required'),
+      })
+      .optional(),
     publicationDate: z.date().default(new Date()),
     premiumType: z.enum(['none', 'region', 'category']),
     projectId: z.string().optional(),
@@ -136,29 +147,41 @@ export default function PostJob() {
   const form = useForm<JobForm>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
-      title: '',
-      description: '',
-      type: 'fixed',
-      category: '',
-      subCategory: '',
-      contactPhone: user?.phone || '',
-      zipCode: user?.address?.zipCode || '',
-      street: user?.address?.street || '',
-      number: user?.address?.number || '',
-      complement: user?.address?.complement || '',
-      neighborhood: user?.address?.neighborhood || '',
-      city: user?.location?.split(' - ')[0] || user?.address?.city || '',
-      state: user?.location?.split(' - ')[1] || user?.address?.state || '',
-      budget: 0,
-      salePrice: 0,
-      rentalRate: 0,
-      rentalRateType: 'monthly',
-      minRentalPeriod: 1,
-      condition: 'new',
-      publicationDate: new Date(),
-      premiumType: 'none',
-      projectId: preProjectId,
-      stageId: preStageId,
+      title: editingJob?.title || '',
+      description: editingJob?.description || '',
+      type: editingJob?.type || 'fixed',
+      category: editingJob?.category || '',
+      subCategory: editingJob?.subCategory || '',
+      contactPhone: editingJob?.contactPhone || user?.phone || '',
+      zipCode: editingJob?.address?.zipCode || user?.address?.zipCode || '',
+      street: editingJob?.address?.street || user?.address?.street || '',
+      number: editingJob?.address?.number || user?.address?.number || '',
+      complement:
+        editingJob?.address?.complement || user?.address?.complement || '',
+      neighborhood:
+        editingJob?.address?.neighborhood || user?.address?.neighborhood || '',
+      city:
+        editingJob?.address?.city ||
+        user?.location?.split(' - ')[0] ||
+        user?.address?.city ||
+        '',
+      state:
+        editingJob?.address?.state ||
+        user?.location?.split(' - ')[1] ||
+        user?.address?.state ||
+        '',
+      budget: editingJob?.budget || 0,
+      salePrice: editingJob?.salePrice || 0,
+      rentalRate: editingJob?.rentalRate || 0,
+      rentalRateType: editingJob?.rentalRateType || 'monthly',
+      minRentalPeriod: editingJob?.minRentalPeriod || 1,
+      condition: editingJob?.condition || 'new',
+      publicationDate: editingJob?.publicationDate || new Date(),
+      maxExecutionDeadline: editingJob?.maxExecutionDeadline || undefined,
+      auctionEndDate: editingJob?.auctionEndDate || undefined,
+      premiumType: editingJob?.premiumType || 'none',
+      projectId: editingJob?.projectId || preProjectId,
+      stageId: editingJob?.stageId || preStageId,
     },
   })
 
@@ -227,7 +250,7 @@ export default function PostJob() {
     if (typeParam === 'product') finalBudget = data.salePrice || 0
     if (typeParam === 'rental') finalBudget = data.rentalRate || 0
 
-    addJob({
+    const payload = {
       title: data.title,
       description: data.description,
       photos,
@@ -251,8 +274,6 @@ export default function PostJob() {
       rentalRateType: typeParam === 'rental' ? data.rentalRateType : undefined,
       minRentalPeriod:
         typeParam === 'rental' ? data.minRentalPeriod : undefined,
-      ownerId: user.id,
-      ownerName: user.name,
       publicationDate: data.publicationDate,
       auctionEndDate: data.auctionEndDate,
       maxExecutionDeadline: data.maxExecutionDeadline,
@@ -262,27 +283,41 @@ export default function PostJob() {
       regionCode: data.state,
       contactPhone: data.contactPhone,
       listingType: typeParam,
-    })
-
-    if (
-      linkToProject &&
-      data.projectId &&
-      data.stageId &&
-      data.type === 'fixed' &&
-      typeParam === 'job'
-    ) {
-      updateStageActuals(
-        data.projectId,
-        data.stageId,
-        'labor',
-        data.budget || 0,
-      )
     }
 
-    toast({
-      title: t('success'),
-      description: t('post.success'),
-    })
+    if (isEditing && editingJob) {
+      updateJob(editingJob.id, payload)
+      toast({
+        title: t('success'),
+        description: t('post.edit.success'),
+      })
+    } else {
+      addJob({
+        ...payload,
+        ownerId: user.id,
+        ownerName: user.name,
+      })
+
+      if (
+        linkToProject &&
+        data.projectId &&
+        data.stageId &&
+        data.type === 'fixed' &&
+        typeParam === 'job'
+      ) {
+        updateStageActuals(
+          data.projectId,
+          data.stageId,
+          'labor',
+          data.budget || 0,
+        )
+      }
+
+      toast({
+        title: t('success'),
+        description: t('post.success'),
+      })
+    }
 
     if (linkToProject && data.projectId) {
       navigate(`/construction/projects/${data.projectId}`)
@@ -292,6 +327,7 @@ export default function PostJob() {
   }
 
   const getPageTitle = () => {
+    if (isEditing) return t('post.edit.title')
     switch (typeParam) {
       case 'product':
         return t('post.type.product.title')
@@ -698,7 +734,10 @@ export default function PostJob() {
                     <FormItem>
                       <FormLabel>{t('settings.address.city')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: São Paulo" {...field} />
+                        <Input
+                          placeholder={t('post.placeholder.city')}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -712,7 +751,7 @@ export default function PostJob() {
                       <FormLabel>{t('settings.address.state')}</FormLabel>
                       <FormControl>
                         <Input
-                          placeholder="SP"
+                          placeholder={t('post.placeholder.state')}
                           maxLength={2}
                           className="uppercase"
                           {...field}
@@ -732,7 +771,10 @@ export default function PostJob() {
                     <FormItem className="md:col-span-3">
                       <FormLabel>{t('settings.address.street')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="..." {...field} />
+                        <Input
+                          placeholder={t('post.placeholder.generic')}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -745,7 +787,10 @@ export default function PostJob() {
                     <FormItem>
                       <FormLabel>{t('settings.address.number')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="123" {...field} />
+                        <Input
+                          placeholder={t('post.placeholder.number')}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -763,7 +808,10 @@ export default function PostJob() {
                         {t('settings.address.neighborhood')}
                       </FormLabel>
                       <FormControl>
-                        <Input placeholder="..." {...field} />
+                        <Input
+                          placeholder={t('post.placeholder.generic')}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -776,7 +824,10 @@ export default function PostJob() {
                     <FormItem>
                       <FormLabel>{t('settings.address.complement')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="..." {...field} />
+                        <Input
+                          placeholder={t('post.placeholder.generic')}
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -1088,7 +1139,7 @@ export default function PostJob() {
                 <FormLabel>{t('job.link')}</FormLabel>
                 <div className="flex gap-2">
                   <Input
-                    placeholder="https://..."
+                    placeholder={t('post.placeholder.url')}
                     value={photoInput}
                     onChange={(e) => setPhotoInput(e.target.value)}
                   />

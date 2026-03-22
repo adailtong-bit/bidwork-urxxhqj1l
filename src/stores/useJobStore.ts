@@ -64,6 +64,8 @@ interface JobState {
   jobs: Job[]
   addJob: (job: any) => void
   getJob: (id: string) => Job | undefined
+  updateJob: (id: string, job: Partial<Job>) => void
+  deleteJob: (id: string) => void
   addBid: (jobId: string, bid: any) => void
   acceptBid: (jobId: string, bidId: string) => void
   completeJob: (jobId: string) => void
@@ -149,6 +151,14 @@ export const useJobStore = create<JobState>((set, get) => ({
       ],
     })),
   getJob: (id) => get().jobs.find((j) => j.id === id),
+  updateJob: (id, job) =>
+    set((state) => ({
+      jobs: state.jobs.map((j) => (j.id === id ? { ...j, ...job } : j)),
+    })),
+  deleteJob: (id) =>
+    set((state) => ({
+      jobs: state.jobs.filter((j) => j.id !== id),
+    })),
   addBid: (jobId, bid) =>
     set((state) => ({
       jobs: state.jobs.map((j) =>

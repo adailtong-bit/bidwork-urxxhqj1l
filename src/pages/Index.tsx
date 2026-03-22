@@ -2,6 +2,7 @@ import { useLanguageStore } from '@/stores/useLanguageStore'
 import { CategoryTiles } from '@/components/home/CategoryTiles'
 import { PromoBanner } from '@/components/home/PromoBanner'
 import { ListingCard } from '@/components/home/ListingCard'
+import { MyAdsDashboard } from '@/components/home/MyAdsDashboard'
 import { Button } from '@/components/ui/button'
 import { SlidersHorizontal } from 'lucide-react'
 import { useSearchParams } from 'react-router-dom'
@@ -99,6 +100,9 @@ export default function Index() {
 
       {/* Promotional Banner */}
       <PromoBanner />
+
+      {/* My Ads Dashboard (Visible only if user is logged in and has ads) */}
+      <MyAdsDashboard />
 
       {/* Listings Section */}
       <div className="px-4 mt-2">
