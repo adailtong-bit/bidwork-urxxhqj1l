@@ -93,7 +93,7 @@ export default function SubscriptionPlans() {
                 </CardTitle>
               </div>
               <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 w-full min-w-0">
-                <span className="text-3xl md:text-4xl font-bold tracking-tighter break-all sm:break-words min-w-0 max-w-full">
+                <span className="text-2xl md:text-3xl font-bold tracking-tight break-words min-w-0 max-w-full">
                   {formatCurrency(plan.price)}
                 </span>
                 {plan.price !== 0 && (
