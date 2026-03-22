@@ -77,23 +77,21 @@ export default function SubscriptionPlans() {
                 </Badge>
               </div>
             )}
-            <CardHeader className="space-y-4 pb-4 grow-0">
-              <div className="flex items-start justify-between gap-2">
-                <div
-                  className={`p-2 rounded-lg shrink-0 ${
-                    plan.popular
-                      ? 'bg-primary/10 text-primary'
-                      : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  <Crown className="h-6 w-6" />
-                </div>
-                <CardTitle className="text-xl leading-tight flex-1 pt-1 break-words">
-                  {plan.name}
-                </CardTitle>
+            <CardHeader className="space-y-4 pb-4 grow-0 flex flex-col items-center text-center">
+              <div
+                className={`p-3 rounded-full shrink-0 ${
+                  plan.popular
+                    ? 'bg-primary/10 text-primary'
+                    : 'bg-muted text-muted-foreground'
+                }`}
+              >
+                <Crown className="h-6 w-6" />
               </div>
-              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 w-full min-w-0">
-                <span className="text-2xl md:text-3xl font-bold tracking-tight break-words min-w-0 max-w-full">
+              <CardTitle className="text-xl leading-tight break-words w-full">
+                {plan.name}
+              </CardTitle>
+              <div className="flex flex-row flex-wrap items-baseline justify-center gap-1.5 w-full">
+                <span className="text-xl md:text-2xl font-bold tracking-tight break-words max-w-full">
                   {formatCurrency(plan.price)}
                 </span>
                 {plan.price !== 0 && (
@@ -102,23 +100,23 @@ export default function SubscriptionPlans() {
                   </span>
                 )}
               </div>
-              <CardDescription className="min-h-[48px] text-sm leading-relaxed break-words whitespace-normal">
+              <CardDescription className="min-h-[48px] text-sm leading-relaxed break-words whitespace-normal w-full px-2">
                 {plan.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-6">
-              <ul className="space-y-3">
+            <CardContent className="flex-1 pb-6 flex flex-col items-center w-full">
+              <ul className="space-y-3 w-full max-w-[280px]">
                 {plan.features?.map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-sm leading-tight break-words flex-1 whitespace-normal">
+                    <span className="text-sm leading-tight break-words flex-1 whitespace-normal text-left">
                       {feature}
                     </span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter className="pt-0 mt-auto shrink-0">
+            <CardFooter className="pt-0 mt-auto shrink-0 w-full">
               <Button
                 className="w-full"
                 variant={plan.popular ? 'default' : 'outline'}

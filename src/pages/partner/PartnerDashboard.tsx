@@ -48,7 +48,7 @@ export default function PartnerDashboard() {
   const { projects, addPartnerTeamMember, addQuote } = useProjectStore()
   const { contractors } = useContractorStore()
   const { toast } = useToast()
-  const { formatCurrency, t, formatDate } = useLanguageStore()
+  const { formatCurrency, formatDate } = useLanguageStore()
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false)
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false)
@@ -287,7 +287,12 @@ export default function PartnerDashboard() {
                           </div>
                           <div className="text-sm text-muted-foreground">
                             {quote.items.length} itens • Enviado em{' '}
-                            {formatDate(quote.createdAt, 'dd/MM/yyyy')}
+                            {formatDate
+                              ? formatDate(
+                                  new Date(quote.createdAt),
+                                  'dd/MM/yyyy',
+                                )
+                              : new Date(quote.createdAt).toLocaleDateString()}
                           </div>
                         </div>
                         <div className="flex items-center gap-4">
@@ -339,7 +344,7 @@ export default function PartnerDashboard() {
             <CardContent>
               {activePartner?.team.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground border-2 border-dashed rounded-lg">
-                  Nenhum miembro registrado. Adicione manualmente ou busque no
+                  Nenhum membro registrado. Adicione manualmente ou busque no
                   banco de talentos.
                 </div>
               ) : (
