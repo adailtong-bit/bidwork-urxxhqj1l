@@ -190,4 +190,3 @@ export const useJobStore = create<JobState>((set, get) => ({
       jobs: state.jobs.map((j) => (j.id === jobId ? { ...j, status } : j)),
     })),
 }))
-
