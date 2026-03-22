@@ -51,6 +51,11 @@ export interface Job {
   acceptedBidId?: string
   smartMatchScore?: number
   listingType?: string // 'job', 'product', 'rental', 'community'
+  condition?: 'new' | 'used'
+  brand?: string
+  model?: string
+  minRentalPeriod?: number
+  priceFrequency?: 'daily' | 'monthly'
 }
 
 interface JobState {
@@ -185,3 +190,4 @@ export const useJobStore = create<JobState>((set, get) => ({
       jobs: state.jobs.map((j) => (j.id === jobId ? { ...j, status } : j)),
     })),
 }))
+
