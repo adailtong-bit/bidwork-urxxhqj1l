@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { PublishModal } from '@/components/PublishModal'
@@ -56,6 +57,7 @@ interface SidebarSection {
 
 export function MainSidebar() {
   const { user, logout } = useAuthStore()
+  const { t } = useLanguageStore()
   const location = useLocation()
   const { state } = useSidebar()
   const [isPublishOpen, setIsPublishOpen] = useState(false)
@@ -67,75 +69,79 @@ export function MainSidebar() {
 
   if (!user) {
     sections.push({
-      label: 'Visitante',
+      label: t('nav.visitor'),
       items: [
-        { title: 'Início', url: '/', icon: Home },
-        { title: 'Serviços', url: '/services', icon: Wrench },
-        { title: 'Encontrar Jobs', url: '/find-jobs', icon: Search },
-        { title: 'Login', url: '/login', icon: LogIn },
-        { title: 'Cadastrar', url: '/register', icon: UserPlus },
+        { title: t('nav.home'), url: '/', icon: Home },
+        { title: t('sidebar.services'), url: '/services', icon: Wrench },
+        { title: t('sidebar.find_jobs'), url: '/find-jobs', icon: Search },
+        { title: t('nav.login'), url: '/login', icon: LogIn },
+        { title: t('nav.register'), url: '/register', icon: UserPlus },
       ],
     })
   } else {
     sections.push({
-      label: 'Navegação e Vagas',
+      label: t('nav.nav_jobs'),
       items: [
-        { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-        { title: 'Encontrar Jobs', url: '/find-jobs', icon: Search },
-        { title: 'Minhas Atividades', url: '/my-jobs', icon: HardHat },
-        { title: 'Mensagens', url: '/messages', icon: Mail },
+        { title: t('nav.dashboard'), url: '/dashboard', icon: LayoutDashboard },
+        { title: t('sidebar.find_jobs'), url: '/find-jobs', icon: Search },
+        { title: t('sidebar.my_jobs'), url: '/my-jobs', icon: HardHat },
+        { title: t('sidebar.messages'), url: '/messages', icon: Mail },
       ],
     })
 
     sections.push({
-      label: 'Gestão de Obras (Contratante)',
+      label: t('nav.construction_mgmt'),
       className: 'text-orange-600 font-semibold',
       items: [
         {
-          title: 'Minhas Obras',
+          title: t('nav.my_projects'),
           url: '/construction/dashboard',
           icon: Briefcase,
         },
-        { title: 'Painel do Parceiro', url: '/partner/dashboard', icon: Users },
-        { title: 'Equipe Corporativa', url: '/team', icon: Users },
+        {
+          title: t('nav.partner_panel'),
+          url: '/partner/dashboard',
+          icon: Users,
+        },
+        { title: t('nav.corp_team'), url: '/team', icon: Users },
       ],
     })
 
     if (isAdmin) {
       sections.push({
-        label: 'Administração',
+        label: t('nav.admin'),
         className: 'text-destructive font-bold',
         items: [
           {
-            title: 'Gestão de Planos',
+            title: t('nav.plan_mgmt'),
             url: '/admin/plans',
             icon: Crown,
           },
           {
-            title: 'Planos de Obras',
+            title: t('nav.const_plans'),
             url: '/admin/construction-plans',
             icon: HardHat,
           },
-          { title: 'Categorias', url: '/admin/categories', icon: Tags },
-          { title: 'Anúncios', url: '/admin/ads', icon: Megaphone },
+          { title: t('nav.categories'), url: '/admin/categories', icon: Tags },
+          { title: t('nav.ads'), url: '/admin/ads', icon: Megaphone },
         ],
       })
     }
 
     sections.push({
-      label: 'Financeiro e Utilitários',
+      label: t('nav.finance_utils'),
       items: [
-        { title: 'Painel Financeiro', url: '/finance', icon: Wallet },
-        { title: 'Planos e Assinatura', url: '/subscription', icon: Crown },
-        { title: 'Ranking e Prêmios', url: '/leaderboard', icon: Trophy },
-        { title: 'Documentos', url: '/documents', icon: FolderOpen },
-        { title: 'Configurações', url: '/settings', icon: Settings },
+        { title: t('nav.finance_panel'), url: '/finance', icon: Wallet },
+        { title: t('nav.sub_plans'), url: '/subscription', icon: Crown },
+        { title: t('nav.ranking'), url: '/leaderboard', icon: Trophy },
+        { title: t('nav.documents'), url: '/documents', icon: FolderOpen },
+        { title: t('nav.settings'), url: '/settings', icon: Settings },
       ],
     })
 
     sections.push({
-      label: 'Ferramentas de Teste',
-      items: [{ title: 'Testing Hub', url: '/testing', icon: TestTube2 }],
+      label: t('nav.test_tools'),
+      items: [{ title: t('nav.test_hub'), url: '/testing', icon: TestTube2 }],
     })
   }
 
@@ -163,7 +169,7 @@ export function MainSidebar() {
               className="w-full justify-start shadow-md"
               size="lg"
             >
-              <PlusCircle className="mr-2 h-5 w-5" /> Publicar
+              <PlusCircle className="mr-2 h-5 w-5" /> {t('publish.btn')}
             </Button>
           )}
           {user && state === 'collapsed' && (
@@ -235,7 +241,7 @@ export function MainSidebar() {
                       className="text-destructive focus:text-destructive cursor-pointer"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
-                      <span>Sair da Conta</span>
+                      <span>{t('sidebar.logout')}</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

@@ -51,11 +51,13 @@ export interface Job {
   acceptedBidId?: string
   smartMatchScore?: number
   listingType?: string // 'job', 'product', 'rental', 'community'
-  condition?: 'new' | 'used'
+  condition?: 'new' | 'like_new' | 'good' | 'fair'
+  salePrice?: number
+  rentalRate?: number
+  rentalRateType?: 'daily' | 'monthly'
+  minRentalPeriod?: number
   brand?: string
   model?: string
-  minRentalPeriod?: number
-  priceFrequency?: 'daily' | 'monthly'
 }
 
 interface JobState {

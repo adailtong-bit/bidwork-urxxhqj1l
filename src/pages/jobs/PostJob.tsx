@@ -35,15 +35,14 @@ import {
   Tag,
   Clock,
   Zap,
-  Upload,
-  X,
-  HardHat,
-  Image as ImageIcon,
   Loader2,
   Phone,
   Link as LinkIcon,
   Check,
   ChevronsUpDown,
+  HardHat,
+  Image as ImageIcon,
+  X,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -94,7 +93,6 @@ export default function PostJob() {
 
   const isSubscribed = user?.constructionSubscription?.active
 
-  // Determine country for validation
   const country = (user?.address?.country as 'BR' | 'US') || 'BR'
   const { phone: phoneValidation, zip: zipValidation } =
     getCountryValidation(country)
@@ -106,7 +104,6 @@ export default function PostJob() {
     category: z.string().min(1, t('val.required')),
     subCategory: z.string().min(1, t('val.required')),
     contactPhone: phoneValidation,
-    // Address Fields
     zipCode: zipValidation,
     street: z.string().min(3, t('val.required')),
     number: z.string().min(1, t('val.required')),
@@ -114,11 +111,17 @@ export default function PostJob() {
     neighborhood: z.string().min(2, t('val.required')),
     city: z.string().min(2, t('val.required')),
     state: z.string().length(2, t('val.required')),
-    // Budget & Dates
-    budget: z
-      .number({ required_error: t('val.required') })
-      .refine((val) => val >= 0, t('val.required')),
+    // Job
+    budget: z.number().optional(),
     auctionEndDate: z.date().optional(),
+    // Product
+    condition: z.enum(['new', 'like_new', 'good', 'fair']).optional(),
+    salePrice: z.number().optional(),
+    // Rental
+    minRentalPeriod: z.coerce.number().optional(),
+    rentalRate: z.number().optional(),
+    rentalRateType: z.enum(['daily', 'monthly']).optional(),
+    // General
     maxExecutionDeadline: z.date({
       required_error: t('val.required'),
     }),
@@ -147,6 +150,11 @@ export default function PostJob() {
       city: user?.location?.split(' - ')[0] || user?.address?.city || '',
       state: user?.location?.split(' - ')[1] || user?.address?.state || '',
       budget: 0,
+      salePrice: 0,
+      rentalRate: 0,
+      rentalRateType: 'monthly',
+      minRentalPeriod: 1,
+      condition: 'new',
       publicationDate: new Date(),
       premiumType: 'none',
       projectId: preProjectId,
@@ -154,13 +162,11 @@ export default function PostJob() {
     },
   })
 
-  // Watch fields
   const selectedProjectId = form.watch('projectId')
   const selectedCategory = form.watch('category')
 
   const availableStages =
     projects.find((p) => p.id === selectedProjectId)?.stages || []
-
   const currentCategory = categories.find((c) => c.name === selectedCategory)
   const availableSubCategories = currentCategory?.subCategories || []
 
@@ -204,7 +210,11 @@ export default function PostJob() {
   const onSubmit = (data: JobForm) => {
     if (!user) return
 
-    if (data.type === 'auction' && !data.auctionEndDate) {
+    if (
+      data.type === 'auction' &&
+      typeParam === 'job' &&
+      !data.auctionEndDate
+    ) {
       form.setError('auctionEndDate', {
         message: t('val.required'),
       })
@@ -212,6 +222,10 @@ export default function PostJob() {
     }
 
     const fullLocation = `${data.city} - ${data.state}`
+
+    let finalBudget = data.budget
+    if (typeParam === 'product') finalBudget = data.salePrice || 0
+    if (typeParam === 'rental') finalBudget = data.rentalRate || 0
 
     addJob({
       title: data.title,
@@ -230,7 +244,13 @@ export default function PostJob() {
         city: data.city,
         state: data.state,
       },
-      budget: data.budget,
+      budget: finalBudget,
+      condition: typeParam === 'product' ? data.condition : undefined,
+      salePrice: typeParam === 'product' ? data.salePrice : undefined,
+      rentalRate: typeParam === 'rental' ? data.rentalRate : undefined,
+      rentalRateType: typeParam === 'rental' ? data.rentalRateType : undefined,
+      minRentalPeriod:
+        typeParam === 'rental' ? data.minRentalPeriod : undefined,
       ownerId: user.id,
       ownerName: user.name,
       publicationDate: data.publicationDate,
@@ -241,21 +261,27 @@ export default function PostJob() {
       stageId: linkToProject ? data.stageId || undefined : undefined,
       regionCode: data.state,
       contactPhone: data.contactPhone,
-      listingType: typeParam, // 'job', 'product', 'rental', 'community'
+      listingType: typeParam,
     })
 
     if (
       linkToProject &&
       data.projectId &&
       data.stageId &&
-      data.type === 'fixed'
+      data.type === 'fixed' &&
+      typeParam === 'job'
     ) {
-      updateStageActuals(data.projectId, data.stageId, 'labor', data.budget)
+      updateStageActuals(
+        data.projectId,
+        data.stageId,
+        'labor',
+        data.budget || 0,
+      )
     }
 
     toast({
       title: t('success'),
-      description: 'Anúncio/Job publicado com sucesso!',
+      description: t('post.success'),
     })
 
     if (linkToProject && data.projectId) {
@@ -268,13 +294,13 @@ export default function PostJob() {
   const getPageTitle = () => {
     switch (typeParam) {
       case 'product':
-        return 'Anunciar Produto'
+        return t('post.type.product.title')
       case 'rental':
-        return 'Anunciar Imóvel / Equipamento'
+        return t('post.type.rental.title')
       case 'community':
-        return 'Postagem na Comunidade'
+        return t('post.type.community.title')
       default:
-        return t('sidebar.post_job')
+        return t('post.type.job.title')
     }
   }
 
@@ -287,9 +313,7 @@ export default function PostJob() {
 
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">{getPageTitle()}</h1>
-        <p className="text-muted-foreground">
-          Preencha as informações para disponibilizar no marketplace.
-        </p>
+        <p className="text-muted-foreground">{t('post.form.desc')}</p>
       </div>
 
       <Form {...form}>
@@ -307,7 +331,7 @@ export default function PostJob() {
                       htmlFor="link-project"
                       className="cursor-pointer font-medium"
                     >
-                      Vincular este serviço a uma obra existente?
+                      {t('post.link_project')}
                     </Label>
                     <Switch
                       id="link-project"
@@ -324,9 +348,7 @@ export default function PostJob() {
                     name="projectId"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>
-                          {t('construction.table.project')} (Opcional)
-                        </FormLabel>
+                        <FormLabel>{t('post.project_opt')}</FormLabel>
                         <Popover
                           open={openProject}
                           onOpenChange={setOpenProject}
@@ -356,12 +378,10 @@ export default function PostJob() {
                             }}
                           >
                             <Command>
-                              <CommandInput
-                                placeholder={t('general.search') || 'Buscar...'}
-                              />
+                              <CommandInput placeholder={t('general.search')} />
                               <CommandList>
                                 <CommandEmpty>
-                                  Nenhum projeto encontrado.
+                                  {t('post.no_projects')}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {projects.map((p) => (
@@ -399,9 +419,7 @@ export default function PostJob() {
                     name="stageId"
                     render={({ field }) => (
                       <FormItem className="flex flex-col">
-                        <FormLabel>
-                          {t('proj.partner.stage')} (Opcional)
-                        </FormLabel>
+                        <FormLabel>{t('post.stage_opt')}</FormLabel>
                         <Popover open={openStage} onOpenChange={setOpenStage}>
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -430,12 +448,10 @@ export default function PostJob() {
                             }}
                           >
                             <Command>
-                              <CommandInput
-                                placeholder={t('general.search') || 'Buscar...'}
-                              />
+                              <CommandInput placeholder={t('general.search')} />
                               <CommandList>
                                 <CommandEmpty>
-                                  Nenhuma etapa encontrada.
+                                  {t('post.no_stages')}
                                 </CommandEmpty>
                                 <CommandGroup>
                                   {availableStages.map((s) => (
@@ -472,10 +488,9 @@ export default function PostJob() {
             </Card>
           )}
 
-          {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>Informações Básicas</CardTitle>
+              <CardTitle>{t('post.basic_info')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -485,7 +500,10 @@ export default function PostJob() {
                   <FormItem>
                     <FormLabel>{t('plans.field.title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Título do Anúncio/Vaga" {...field} />
+                      <Input
+                        placeholder={t('post.title_placeholder')}
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -499,7 +517,7 @@ export default function PostJob() {
                     <FormLabel>{t('plans.field.description')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="Detalhes completos..."
+                        placeholder={t('post.desc_placeholder')}
                         className="min-h-[120px]"
                         {...field}
                       />
@@ -509,7 +527,6 @@ export default function PostJob() {
                 )}
               />
 
-              {/* Categorization */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
                 <FormField
                   control={form.control}
@@ -574,7 +591,6 @@ export default function PostJob() {
                 />
               </div>
 
-              {/* Contact Phone */}
               <FormField
                 control={form.control}
                 name="contactPhone"
@@ -602,13 +618,12 @@ export default function PostJob() {
                 )}
               />
 
-              {/* Deadline */}
               <FormField
                 control={form.control}
                 name="maxExecutionDeadline"
                 render={({ field }) => (
                   <FormItem className="pt-2">
-                    <FormLabel>Data Limite / Validade</FormLabel>
+                    <FormLabel>{t('post.deadline')}</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -648,7 +663,6 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
-          {/* Address Section */}
           <Card>
             <CardHeader>
               <CardTitle>{t('job.post.location')}</CardTitle>
@@ -772,138 +786,271 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
-          {/* Budget and Type */}
           <Card>
             <CardHeader>
-              <CardTitle>Precificação e Tipo</CardTitle>
+              <CardTitle>{t('post.pricing_type')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
               {typeParam === 'job' && (
-                <FormField
-                  control={form.control}
-                  name="type"
-                  render={({ field }) => (
-                    <FormItem className="space-y-3">
-                      <FormLabel>{t('job.type')}</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                        >
-                          <FormItem>
-                            <FormControl>
-                              <RadioGroupItem
-                                value="fixed"
-                                className="peer sr-only"
-                              />
-                            </FormControl>
-                            <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
-                              <Tag className="mb-3 h-6 w-6" />
-                              <span className="font-semibold">
-                                {t('job.fixed_price')}
-                              </span>
-                            </FormLabel>
-                          </FormItem>
-                          <FormItem>
-                            <FormControl>
-                              <RadioGroupItem
-                                value="auction"
-                                className="peer sr-only"
-                              />
-                            </FormControl>
-                            <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
-                              <Gavel className="mb-3 h-6 w-6" />
-                              <span className="font-semibold">
-                                {t('job.auction_reverse')}
-                              </span>
-                            </FormLabel>
-                          </FormItem>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="budget"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {form.watch('type') === 'auction' && typeParam === 'job'
-                          ? t('job.max_initial')
-                          : 'Valor / Orçamento Estimado'}
-                      </FormLabel>
-                      <FormControl>
-                        <CurrencyInput
-                          value={field.value}
-                          onChange={field.onChange}
-                          placeholder="0.00"
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        {typeParam === 'community'
-                          ? 'Deixe 0.00 se for grátis.'
-                          : t('job.post.budget_help')}
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {form.watch('type') === 'auction' && typeParam === 'job' && (
+                <>
                   <FormField
                     control={form.control}
-                    name="auctionEndDate"
+                    name="type"
                     render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>{t('job.end_date')}</FormLabel>
-                        <Popover>
-                          <PopoverTrigger asChild>
-                            <FormControl>
-                              <Button
-                                variant={'outline'}
-                                className={cn(
-                                  'w-full pl-3 text-left font-normal',
-                                  !field.value && 'text-muted-foreground',
-                                )}
-                              >
-                                {field.value ? (
-                                  format(field.value, 'PPP', {
-                                    locale: getDateLocale(),
-                                  })
-                                ) : (
-                                  <span>{t('date')}</span>
-                                )}
-                                <Clock className="ml-auto h-4 w-4 opacity-50" />
-                              </Button>
-                            </FormControl>
-                          </PopoverTrigger>
-                          <PopoverContent className="w-auto p-0" align="start">
-                            <Calendar
-                              mode="single"
-                              selected={field.value}
-                              onSelect={field.onChange}
-                              disabled={(date) => date < new Date()}
-                              locale={getDateLocale()}
-                              initialFocus
-                            />
-                          </PopoverContent>
-                        </Popover>
+                      <FormItem className="space-y-3">
+                        <FormLabel>{t('job.type')}</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            onValueChange={field.onChange}
+                            defaultValue={field.value}
+                            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                          >
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem
+                                  value="fixed"
+                                  className="peer sr-only"
+                                />
+                              </FormControl>
+                              <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
+                                <Tag className="mb-3 h-6 w-6" />
+                                <span className="font-semibold">
+                                  {t('job.fixed_price')}
+                                </span>
+                              </FormLabel>
+                            </FormItem>
+                            <FormItem>
+                              <FormControl>
+                                <RadioGroupItem
+                                  value="auction"
+                                  className="peer sr-only"
+                                />
+                              </FormControl>
+                              <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
+                                <Gavel className="mb-3 h-6 w-6" />
+                                <span className="font-semibold">
+                                  {t('job.auction_reverse')}
+                                </span>
+                              </FormLabel>
+                            </FormItem>
+                          </RadioGroup>
+                        </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                )}
-              </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="budget"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>
+                            {form.watch('type') === 'auction'
+                              ? t('job.max_initial')
+                              : t('post.budget_est')}
+                          </FormLabel>
+                          <FormControl>
+                            <CurrencyInput
+                              value={field.value || 0}
+                              onChange={field.onChange}
+                              placeholder="0.00"
+                            />
+                          </FormControl>
+                          <FormDescription>
+                            {t('job.post.budget_help')}
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    {form.watch('type') === 'auction' && (
+                      <FormField
+                        control={form.control}
+                        name="auctionEndDate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{t('job.end_date')}</FormLabel>
+                            <Popover>
+                              <PopoverTrigger asChild>
+                                <FormControl>
+                                  <Button
+                                    variant={'outline'}
+                                    className={cn(
+                                      'w-full pl-3 text-left font-normal',
+                                      !field.value && 'text-muted-foreground',
+                                    )}
+                                  >
+                                    {field.value ? (
+                                      format(field.value, 'PPP', {
+                                        locale: getDateLocale(),
+                                      })
+                                    ) : (
+                                      <span>{t('date')}</span>
+                                    )}
+                                    <Clock className="ml-auto h-4 w-4 opacity-50" />
+                                  </Button>
+                                </FormControl>
+                              </PopoverTrigger>
+                              <PopoverContent
+                                className="w-auto p-0"
+                                align="start"
+                              >
+                                <Calendar
+                                  mode="single"
+                                  selected={field.value}
+                                  onSelect={field.onChange}
+                                  disabled={(date) => date < new Date()}
+                                  locale={getDateLocale()}
+                                  initialFocus
+                                />
+                              </PopoverContent>
+                            </Popover>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+                </>
+              )}
+
+              {typeParam === 'product' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="condition"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('post.condition')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('general.select')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="new">
+                              {t('post.condition.new')}
+                            </SelectItem>
+                            <SelectItem value="like_new">
+                              {t('post.condition.like_new')}
+                            </SelectItem>
+                            <SelectItem value="good">
+                              {t('post.condition.good')}
+                            </SelectItem>
+                            <SelectItem value="fair">
+                              {t('post.condition.fair')}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="salePrice"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('post.sale_price')}</FormLabel>
+                        <FormControl>
+                          <CurrencyInput
+                            value={field.value || 0}
+                            onChange={field.onChange}
+                            placeholder="0.00"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {typeParam === 'rental' && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="minRentalPeriod"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('post.min_rental_period')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min={1}
+                            {...field}
+                            onChange={(e) =>
+                              field.onChange(parseInt(e.target.value) || 0)
+                            }
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="rentalRate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('post.rental_rate')}</FormLabel>
+                        <FormControl>
+                          <CurrencyInput
+                            value={field.value || 0}
+                            onChange={field.onChange}
+                            placeholder="0.00"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="rentalRateType"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('post.pricing_type')}</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder={t('general.select')} />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="daily">
+                              {t('post.rate.daily')}
+                            </SelectItem>
+                            <SelectItem value="monthly">
+                              {t('post.rate.monthly')}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              )}
+
+              {typeParam === 'community' && (
+                <p className="text-sm text-muted-foreground py-4">
+                  {t('post.free_help')}
+                </p>
+              )}
             </CardContent>
           </Card>
 
-          {/* Images Section */}
           <Card>
             <CardHeader>
               <CardTitle>{t('job.photos')}</CardTitle>
@@ -978,7 +1125,6 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
-          {/* Premium Options */}
           <Card>
             <CardHeader>
               <CardTitle>{t('ad.highlight')}</CardTitle>
@@ -1050,10 +1196,10 @@ export default function PostJob() {
               type="button"
               onClick={() => navigate('/')}
             >
-              {t('cancel')}
+              {t('post.cancel')}
             </Button>
             <Button type="submit" size="lg" disabled={!form.formState.isValid}>
-              Publicar
+              {t('post.submit')}
             </Button>
           </div>
         </form>

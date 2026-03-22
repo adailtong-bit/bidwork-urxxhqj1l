@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/card'
 import { useNavigate } from 'react-router-dom'
 import { Tag, Home, Users, Briefcase } from 'lucide-react'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface PublishModalProps {
   open: boolean
@@ -20,6 +21,7 @@ interface PublishModalProps {
 
 export function PublishModal({ open, onOpenChange }: PublishModalProps) {
   const navigate = useNavigate()
+  const { t } = useLanguageStore()
 
   const handleAction = (path: string) => {
     onOpenChange(false)
@@ -30,9 +32,7 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl">
         <DialogHeader>
-          <DialogTitle className="text-2xl">
-            O que você deseja publicar?
-          </DialogTitle>
+          <DialogTitle className="text-2xl">{t('publish.what')}</DialogTitle>
         </DialogHeader>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
           <Card
@@ -41,10 +41,8 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
           >
             <CardHeader>
               <Tag className="h-8 w-8 text-green-500 mb-2" />
-              <CardTitle>Anunciar Produto</CardTitle>
-              <CardDescription>
-                Vender materiais ou ferramentas.
-              </CardDescription>
+              <CardTitle>{t('post.type.product.title')}</CardTitle>
+              <CardDescription>{t('post.type.product.desc')}</CardDescription>
             </CardHeader>
           </Card>
           <Card
@@ -53,8 +51,8 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
           >
             <CardHeader>
               <Home className="h-8 w-8 text-blue-500 mb-2" />
-              <CardTitle>Anunciar Imóvel/Equipamento</CardTitle>
-              <CardDescription>Disponibilizar para aluguel.</CardDescription>
+              <CardTitle>{t('post.type.rental.title')}</CardTitle>
+              <CardDescription>{t('post.type.rental.desc')}</CardDescription>
             </CardHeader>
           </Card>
           <Card
@@ -63,20 +61,18 @@ export function PublishModal({ open, onOpenChange }: PublishModalProps) {
           >
             <CardHeader>
               <Users className="h-8 w-8 text-purple-500 mb-2" />
-              <CardTitle>Criar Postagem</CardTitle>
-              <CardDescription>Compartilhar na comunidade.</CardDescription>
+              <CardTitle>{t('post.type.community.title')}</CardTitle>
+              <CardDescription>{t('post.type.community.desc')}</CardDescription>
             </CardHeader>
           </Card>
           <Card
             className="cursor-pointer border-orange-200 bg-orange-50/50 hover:border-orange-500 transition-colors"
-            onClick={() => handleAction('/post-job')}
+            onClick={() => handleAction('/post-job?type=job')}
           >
             <CardHeader>
               <Briefcase className="h-8 w-8 text-orange-500 mb-2" />
-              <CardTitle>Publicar Vaga/Serviço</CardTitle>
-              <CardDescription>
-                Contratar um profissional ou empresa para um projeto.
-              </CardDescription>
+              <CardTitle>{t('post.type.job.title')}</CardTitle>
+              <CardDescription>{t('post.type.job.desc')}</CardDescription>
             </CardHeader>
           </Card>
         </div>
