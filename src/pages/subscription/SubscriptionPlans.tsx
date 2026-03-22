@@ -60,30 +60,30 @@ export default function SubscriptionPlans() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 items-stretch">
         {availablePlans.map((plan) => (
           <Card
             key={plan.id}
-            className={`flex flex-col relative ${
+            className={`flex flex-col relative h-full transition-all duration-300 ${
               plan.popular
-                ? 'border-primary shadow-xl scale-105 z-10'
+                ? 'border-primary shadow-xl lg:scale-105 z-10'
                 : 'border-border'
             }`}
           >
             {plan.popular && (
               <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm">
+                <Badge className="bg-primary text-primary-foreground px-4 py-1 text-sm shadow-sm">
                   Mais Popular
                 </Badge>
               </div>
             )}
-            <CardHeader className="space-y-4 pb-4">
+            <CardHeader className="space-y-4 pb-4 grow-0">
               <div className="flex items-start justify-between gap-2">
                 <div
                   className={`p-2 rounded-lg shrink-0 ${
                     plan.popular
-                      ? 'bg-blue-100 text-blue-600'
-                      : 'bg-gray-100 text-gray-600'
+                      ? 'bg-primary/10 text-primary'
+                      : 'bg-muted text-muted-foreground'
                   }`}
                 >
                   <Crown className="h-6 w-6" />
@@ -92,17 +92,17 @@ export default function SubscriptionPlans() {
                   {plan.name}
                 </CardTitle>
               </div>
-              <div className="flex items-baseline gap-1 break-words">
-                <span className="text-3xl font-bold tracking-tighter">
+              <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1 w-full min-w-0">
+                <span className="text-3xl md:text-4xl font-bold tracking-tighter break-all sm:break-words min-w-0 max-w-full">
                   {formatCurrency(plan.price)}
                 </span>
                 {plan.price !== 0 && (
-                  <span className="text-muted-foreground text-sm font-medium">
+                  <span className="text-muted-foreground text-sm font-medium whitespace-nowrap shrink-0">
                     /{plan.billingCycle === 'monthly' ? 'mês' : 'ciclo'}
                   </span>
                 )}
               </div>
-              <CardDescription className="min-h-[48px] text-sm leading-relaxed break-words whitespace-normal text-wrap">
+              <CardDescription className="min-h-[48px] text-sm leading-relaxed break-words whitespace-normal">
                 {plan.description}
               </CardDescription>
             </CardHeader>
@@ -111,14 +111,14 @@ export default function SubscriptionPlans() {
                 {plan.features?.map((feature, i) => (
                   <li key={i} className="flex items-start gap-3">
                     <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
-                    <span className="text-sm leading-tight break-words flex-1 text-wrap whitespace-normal">
+                    <span className="text-sm leading-tight break-words flex-1 whitespace-normal">
                       {feature}
                     </span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter className="pt-0">
+            <CardFooter className="pt-0 mt-auto shrink-0">
               <Button
                 className="w-full"
                 variant={plan.popular ? 'default' : 'outline'}
