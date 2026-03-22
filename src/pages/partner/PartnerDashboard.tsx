@@ -48,7 +48,7 @@ export default function PartnerDashboard() {
   const { projects, addPartnerTeamMember, addQuote } = useProjectStore()
   const { contractors } = useContractorStore()
   const { toast } = useToast()
-  const { formatCurrency, t } = useLanguageStore()
+  const { formatCurrency, t, formatDate } = useLanguageStore()
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false)
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false)
