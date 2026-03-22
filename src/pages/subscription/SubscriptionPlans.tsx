@@ -77,10 +77,10 @@ export default function SubscriptionPlans() {
                 </Badge>
               </div>
             )}
-            <CardHeader>
-              <div className="flex items-center gap-2 mb-2">
+            <CardHeader className="space-y-4 pb-4">
+              <div className="flex items-start justify-between gap-2">
                 <div
-                  className={`p-2 rounded-lg ${
+                  className={`p-2 rounded-lg shrink-0 ${
                     plan.popular
                       ? 'bg-blue-100 text-blue-600'
                       : 'bg-gray-100 text-gray-600'
@@ -88,33 +88,37 @@ export default function SubscriptionPlans() {
                 >
                   <Crown className="h-6 w-6" />
                 </div>
-                <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                <CardTitle className="text-xl leading-tight flex-1 pt-1 break-words">
+                  {plan.name}
+                </CardTitle>
               </div>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">
+              <div className="flex items-baseline gap-1 break-words">
+                <span className="text-3xl font-bold tracking-tighter">
                   {formatCurrency(plan.price)}
                 </span>
                 {plan.price !== 0 && (
-                  <span className="text-muted-foreground">
+                  <span className="text-muted-foreground text-sm font-medium">
                     /{plan.billingCycle === 'monthly' ? 'mês' : 'ciclo'}
                   </span>
                 )}
               </div>
-              <CardDescription className="mt-2 min-h-[40px]">
+              <CardDescription className="min-h-[48px] text-sm leading-relaxed break-words whitespace-normal text-wrap">
                 {plan.description}
               </CardDescription>
             </CardHeader>
-            <CardContent className="flex-1">
+            <CardContent className="flex-1 pb-6">
               <ul className="space-y-3">
                 {plan.features?.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">{feature}</span>
+                  <li key={i} className="flex items-start gap-3">
+                    <Check className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
+                    <span className="text-sm leading-tight break-words flex-1 text-wrap whitespace-normal">
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="pt-0">
               <Button
                 className="w-full"
                 variant={plan.popular ? 'default' : 'outline'}

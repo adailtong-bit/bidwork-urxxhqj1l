@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { z } from 'zod'
@@ -43,6 +43,8 @@ import {
   HardHat,
   Image as ImageIcon,
   X,
+  MapPin,
+  Eye,
 } from 'lucide-react'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -60,19 +62,29 @@ import {
 } from '@/components/ui/command'
 import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import { Badge } from '@/components/ui/badge'
 import { cn, maskPhone, maskZip } from '@/lib/utils'
 import { format } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { CurrencyInput } from '@/components/CurrencyInput'
 import { getCountryValidation } from '@/lib/validation'
 import { PremiumConstructionModal } from '@/components/PremiumConstructionModal'
+import { SafeImage } from '@/components/SafeImage'
 
 export default function PostJob() {
   const { addJob, getJob, updateJob } = useJobStore()
   const { user } = useAuthStore()
   const { categories } = useCategoryStore()
   const { projects, updateStageActuals } = useProjectStore()
-  const { t, getDateLocale, currentLanguage } = useLanguageStore()
+  const { t, getDateLocale, currentLanguage, formatCurrency } =
+    useLanguageStore()
   const navigate = useNavigate()
   const { toast } = useToast()
   const [searchParams] = useSearchParams()
@@ -99,6 +111,7 @@ export default function PostJob() {
   const [openProject, setOpenProject] = useState(false)
   const [openStage, setOpenStage] = useState(false)
   const [showPremiumModal, setShowPremiumModal] = useState(false)
+  const [showPreview, setShowPreview] = useState(false)
 
   const isSubscribed = user?.constructionSubscription?.active
 
@@ -340,12 +353,107 @@ export default function PostJob() {
     }
   }
 
+  // Helper for rendering preview details
+  const renderPreviewDetails = () => {
+    const values = form.getValues()
+    let displayPrice = values.budget || 0
+    if (typeParam === 'product') displayPrice = values.salePrice || 0
+    if (typeParam === 'rental') displayPrice = values.rentalRate || 0
+
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="flex justify-between items-start gap-4">
+            <h2 className="text-2xl font-bold break-words">
+              {values.title || 'Sem Título'}
+            </h2>
+            <div className="text-right">
+              <div className="text-xl font-bold text-primary">
+                {displayPrice === 0
+                  ? t('post.free_help')
+                  : formatCurrency(displayPrice)}
+              </div>
+              {typeParam === 'rental' && (
+                <span className="text-sm text-muted-foreground">
+                  /{' '}
+                  {values.rentalRateType === 'daily'
+                    ? t('post.rate.daily')
+                    : t('post.rate.monthly')}
+                </span>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <Badge variant="secondary" className="font-normal">
+              {values.category || 'Categoria'}
+            </Badge>
+            {values.subCategory && (
+              <Badge variant="outline" className="font-normal">
+                {values.subCategory}
+              </Badge>
+            )}
+            {typeParam === 'product' && values.condition && (
+              <Badge variant="secondary" className="font-normal">
+                {t(`post.condition.${values.condition}`)}
+              </Badge>
+            )}
+            <span className="flex items-center gap-1">
+              <MapPin className="h-3 w-3" />
+              {values.city || 'Cidade'}, {values.state || 'UF'}
+            </span>
+          </div>
+        </div>
+
+        {photos.length > 0 && (
+          <div className="aspect-video relative overflow-hidden rounded-xl bg-muted">
+            <SafeImage
+              src={photos[0]}
+              alt="Preview principal"
+              className="object-cover w-full h-full"
+            />
+            {photos.length > 1 && (
+              <div className="absolute bottom-2 right-2 bg-black/60 text-white px-2 py-1 rounded text-xs">
+                + {photos.length - 1} fotos
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="prose dark:prose-invert max-w-none text-sm md:text-base break-words whitespace-pre-wrap">
+          {values.description || 'Nenhuma descrição fornecida.'}
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="max-w-3xl mx-auto space-y-6 pb-10">
       <PremiumConstructionModal
         open={showPremiumModal}
         onOpenChange={setShowPremiumModal}
       />
+
+      <Dialog open={showPreview} onOpenChange={setShowPreview}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-muted-foreground" />
+              {t('post.preview.title')}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-4 bg-card rounded-lg border mt-2">
+            {renderPreviewDetails()}
+          </div>
+          <DialogFooter className="mt-4">
+            <Button
+              onClick={() => setShowPreview(false)}
+              className="w-full sm:w-auto"
+            >
+              {t('post.preview.close')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="space-y-2">
         <h1 className="text-3xl font-bold tracking-tight">{getPageTitle()}</h1>
@@ -1241,13 +1349,21 @@ export default function PostJob() {
             </CardContent>
           </Card>
 
-          <div className="flex justify-end gap-4 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t z-10">
+          <div className="flex flex-col sm:flex-row justify-end gap-3 sticky bottom-0 bg-background/95 backdrop-blur-sm p-4 border-t z-10">
             <Button
               variant="outline"
               type="button"
               onClick={() => navigate('/')}
             >
               {t('post.cancel')}
+            </Button>
+            <Button
+              variant="secondary"
+              type="button"
+              onClick={() => setShowPreview(true)}
+            >
+              <Eye className="mr-2 h-4 w-4" />
+              {t('post.preview')}
             </Button>
             <Button type="submit" size="lg" disabled={!form.formState.isValid}>
               {t('post.submit')}
