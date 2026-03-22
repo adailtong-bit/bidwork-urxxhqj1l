@@ -50,6 +50,7 @@ export interface Job {
   bids: Bid[]
   acceptedBidId?: string
   smartMatchScore?: number
+  listingType?: string // 'job', 'product', 'rental', 'community'
 }
 
 interface JobState {
@@ -84,6 +85,7 @@ export const useJobStore = create<JobState>((set, get) => ({
       premiumType: 'category',
       regionCode: 'SP',
       bids: [],
+      listingType: 'job',
     },
     {
       id: 'job-2',
@@ -103,6 +105,7 @@ export const useJobStore = create<JobState>((set, get) => ({
       premiumType: 'none',
       regionCode: 'BR',
       bids: [],
+      listingType: 'job',
     },
     {
       id: 'job-3',
@@ -122,6 +125,7 @@ export const useJobStore = create<JobState>((set, get) => ({
       premiumType: 'region',
       regionCode: 'RJ',
       bids: [],
+      listingType: 'job',
     },
   ],
   addJob: (job) =>

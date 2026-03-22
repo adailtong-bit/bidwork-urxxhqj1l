@@ -27,22 +27,41 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
-import { Building2, Users, FileText, Star, Plus, UserCheck } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import {
+  Building2,
+  Users,
+  FileText,
+  Star,
+  Plus,
+  UserCheck,
+  Trash2,
+} from 'lucide-react'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
 import { TeamMemberModal } from '@/components/partner/TeamMemberModal'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { CurrencyInput } from '@/components/CurrencyInput'
 
 export default function PartnerDashboard() {
   const { user } = useAuthStore()
-  const { projects, generateInvoice, addPartnerTeamMember } = useProjectStore()
+  const { projects, addPartnerTeamMember, addQuote } = useProjectStore()
   const { contractors } = useContractorStore()
   const { toast } = useToast()
-  const { formatCurrency } = useLanguageStore()
+  const { formatCurrency, t } = useLanguageStore()
 
   const [isTeamModalOpen, setIsTeamModalOpen] = useState(false)
   const [isPoolModalOpen, setIsPoolModalOpen] = useState(false)
   const [selectedContractorId, setSelectedContractorId] = useState('')
+
+  // Quote State
+  const [isQuoteOpen, setIsQuoteOpen] = useState(false)
+  const [selectedProjectForQuote, setSelectedProjectForQuote] = useState('')
+  const [quoteItems, setQuoteItems] = useState<
+    { id: string; description: string; amount: number }[]
+  >([])
+  const [quoteDesc, setQuoteDesc] = useState('')
+  const [quoteAmount, setQuoteAmount] = useState(0)
 
   // Assume current logged in partner is 'partner-1' for demo
   const partnerId = 'partner-1'
@@ -54,8 +73,6 @@ export default function PartnerDashboard() {
     (p) => p.id === partnerId,
   )
 
-  // Get available contractors from pool (not yet in team? logic depends on requirement)
-  // Story: "Select contractors and add them to their permanent team roster"
   const availableContractors = contractors.filter(
     (c) => c.status === 'available',
   )
@@ -65,11 +82,6 @@ export default function PartnerDashboard() {
     const contractor = contractors.find((c) => c.id === selectedContractorId)
 
     if (contractor && partnerProjects.length > 0) {
-      // Add to first project as example, or user should select project context
-      // User Story implies adding to "permanent team roster".
-      // The current data structure links team members to a specific project partner entry.
-      // We'll add to the first project for now to satisfy the "Project Activity Assignment" prerequisite.
-
       const projectId = partnerProjects[0].id
 
       addPartnerTeamMember(projectId, activePartner.id, {
@@ -77,7 +89,7 @@ export default function PartnerDashboard() {
         role: contractor.role as any,
         email: contractor.email,
         phone: contractor.phone,
-        registrationId: contractor.id, // Linking ID
+        registrationId: contractor.id,
       })
 
       toast({ title: 'Profissional adicionado à equipe' })
@@ -86,27 +98,58 @@ export default function PartnerDashboard() {
     }
   }
 
-  const handleGenerateInvoice = (
-    projId: string,
-    stageId: string,
-    subId: string,
-  ) => {
-    generateInvoice(projId, stageId, subId, 'partner_to_contractor')
-    toast({
-      title: 'Fatura Enviada',
-      description: 'Solicitação de pagamento enviada ao contratante.',
+  const handleAddQuoteItem = () => {
+    if (!quoteDesc || quoteAmount <= 0) return
+    setQuoteItems([
+      ...quoteItems,
+      {
+        id: Math.random().toString(),
+        description: quoteDesc,
+        amount: quoteAmount,
+      },
+    ])
+    setQuoteDesc('')
+    setQuoteAmount(0)
+  }
+
+  const handleRemoveQuoteItem = (id: string) => {
+    setQuoteItems(quoteItems.filter((i) => i.id !== id))
+  }
+
+  const handleSubmitQuote = () => {
+    if (!selectedProjectForQuote || quoteItems.length === 0) return
+    const totalAmount = quoteItems.reduce((acc, i) => acc + i.amount, 0)
+
+    // Simplification: assign to the partner's assigned stage
+    const project = projects.find((p) => p.id === selectedProjectForQuote)
+    const partnerInfo = project?.partners.find((p) => p.id === partnerId)
+    const stageId = partnerInfo?.stageId || project?.stages[0]?.id || ''
+
+    addQuote(selectedProjectForQuote, {
+      partnerId: partnerId,
+      stageId,
+      items: quoteItems,
+      totalAmount,
     })
+
+    toast({
+      title: 'Orçamento enviado!',
+      description: 'O contratante irá avaliar a sua proposta.',
+    })
+    setIsQuoteOpen(false)
+    setQuoteItems([])
+    setSelectedProjectForQuote('')
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-20">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
             Painel do Parceiro
           </h1>
           <p className="text-muted-foreground">
-            Gestão de Obras e Equipes |{' '}
+            Gestão de Obras, Orçamentos e Equipes |{' '}
             {activePartner?.companyName || user?.name}
           </p>
         </div>
@@ -148,7 +191,9 @@ export default function PartnerDashboard() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Recebíveis</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Recebíveis Previstos
+            </CardTitle>
             <FileText className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
@@ -161,9 +206,9 @@ export default function PartnerDashboard() {
 
       <Tabs defaultValue="projects">
         <TabsList>
-          <TabsTrigger value="projects">Meus Projetos</TabsTrigger>
+          <TabsTrigger value="projects">Meus Projetos & Tarefas</TabsTrigger>
+          <TabsTrigger value="quotes">Orçamentos (Propostas)</TabsTrigger>
           <TabsTrigger value="team">Minha Equipe</TabsTrigger>
-          <TabsTrigger value="invoices">Faturas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="projects" className="space-y-6 mt-4">
@@ -179,13 +224,16 @@ export default function PartnerDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="mb-4 bg-muted/30 p-3 rounded-lg border text-sm">
-                  <p className="font-semibold text-primary mb-1">
-                    Suas Atividades Atribuídas:
-                  </p>
-                  <p className="text-muted-foreground">
-                    Gerencie o progresso e aloque sua equipe nas tarefas abaixo.
-                  </p>
+                <div className="mb-4 bg-muted/30 p-3 rounded-lg border text-sm flex flex-col md:flex-row justify-between md:items-center gap-4">
+                  <div>
+                    <p className="font-semibold text-primary mb-1">
+                      Suas Atividades Atribuídas:
+                    </p>
+                    <p className="text-muted-foreground">
+                      Use as opções da tarefa para solicitar medições ao
+                      contratante.
+                    </p>
+                  </div>
                 </div>
                 <ProjectScheduleTable
                   projectId={proj.id}
@@ -196,6 +244,79 @@ export default function PartnerDashboard() {
               </CardContent>
             </Card>
           ))}
+        </TabsContent>
+
+        <TabsContent value="quotes" className="space-y-6 mt-4">
+          <Card>
+            <CardHeader className="flex flex-row justify-between items-center">
+              <div>
+                <CardTitle>Meus Orçamentos</CardTitle>
+                <CardDescription>
+                  Envie novas propostas e acompanhe as aprovações.
+                </CardDescription>
+              </div>
+              <Button onClick={() => setIsQuoteOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" /> Enviar Proposta
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {partnerProjects.flatMap((p) =>
+                  p.quotes
+                    .filter((q) => q.partnerId === partnerId)
+                    .map((q) => ({ ...q, projectName: p.name })),
+                ).length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8 border-2 border-dashed rounded-lg">
+                    Nenhuma proposta enviada.
+                  </div>
+                ) : (
+                  partnerProjects
+                    .flatMap((p) =>
+                      p.quotes
+                        .filter((q) => q.partnerId === partnerId)
+                        .map((q) => ({ ...q, projectName: p.name })),
+                    )
+                    .map((quote) => (
+                      <div
+                        key={quote.id}
+                        className="flex justify-between items-center p-4 border rounded-lg"
+                      >
+                        <div>
+                          <div className="font-medium">
+                            Orçamento para {quote.projectName}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {quote.items.length} itens • Enviado em{' '}
+                            {formatDate(quote.createdAt, 'dd/MM/yyyy')}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <span className="font-bold text-lg">
+                            {formatCurrency(quote.totalAmount)}
+                          </span>
+                          <Badge
+                            variant={
+                              quote.status === 'approved'
+                                ? 'default'
+                                : quote.status === 'rejected'
+                                  ? 'destructive'
+                                  : 'secondary'
+                            }
+                            className={
+                              quote.status === 'approved' ? 'bg-green-500' : ''
+                            }
+                          >
+                            {quote.status === 'pending' && 'Em Análise'}
+                            {quote.status === 'approved' && 'Aprovado'}
+                            {quote.status === 'rejected' && 'Rejeitado'}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="team" className="mt-4">
@@ -256,64 +377,6 @@ export default function PartnerDashboard() {
             </CardContent>
           </Card>
         </TabsContent>
-
-        <TabsContent value="invoices" className="mt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Gestão de Faturas</CardTitle>
-              <CardDescription>
-                Emita cobranças para atividades concluídas.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {partnerProjects
-                  .flatMap((p) => p.stages.flatMap((s) => s.subStages))
-                  .filter((sub) => sub.status === 'completed')
-                  .map((sub) => (
-                    <div
-                      key={sub.id}
-                      className="flex justify-between items-center border p-4 rounded-lg bg-card"
-                    >
-                      <div>
-                        <p className="font-medium">{sub.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Valor: {formatCurrency(sub.taskPrice || 0)}
-                        </p>
-                      </div>
-                      <div>
-                        {sub.invoiceStatus === 'paid' ? (
-                          <Badge className="bg-green-500">Pago</Badge>
-                        ) : sub.invoiceStatus === 'sent_to_contractor' ? (
-                          <Badge variant="secondary">Enviado</Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              handleGenerateInvoice(
-                                partnerProjects[0].id,
-                                'any',
-                                sub.id,
-                              )
-                            }
-                          >
-                            <FileText className="mr-2 h-4 w-4" /> Gerar Fatura
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                {partnerProjects
-                  .flatMap((p) => p.stages.flatMap((s) => s.subStages))
-                  .filter((sub) => sub.status === 'completed').length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    Nenhuma actividad concluída disponible para facturación.
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
 
       {/* Manual Add Modal */}
@@ -356,6 +419,99 @@ export default function PartnerDashboard() {
               disabled={!selectedContractorId}
             >
               Adicionar à Equipe
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* New Quote Dialog */}
+      <Dialog open={isQuoteOpen} onOpenChange={setIsQuoteOpen}>
+        <DialogContent className="sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Enviar Nova Proposta / Orçamento</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Para qual projeto?</Label>
+              <Select
+                value={selectedProjectForQuote}
+                onValueChange={setSelectedProjectForQuote}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o projeto" />
+                </SelectTrigger>
+                <SelectContent>
+                  {partnerProjects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="border rounded-md p-4 space-y-4 bg-muted/20">
+              <Label>Itens do Orçamento</Label>
+              <div className="flex flex-col sm:flex-row gap-2 items-end">
+                <div className="flex-1 space-y-2 w-full">
+                  <Input
+                    placeholder="Descrição do serviço/material"
+                    value={quoteDesc}
+                    onChange={(e) => setQuoteDesc(e.target.value)}
+                  />
+                </div>
+                <div className="w-full sm:w-32 space-y-2">
+                  <CurrencyInput
+                    value={quoteAmount}
+                    onChange={setQuoteAmount}
+                  />
+                </div>
+                <Button
+                  onClick={handleAddQuoteItem}
+                  variant="secondary"
+                  className="w-full sm:w-auto mt-2 sm:mt-0"
+                >
+                  Adicionar
+                </Button>
+              </div>
+
+              {quoteItems.length > 0 && (
+                <ul className="space-y-2 pt-2 border-t">
+                  {quoteItems.map((it) => (
+                    <li
+                      key={it.id}
+                      className="flex justify-between items-center text-sm bg-background p-2 rounded border"
+                    >
+                      <span>{it.description}</span>
+                      <div className="flex items-center gap-4">
+                        <span className="font-semibold">
+                          {formatCurrency(it.amount)}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-destructive"
+                          onClick={() => handleRemoveQuoteItem(it.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="text-right pt-2 font-bold text-lg">
+                Total:{' '}
+                {formatCurrency(quoteItems.reduce((a, b) => a + b.amount, 0))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleSubmitQuote}
+              disabled={!selectedProjectForQuote || quoteItems.length === 0}
+            >
+              Enviar Orçamento
             </Button>
           </DialogFooter>
         </DialogContent>

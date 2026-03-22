@@ -1,5 +1,16 @@
 import { create } from 'zustand'
 
+export interface Measurement {
+  id: string
+  stageId: string
+  subStageId: string
+  requestedPercentage: number
+  amount: number
+  status: 'pending' | 'approved' | 'rejected'
+  date: Date
+  partnerId?: string
+}
+
 export interface Inspection {
   id: string
   name: string
@@ -164,7 +175,7 @@ export interface BudgetItem {
 
 export interface ApprovalLog {
   id: string
-  type: 'invoice' | 'document' | 'activity'
+  type: 'invoice' | 'document' | 'activity' | 'measurement'
   referenceId: string
   description: string
   status: 'pending' | 'approved' | 'rejected' | 'in_review'
@@ -219,7 +230,7 @@ export interface Quote {
 
 export interface ProjectInvoice {
   id: string
-  quoteId: string
+  quoteId?: string
   partnerId: string
   contractorName: string
   partnerName: string
@@ -267,6 +278,7 @@ export interface Project {
   quotes: Quote[]
   invoices: ProjectInvoice[]
   messages: ProjectMessage[]
+  measurements?: Measurement[]
 }
 
 interface ProjectState {
@@ -288,6 +300,7 @@ interface ProjectState {
       | 'quotes'
       | 'invoices'
       | 'messages'
+      | 'measurements'
     >,
   ) => void
   updateProject: (id: string, data: Partial<Project>) => void
@@ -456,6 +469,11 @@ interface ProjectState {
     projectId: string,
     message: Omit<ProjectMessage, 'id' | 'timestamp'>,
   ) => void
+  requestMeasurement: (
+    projectId: string,
+    data: Omit<Measurement, 'id' | 'status' | 'date'>,
+  ) => void
+  approveMeasurement: (projectId: string, measurementId: string) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -549,6 +567,7 @@ const mockProjects: Project[] = [
     totalBudget: 1500000,
     totalSpent: 350000,
     sqFt: 2500,
+    measurements: [],
     partners: [
       {
         id: 'partner-1',
@@ -615,6 +634,7 @@ const mockProjects: Project[] = [
             progress: 70,
             status: 'delayed',
             assignedTeamMemberId: 'member-1',
+            taskPrice: 15000,
           },
         ],
         bimFiles: [],
@@ -770,62 +790,6 @@ const mockProjects: Project[] = [
       },
     ],
   },
-  {
-    id: 'proj-2',
-    ownerId: 'owner-1',
-    name: 'Orlando Vacation Home',
-    description: 'Construction of a 5-bedroom vacation home near Disney.',
-    location: 'Kissimmee - FL',
-    region: 'US',
-    address: {
-      zipCode: '34747',
-      street: 'Magic Way',
-      number: '123',
-      complement: '',
-      neighborhood: 'Resort Area',
-      city: 'Kissimmee',
-      state: 'FL',
-      country: 'US',
-    },
-    startDate: new Date(Date.now() + 86400000 * 10),
-    endDate: new Date(Date.now() + 86400000 * 365),
-    status: 'planning',
-    totalBudget: 850000,
-    totalSpent: 10000,
-    sqFt: 3500,
-    partners: [],
-    stages: [],
-    budgetItems: [],
-    approvalLogs: [],
-    integrations: [],
-    allocatedCosts: [],
-    checkingAccounts: [],
-    financialMovements: [],
-    constructionItems: [],
-    laborAdjustments: [],
-    quotes: [],
-    invoices: [],
-    messages: [],
-    inspections: [
-      { id: 'u1', name: 'Footing', status: 'pending', evidenceUrls: [] },
-      { id: 'u2', name: 'Framing', status: 'pending', evidenceUrls: [] },
-      {
-        id: 'u3',
-        name: 'Rough-in (Electric/Plumbing)',
-        status: 'pending',
-        evidenceUrls: [],
-      },
-      { id: 'u4', name: 'Insulation', status: 'pending', evidenceUrls: [] },
-      { id: 'u5', name: 'Drywall', status: 'pending', evidenceUrls: [] },
-      {
-        id: 'u6',
-        name: 'Final Inspection',
-        status: 'pending',
-        evidenceUrls: [],
-      },
-    ],
-    dailyLogs: [],
-  },
 ]
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -850,6 +814,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           quotes: [],
           invoices: [],
           messages: [],
+          measurements: [],
         },
       ],
     })),
@@ -1194,7 +1159,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           return {
             ...p,
             stages: (p.stages || []).map((s) => {
-              if (s.id === stageId) {
+              if (s.id === stageId || stageId === 'any') {
                 return {
                   ...s,
                   subStages: (s.subStages || []).map((sub) => {
@@ -1640,5 +1605,101 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
           : p,
       ),
+    })),
+  requestMeasurement: (projectId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            measurements: [
+              ...(p.measurements || []),
+              {
+                ...data,
+                id: Math.random().toString(36).substr(2, 9),
+                status: 'pending',
+                date: new Date(),
+              },
+            ],
+          }
+        }
+        return p
+      }),
+    })),
+  approveMeasurement: (projectId, measurementId) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const measurement = p.measurements?.find(
+            (m) => m.id === measurementId,
+          )
+          if (!measurement) return p
+
+          const newMeasurements = p.measurements?.map((m) =>
+            m.id === measurementId ? { ...m, status: 'approved' as const } : m,
+          )
+
+          // Update substage progress
+          const newStages = p.stages.map((s) => {
+            if (s.id === measurement.stageId) {
+              return {
+                ...s,
+                subStages: s.subStages.map((sub) => {
+                  if (sub.id === measurement.subStageId) {
+                    return {
+                      ...sub,
+                      progress: measurement.requestedPercentage,
+                      status:
+                        measurement.requestedPercentage === 100
+                          ? 'completed'
+                          : sub.status,
+                    }
+                  }
+                  return sub
+                }),
+              }
+            }
+            return s
+          })
+
+          // Add allocated cost
+          const costItem: CostItem = {
+            id: Math.random().toString(36).substr(2, 9),
+            description: `Medição Aprovada (${measurement.requestedPercentage}%)`,
+            amount: measurement.amount,
+            type: 'actual',
+            category: 'labor',
+            costClass: 'capex',
+            date: new Date(),
+            stageId: measurement.stageId,
+          }
+
+          const totalSpent = (p.totalSpent || 0) + measurement.amount
+
+          // Generate Invoice
+          const invoice: ProjectInvoice = {
+            id: Math.random().toString(36).substr(2, 9),
+            partnerId: measurement.partnerId || '',
+            contractorName: p.ownerId || 'Contractor',
+            partnerName:
+              p.partners?.find((pt) => pt.id === measurement.partnerId)
+                ?.companyName || 'Partner',
+            description: `Fatura Automática - Medição (${measurement.requestedPercentage}%)`,
+            totalAmount: measurement.amount,
+            date: new Date(),
+            status: 'generated',
+          }
+
+          return {
+            ...p,
+            measurements: newMeasurements,
+            stages: newStages,
+            allocatedCosts: [...(p.allocatedCosts || []), costItem],
+            totalSpent,
+            invoices: [...(p.invoices || []), invoice],
+          }
+        }
+        return p
+      }),
     })),
 }))

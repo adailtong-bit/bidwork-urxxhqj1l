@@ -1,38 +1,33 @@
 import { create } from 'zustand'
 
-export type TargetAudience = 'executor' | 'advertiser' | 'contractor'
-export type BillingCycle = 'monthly' | 'quarterly' | 'semi-annually' | 'yearly'
-
 export interface SubscriptionPlan {
   id: string
   name: string
   description: string
   price: number
-  features: string[]
-  popular?: boolean
-  targetAudience: TargetAudience
-  billingCycle: BillingCycle
+  billingCycle: 'monthly' | 'quarterly' | 'semi-annually' | 'yearly'
   validityDays: number
+  features: string[]
   active: boolean
+  targetAudience: 'executor' | 'advertiser' | 'contractor'
 
-  // Contractor specific metadata
+  // Rules for Contractors
   maxProjects?: number
-  complexity?: 'Low' | 'Medium' | 'High'
   workSize?: string
+  complexity?: 'Low' | 'Medium' | 'High'
 
-  // Push Notification Rules
+  // Rules for Executors
   pushEnabled?: boolean
   pushLeadTimeHours?: number
   pushMessageText?: string
-
-  // Priority & Visibility
   priorityWeight?: number
   earlyAccessHours?: number
-  visibilityBoost?: number
-
-  // Skill Logic
   skillMatchingRule?: 'strict' | 'flexible' | 'all'
   skillWeight?: number
+
+  // Rules for Advertisers
+  visibilityBoost?: number
+  popular?: boolean
 }
 
 interface AdminPricingState {
@@ -46,78 +41,80 @@ interface AdminPricingState {
 export const useAdminPricingStore = create<AdminPricingState>((set) => ({
   plans: [
     {
-      id: 'plan-exec-basic',
+      id: 'plan-1',
       name: 'Básico',
-      description: 'Essencial para autônomos.',
+      description: 'Acesso gratuito limitado',
       price: 0,
-      features: ['Acesso a jobs básicos', 'Perfil padrão'],
-      targetAudience: 'executor',
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
-      pushEnabled: false,
+      targetAudience: 'executor',
+      features: ['Acesso ao mural (com delay)', 'Até 3 propostas/mês'],
       priorityWeight: 1,
       earlyAccessHours: 0,
       skillMatchingRule: 'strict',
       skillWeight: 1,
     },
     {
-      id: 'plan-exec-pro',
+      id: 'plan-2',
       name: 'Premium',
-      description: 'Perfeito para freelancers ativos.',
+      description: 'Ideal para profissionais dedicados',
       price: 49.9,
+      billingCycle: 'monthly',
+      validityDays: 30,
+      active: true,
+      targetAudience: 'executor',
       features: [
-        'Destaque Regional em buscas',
-        'Taxa de serviço reduzida (10%)',
-        '50 Créditos mensais para lances',
+        'Propostas ilimitadas',
+        'Acesso antecipado de 24h',
+        'Destaque no perfil',
       ],
       popular: true,
-      targetAudience: 'executor',
-      billingCycle: 'monthly',
-      validityDays: 30,
-      active: true,
-      pushEnabled: true,
-      pushLeadTimeHours: 24,
-      pushMessageText:
-        'Vagas exclusivas liberadas! Confira agora com seu acesso antecipado.',
-      priorityWeight: 10,
+      priorityWeight: 5,
       earlyAccessHours: 24,
+      pushEnabled: true,
+      pushLeadTimeHours: 1,
+      pushMessageText: 'Nova vaga liberada em primeira mão para você!',
       skillMatchingRule: 'flexible',
-      skillWeight: 8,
+      skillWeight: 5,
     },
     {
-      id: 'plan-adv-pro',
-      name: 'Ouro',
-      description: 'Mais alcance para suas vagas.',
-      price: 99.9,
-      features: ['Anúncios no topo', 'Sem limites de jobs criados'],
-      targetAudience: 'advertiser',
+      id: 'plan-contractor-1',
+      name: 'Construtora Essential',
+      description: 'Gestão básica de obras',
+      price: 299.0,
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
-      visibilityBoost: 5,
-      pushEnabled: true,
-      pushLeadTimeHours: 12,
-      pushMessageText: 'Seus anúncios Ouro estão com alta visualização hoje.',
-    },
-    {
-      id: 'plan-cont-pro',
-      name: 'Enterprise',
-      description: 'Gestão completa para construtoras.',
-      price: 149.9,
-      features: ['Dashboard avançado', 'Até 10 obras simultâneas'],
       targetAudience: 'contractor',
+      maxProjects: 3,
+      workSize: 'Até 500m²',
+      complexity: 'Low',
+      features: [
+        'Até 3 obras ativas',
+        'Controle Financeiro',
+        'Medições Simples',
+      ],
+    },
+    {
+      id: 'plan-contractor-2',
+      name: 'Construtora PRO',
+      description: 'Para gestão avançada e múltiplas obras',
+      price: 899.0,
       billingCycle: 'monthly',
       validityDays: 30,
       active: true,
-      maxProjects: 10,
-      complexity: 'High',
-      workSize: 'Grande',
-      priorityWeight: 20,
-      pushEnabled: true,
-      pushLeadTimeHours: 48,
-      pushMessageText:
-        'Resumo das suas obras Enterprise disponível. Verifique o dashboard.',
+      targetAudience: 'contractor',
+      maxProjects: 15,
+      workSize: 'Ilimitado',
+      complexity: 'Medium',
+      popular: true,
+      features: [
+        'Até 15 obras ativas',
+        'Assinatura Digital de Contratos',
+        'Gestão de Múltiplos Parceiros',
+        'Suporte Prioritário',
+      ],
     },
   ],
   addPlan: (plan) =>

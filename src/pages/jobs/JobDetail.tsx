@@ -104,14 +104,14 @@ export default function JobDetail() {
     addNotification({
       userId: job.ownerId,
       title: 'Novo Lance Recebido!',
-      message: `Você recebeu um lance de ${formatCurrency(amount)} no job "${job.title}".`,
+      message: `Você recebeu um lance de ${formatCurrency(amount)} no anúncio "${job.title}".`,
       type: 'info',
       link: `/jobs/${job.id}`,
     })
 
     toast({
-      title: 'Lance enviado!',
-      description: 'O contratante será notificado.',
+      title: 'Lance/Proposta enviado!',
+      description: 'O anunciante será notificado.',
     })
     setBidAmount('')
     setBidDescription('')
@@ -131,8 +131,8 @@ export default function JobDetail() {
 
     completeJob(job.id)
     toast({
-      title: 'Job Finalizado',
-      description: 'Por favor, avalie o executor para liberar o pagamento.',
+      title: 'Finalizado',
+      description: 'Por favor, avalie a contraparte para liberar o pagamento.',
     })
   }
 
@@ -178,13 +178,26 @@ export default function JobDetail() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open':
-        return 'Aberto'
+        return 'Aberto / Disponível'
       case 'in_progress':
         return 'Em Andamento'
       case 'completed':
         return 'Finalizado'
       default:
         return status
+    }
+  }
+
+  const getListingTypeLabel = (type?: string) => {
+    switch (type) {
+      case 'product':
+        return 'Produto à Venda'
+      case 'rental':
+        return 'Imóvel / Equipamento'
+      case 'community':
+        return 'Postagem na Comunidade'
+      default:
+        return 'Vaga / Serviço'
     }
   }
 
@@ -195,6 +208,9 @@ export default function JobDetail() {
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
+            <Badge variant="outline" className="border-primary text-primary">
+              {getListingTypeLabel(job.listingType)}
+            </Badge>
             <Badge>{job.category}</Badge>
             <Badge
               variant={
@@ -223,10 +239,12 @@ export default function JobDetail() {
         <div className="flex flex-col items-end gap-2">
           <div className="text-right">
             <div className="text-sm text-muted-foreground">
-              {job.type === 'auction' ? 'Orçamento Inicial' : 'Orçamento'}
+              {job.type === 'auction'
+                ? 'Orçamento Inicial'
+                : 'Preço / Orçamento'}
             </div>
             <div className="text-2xl font-bold text-primary">
-              {formatCurrency(job.budget)}
+              {job.budget === 0 ? 'Grátis' : formatCurrency(job.budget)}
             </div>
             {job.type === 'auction' && job.bids.length > 0 && (
               <div className="text-xs font-semibold text-emerald-600">
@@ -276,7 +294,7 @@ export default function JobDetail() {
         <div className="lg:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Descrição do Serviço</CardTitle>
+              <CardTitle>Descrição</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <p className="whitespace-pre-line leading-relaxed">
@@ -285,14 +303,14 @@ export default function JobDetail() {
               {job.photos && job.photos.length > 0 && (
                 <div className="mt-4">
                   <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" /> Fotos do Local
+                    <ImageIcon className="h-4 w-4" /> Fotos / Anexos
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                     {job.photos.map((photo, i) => (
                       <img
                         key={i}
                         src={photo}
-                        alt={`Job photo ${i + 1}`}
+                        alt={`Photo ${i + 1}`}
                         className="rounded-lg border object-cover w-full h-32 hover:scale-105 transition-transform cursor-pointer"
                       />
                     ))}
@@ -307,10 +325,10 @@ export default function JobDetail() {
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Settings2 className="h-5 w-5 text-primary" /> Gerenciar
-                  Status do Job
+                  Status
                 </CardTitle>
                 <CardDescription>
-                  Mova o job pelo funil de execução manualmente se necessário.
+                  Altere o status manualmente se necessário.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -322,7 +340,7 @@ export default function JobDetail() {
                       job.status === 'open' ? 'pointer-events-none' : ''
                     }
                   >
-                    Aberto
+                    Aberto / Disponível
                   </Button>
                   <Button
                     variant={
@@ -335,7 +353,7 @@ export default function JobDetail() {
                         : ''
                     }
                   >
-                    Em Andamento
+                    Em Andamento / Reservado
                   </Button>
                   <Button
                     variant={job.status === 'completed' ? 'default' : 'outline'}
@@ -346,7 +364,7 @@ export default function JobDetail() {
                         : ''
                     }
                   >
-                    Finalizado
+                    Finalizado / Fechado
                   </Button>
                 </div>
               </CardContent>
@@ -360,7 +378,7 @@ export default function JobDetail() {
                 <CardDescription>
                   {job.type === 'auction'
                     ? 'Acompanhe os lances do leilão.'
-                    : 'Escolha a melhor proposta.'}
+                    : 'Escolha a melhor proposta ou comprador/locatário.'}
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -403,7 +421,8 @@ export default function JobDetail() {
                             size="sm"
                             onClick={() => handleAcceptBid(bid.id)}
                           >
-                            Aceitar e Pagar
+                            Aceitar e{' '}
+                            {job.listingType === 'job' ? 'Pagar' : 'Prosseguir'}
                           </Button>
                         </div>
                       </div>
@@ -422,12 +441,12 @@ export default function JobDetail() {
                 <CardHeader className="bg-muted/30">
                   <CardTitle className="flex items-center justify-between">
                     <span className="flex items-center gap-2">
-                      <MessageSquare className="h-5 w-5" /> Sala de Chat
+                      <MessageSquare className="h-5 w-5" /> Sala de Chat Segura
                     </span>
                     {job.status !== 'completed' &&
                       job.status !== 'cancelled' && (
                         <Badge className="bg-indigo-500 hover:bg-indigo-600">
-                          Escrow: {formatCurrency(acceptedBid?.amount || 0)}
+                          Protegido: {formatCurrency(acceptedBid?.amount || 0)}
                         </Badge>
                       )}
                   </CardTitle>
@@ -492,8 +511,7 @@ export default function JobDetail() {
                         className="bg-emerald-600 hover:bg-emerald-700 w-full md:w-auto"
                         onClick={handleComplete}
                       >
-                        <CheckCircle className="mr-2 h-4 w-4" /> Concluir e
-                        Pagar
+                        <CheckCircle className="mr-2 h-4 w-4" /> Concluir
                       </Button>
                     )}
                 </CardFooter>
@@ -505,10 +523,14 @@ export default function JobDetail() {
           {!isOwner && job.status === 'open' && !hasBidded && (
             <Card>
               <CardHeader>
-                <CardTitle>Enviar Proposta</CardTitle>
+                <CardTitle>
+                  {job.listingType === 'job'
+                    ? 'Enviar Proposta'
+                    : 'Enviar Interesse/Oferta'}
+                </CardTitle>
                 {job.type === 'auction' && (
                   <CardDescription className="text-amber-600 font-medium">
-                    Aviso: O lance deve ser menor que{' '}
+                    Aviso: A oferta deve ser menor que{' '}
                     {formatCurrency(lowestBid)}
                   </CardDescription>
                 )}
@@ -526,10 +548,10 @@ export default function JobDetail() {
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Detalhes da Proposta
+                    Detalhes / Mensagem
                   </label>
                   <Textarea
-                    placeholder="Descreva como você executará o serviço..."
+                    placeholder="Descreva sua proposta ou dúvidas..."
                     value={bidDescription}
                     onChange={(e) => setBidDescription(e.target.value)}
                   />
@@ -544,13 +566,13 @@ export default function JobDetail() {
           <Card className="bg-blue-50/50 border-blue-100">
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-blue-800 flex items-center gap-2">
-                <ShieldAlert className="h-4 w-4" /> Pagamento Protegido
+                <ShieldAlert className="h-4 w-4" /> Transação Segura
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs text-blue-700">
               <p>
-                O valor fica retido pelo BIDWORK e só é liberado ao profissional
-                após a conclusão e aprovação do serviço.
+                O valor fica retido pelo BIDWORK e só é liberado após a
+                conclusão e aprovação pelas partes.
               </p>
             </CardContent>
           </Card>

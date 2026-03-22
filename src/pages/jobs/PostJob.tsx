@@ -85,6 +85,7 @@ export default function PostJob() {
 
   const preProjectId = searchParams.get('projectId') || ''
   const preStageId = searchParams.get('stageId') || ''
+  const typeParam = searchParams.get('type') || 'job'
 
   const [linkToProject, setLinkToProject] = useState(!!preProjectId)
   const [openProject, setOpenProject] = useState(false)
@@ -116,7 +117,7 @@ export default function PostJob() {
     // Budget & Dates
     budget: z
       .number({ required_error: t('val.required') })
-      .refine((val) => val > 0, t('val.required')),
+      .refine((val) => val >= 0, t('val.required')),
     auctionEndDate: z.date().optional(),
     maxExecutionDeadline: z.date({
       required_error: t('val.required'),
@@ -240,6 +241,7 @@ export default function PostJob() {
       stageId: linkToProject ? data.stageId || undefined : undefined,
       regionCode: data.state,
       contactPhone: data.contactPhone,
+      listingType: typeParam, // 'job', 'product', 'rental', 'community'
     })
 
     if (
@@ -253,13 +255,26 @@ export default function PostJob() {
 
     toast({
       title: t('success'),
-      description: 'Job publicado com sucesso!',
+      description: 'Anúncio/Job publicado com sucesso!',
     })
 
     if (linkToProject && data.projectId) {
       navigate(`/construction/projects/${data.projectId}`)
     } else {
-      navigate('/my-jobs')
+      navigate('/')
+    }
+  }
+
+  const getPageTitle = () => {
+    switch (typeParam) {
+      case 'product':
+        return 'Anunciar Produto'
+      case 'rental':
+        return 'Anunciar Imóvel / Equipamento'
+      case 'community':
+        return 'Postagem na Comunidade'
+      default:
+        return t('sidebar.post_job')
     }
   }
 
@@ -271,192 +286,196 @@ export default function PostJob() {
       />
 
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold tracking-tight">
-          {t('sidebar.post_job')}
-        </h1>
-        <p className="text-muted-foreground">{t('job.post.details')}</p>
+        <h1 className="text-3xl font-bold tracking-tight">{getPageTitle()}</h1>
+        <p className="text-muted-foreground">
+          Preencha as informações para disponibilizar no marketplace.
+        </p>
       </div>
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {/* Construction/Project Context - Now visible to everyone */}
-          <Card className="border-l-4 border-l-orange-500">
-            <CardHeader className={linkToProject ? 'pb-4' : ''}>
-              <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                <div className="flex items-center gap-2">
-                  <HardHat className="h-5 w-5" />{' '}
-                  {t('construction.table.project')}
-                </div>
-                <div className="flex items-center gap-2 text-sm font-normal">
-                  <Label
-                    htmlFor="link-project"
-                    className="cursor-pointer font-medium"
-                  >
-                    Vincular este serviço a uma obra existente?
-                  </Label>
-                  <Switch
-                    id="link-project"
-                    checked={linkToProject}
-                    onCheckedChange={handleToggleLink}
+          {typeParam === 'job' && (
+            <Card className="border-l-4 border-l-orange-500">
+              <CardHeader className={linkToProject ? 'pb-4' : ''}>
+                <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-center gap-2">
+                    <HardHat className="h-5 w-5" />{' '}
+                    {t('construction.table.project')}
+                  </div>
+                  <div className="flex items-center gap-2 text-sm font-normal">
+                    <Label
+                      htmlFor="link-project"
+                      className="cursor-pointer font-medium"
+                    >
+                      Vincular este serviço a uma obra existente?
+                    </Label>
+                    <Switch
+                      id="link-project"
+                      checked={linkToProject}
+                      onCheckedChange={handleToggleLink}
+                    />
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              {linkToProject && (
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="projectId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>
+                          {t('construction.table.project')} (Opcional)
+                        </FormLabel>
+                        <Popover
+                          open={openProject}
+                          onOpenChange={setOpenProject}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className={cn(
+                                  'w-full justify-between',
+                                  !field.value && 'text-muted-foreground',
+                                )}
+                              >
+                                {field.value
+                                  ? projects.find((p) => p.id === field.value)
+                                      ?.name
+                                  : t('general.select')}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="p-0"
+                            style={{
+                              width: 'var(--radix-popover-trigger-width)',
+                            }}
+                          >
+                            <Command>
+                              <CommandInput
+                                placeholder={t('general.search') || 'Buscar...'}
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  Nenhum projeto encontrado.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {projects.map((p) => (
+                                    <CommandItem
+                                      key={p.id}
+                                      value={p.name}
+                                      onSelect={() => {
+                                        form.setValue('projectId', p.id)
+                                        form.setValue('stageId', '')
+                                        setOpenProject(false)
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          p.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                        )}
+                                      />
+                                      {p.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
                   />
-                </div>
-              </CardTitle>
-            </CardHeader>
-            {linkToProject && (
-              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="projectId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>
-                        {t('construction.table.project')} (Opcional)
-                      </FormLabel>
-                      <Popover open={openProject} onOpenChange={setOpenProject}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              className={cn(
-                                'w-full justify-between',
-                                !field.value && 'text-muted-foreground',
-                              )}
-                            >
-                              {field.value
-                                ? projects.find((p) => p.id === field.value)
-                                    ?.name
-                                : t('general.select')}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="p-0"
-                          style={{
-                            width: 'var(--radix-popover-trigger-width)',
-                          }}
-                        >
-                          <Command>
-                            <CommandInput
-                              placeholder={t('general.search') || 'Buscar...'}
-                            />
-                            <CommandList>
-                              <CommandEmpty>
-                                Nenhum projeto encontrado.
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {projects.map((p) => (
-                                  <CommandItem
-                                    key={p.id}
-                                    value={p.name}
-                                    onSelect={() => {
-                                      form.setValue('projectId', p.id)
-                                      form.setValue('stageId', '')
-                                      setOpenProject(false)
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        'mr-2 h-4 w-4',
-                                        p.id === field.value
-                                          ? 'opacity-100'
-                                          : 'opacity-0',
-                                      )}
-                                    />
-                                    {p.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="stageId"
-                  render={({ field }) => (
-                    <FormItem className="flex flex-col">
-                      <FormLabel>
-                        {t('proj.partner.stage')} (Opcional)
-                      </FormLabel>
-                      <Popover open={openStage} onOpenChange={setOpenStage}>
-                        <PopoverTrigger asChild>
-                          <FormControl>
-                            <Button
-                              variant="outline"
-                              role="combobox"
-                              disabled={!selectedProjectId}
-                              className={cn(
-                                'w-full justify-between',
-                                !field.value && 'text-muted-foreground',
-                              )}
-                            >
-                              {field.value
-                                ? availableStages.find(
-                                    (s) => s.id === field.value,
-                                  )?.name
-                                : t('general.select')}
-                              <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                            </Button>
-                          </FormControl>
-                        </PopoverTrigger>
-                        <PopoverContent
-                          className="p-0"
-                          style={{
-                            width: 'var(--radix-popover-trigger-width)',
-                          }}
-                        >
-                          <Command>
-                            <CommandInput
-                              placeholder={t('general.search') || 'Buscar...'}
-                            />
-                            <CommandList>
-                              <CommandEmpty>
-                                Nenhuma etapa encontrada.
-                              </CommandEmpty>
-                              <CommandGroup>
-                                {availableStages.map((s) => (
-                                  <CommandItem
-                                    key={s.id}
-                                    value={s.name}
-                                    onSelect={() => {
-                                      form.setValue('stageId', s.id)
-                                      setOpenStage(false)
-                                    }}
-                                  >
-                                    <Check
-                                      className={cn(
-                                        'mr-2 h-4 w-4',
-                                        s.id === field.value
-                                          ? 'opacity-100'
-                                          : 'opacity-0',
-                                      )}
-                                    />
-                                    {s.name}
-                                  </CommandItem>
-                                ))}
-                              </CommandGroup>
-                            </CommandList>
-                          </Command>
-                        </PopoverContent>
-                      </Popover>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            )}
-          </Card>
+                  <FormField
+                    control={form.control}
+                    name="stageId"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-col">
+                        <FormLabel>
+                          {t('proj.partner.stage')} (Opcional)
+                        </FormLabel>
+                        <Popover open={openStage} onOpenChange={setOpenStage}>
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                disabled={!selectedProjectId}
+                                className={cn(
+                                  'w-full justify-between',
+                                  !field.value && 'text-muted-foreground',
+                                )}
+                              >
+                                {field.value
+                                  ? availableStages.find(
+                                      (s) => s.id === field.value,
+                                    )?.name
+                                  : t('general.select')}
+                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent
+                            className="p-0"
+                            style={{
+                              width: 'var(--radix-popover-trigger-width)',
+                            }}
+                          >
+                            <Command>
+                              <CommandInput
+                                placeholder={t('general.search') || 'Buscar...'}
+                              />
+                              <CommandList>
+                                <CommandEmpty>
+                                  Nenhuma etapa encontrada.
+                                </CommandEmpty>
+                                <CommandGroup>
+                                  {availableStages.map((s) => (
+                                    <CommandItem
+                                      key={s.id}
+                                      value={s.name}
+                                      onSelect={() => {
+                                        form.setValue('stageId', s.id)
+                                        setOpenStage(false)
+                                      }}
+                                    >
+                                      <Check
+                                        className={cn(
+                                          'mr-2 h-4 w-4',
+                                          s.id === field.value
+                                            ? 'opacity-100'
+                                            : 'opacity-0',
+                                        )}
+                                      />
+                                      {s.name}
+                                    </CommandItem>
+                                  ))}
+                                </CommandGroup>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </CardContent>
+              )}
+            </Card>
+          )}
 
           {/* Basic Information */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('job.post.details')}</CardTitle>
+              <CardTitle>Informações Básicas</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <FormField
@@ -466,7 +485,7 @@ export default function PostJob() {
                   <FormItem>
                     <FormLabel>{t('plans.field.title')}</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Reforma da Sala" {...field} />
+                      <Input placeholder="Título do Anúncio/Vaga" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -480,7 +499,7 @@ export default function PostJob() {
                     <FormLabel>{t('plans.field.description')}</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="..."
+                        placeholder="Detalhes completos..."
                         className="min-h-[120px]"
                         {...field}
                       />
@@ -589,7 +608,7 @@ export default function PostJob() {
                 name="maxExecutionDeadline"
                 render={({ field }) => (
                   <FormItem className="pt-2">
-                    <FormLabel>{t('plans.field.deadline')}</FormLabel>
+                    <FormLabel>Data Limite / Validade</FormLabel>
                     <Popover>
                       <PopoverTrigger asChild>
                         <FormControl>
@@ -756,55 +775,57 @@ export default function PostJob() {
           {/* Budget and Type */}
           <Card>
             <CardHeader>
-              <CardTitle>{t('job.budget')}</CardTitle>
+              <CardTitle>Precificação e Tipo</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <FormField
-                control={form.control}
-                name="type"
-                render={({ field }) => (
-                  <FormItem className="space-y-3">
-                    <FormLabel>{t('job.type')}</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                      >
-                        <FormItem>
-                          <FormControl>
-                            <RadioGroupItem
-                              value="fixed"
-                              className="peer sr-only"
-                            />
-                          </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
-                            <Tag className="mb-3 h-6 w-6" />
-                            <span className="font-semibold">
-                              {t('job.fixed_price')}
-                            </span>
-                          </FormLabel>
-                        </FormItem>
-                        <FormItem>
-                          <FormControl>
-                            <RadioGroupItem
-                              value="auction"
-                              className="peer sr-only"
-                            />
-                          </FormControl>
-                          <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
-                            <Gavel className="mb-3 h-6 w-6" />
-                            <span className="font-semibold">
-                              {t('job.auction_reverse')}
-                            </span>
-                          </FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {typeParam === 'job' && (
+                <FormField
+                  control={form.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem className="space-y-3">
+                      <FormLabel>{t('job.type')}</FormLabel>
+                      <FormControl>
+                        <RadioGroup
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                        >
+                          <FormItem>
+                            <FormControl>
+                              <RadioGroupItem
+                                value="fixed"
+                                className="peer sr-only"
+                              />
+                            </FormControl>
+                            <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
+                              <Tag className="mb-3 h-6 w-6" />
+                              <span className="font-semibold">
+                                {t('job.fixed_price')}
+                              </span>
+                            </FormLabel>
+                          </FormItem>
+                          <FormItem>
+                            <FormControl>
+                              <RadioGroupItem
+                                value="auction"
+                                className="peer sr-only"
+                              />
+                            </FormControl>
+                            <FormLabel className="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary cursor-pointer h-full">
+                              <Gavel className="mb-3 h-6 w-6" />
+                              <span className="font-semibold">
+                                {t('job.auction_reverse')}
+                              </span>
+                            </FormLabel>
+                          </FormItem>
+                        </RadioGroup>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
@@ -813,9 +834,9 @@ export default function PostJob() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>
-                        {form.watch('type') === 'auction'
+                        {form.watch('type') === 'auction' && typeParam === 'job'
                           ? t('job.max_initial')
-                          : t('job.budget')}
+                          : 'Valor / Orçamento Estimado'}
                       </FormLabel>
                       <FormControl>
                         <CurrencyInput
@@ -825,14 +846,16 @@ export default function PostJob() {
                         />
                       </FormControl>
                       <FormDescription>
-                        {t('job.post.budget_help')}
+                        {typeParam === 'community'
+                          ? 'Deixe 0.00 se for grátis.'
+                          : t('job.post.budget_help')}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
 
-                {form.watch('type') === 'auction' && (
+                {form.watch('type') === 'auction' && typeParam === 'job' && (
                   <FormField
                     control={form.control}
                     name="auctionEndDate"
@@ -938,7 +961,7 @@ export default function PostJob() {
                     <div key={idx} className="relative group shrink-0">
                       <img
                         src={photo}
-                        alt="Job preview"
+                        alt="Preview"
                         className="w-32 h-32 object-cover rounded-md border shadow-sm"
                       />
                       <button
@@ -1025,12 +1048,12 @@ export default function PostJob() {
             <Button
               variant="outline"
               type="button"
-              onClick={() => navigate('/dashboard')}
+              onClick={() => navigate('/')}
             >
               {t('cancel')}
             </Button>
             <Button type="submit" size="lg" disabled={!form.formState.isValid}>
-              {t('dashboard.post_job')}
+              Publicar
             </Button>
           </div>
         </form>

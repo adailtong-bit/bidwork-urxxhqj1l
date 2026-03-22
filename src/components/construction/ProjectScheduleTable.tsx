@@ -41,6 +41,7 @@ import {
   Trash2,
   UserPlus,
   CheckCircle2,
+  Ruler,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import {
@@ -56,10 +57,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { CurrencyInput } from '@/components/CurrencyInput'
+import { useToast } from '@/hooks/use-toast'
 
 interface ProjectScheduleTableProps {
   projectId: string
@@ -74,9 +77,15 @@ export function ProjectScheduleTable({
   partners = [],
   isPartnerView = false,
 }: ProjectScheduleTableProps) {
-  const { updateStage, updateSubStage, addSubStage, deleteSubStage } =
-    useProjectStore()
+  const {
+    updateStage,
+    updateSubStage,
+    addSubStage,
+    deleteSubStage,
+    requestMeasurement,
+  } = useProjectStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
+  const { toast } = useToast()
 
   const [expandedStages, setExpandedStages] = useState<Set<string>>(
     new Set((stages || []).map((s) => s.id)),
@@ -100,6 +109,15 @@ export function ProjectScheduleTable({
   } | null>(null)
   const [selectedMember, setSelectedMember] = useState('')
   const [taskPrice, setTaskPrice] = useState<number>(0)
+
+  // Measurement State
+  const [measurementData, setMeasurementData] = useState<{
+    stageId: string
+    subStageId: string
+    currentProgress: number
+    taskPrice: number
+  } | null>(null)
+  const [reqPct, setReqPct] = useState<number>(0)
 
   const toggleExpand = (id: string) => {
     const newSet = new Set(expandedStages)
@@ -198,6 +216,32 @@ export function ProjectScheduleTable({
     }
   }
 
+  const handleRequestMeasurement = () => {
+    if (measurementData && reqPct > measurementData.currentProgress) {
+      const diff = reqPct - measurementData.currentProgress
+      const amount = (diff / 100) * measurementData.taskPrice
+      requestMeasurement(projectId, {
+        stageId: measurementData.stageId,
+        subStageId: measurementData.subStageId,
+        requestedPercentage: reqPct,
+        amount,
+        partnerId: partners.length > 0 ? partners[0].id : undefined,
+      })
+      toast({
+        title: 'Medição solicitada!',
+        description: 'Enviada para aprovação do contratante.',
+      })
+      setMeasurementData(null)
+      setReqPct(0)
+    } else {
+      toast({
+        variant: 'destructive',
+        title: 'Valor inválido',
+        description: 'O % deve ser maior que o atual e menor ou igual a 100%.',
+      })
+    }
+  }
+
   const safeStages = Array.isArray(stages) ? stages : []
 
   const availablePartners =
@@ -263,23 +307,25 @@ export function ProjectScheduleTable({
                   <Badge variant="outline">{t(`status.${stage.status}`)}</Badge>
                 </TableCell>
                 <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreVertical className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setNewItem({ parentId: stage.id, name: '' })
-                        }
-                      >
-                        <Plus className="mr-2 h-4 w-4" />
-                        {t('sched.add_activity')}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  {!isPartnerView && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={() =>
+                            setNewItem({ parentId: stage.id, name: '' })
+                          }
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          {t('sched.add_activity')}
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
                 </TableCell>
               </TableRow>
 
@@ -328,34 +374,40 @@ export function ProjectScheduleTable({
                             value={sub.progress}
                             className="h-1.5 flex-1"
                           />
-                          <Input
-                            type="number"
-                            min={0}
-                            max={100}
-                            className="h-7 w-16 text-right text-xs"
-                            value={sub.progress}
-                            onChange={(e) =>
-                              handleUpdateProgress(
-                                stage.id,
-                                sub.id,
-                                parseInt(e.target.value) || 0,
-                              )
-                            }
-                          />
+                          {!isPartnerView && (
+                            <Input
+                              type="number"
+                              min={0}
+                              max={100}
+                              className="h-7 w-16 text-right text-xs"
+                              value={sub.progress}
+                              onChange={(e) =>
+                                handleUpdateProgress(
+                                  stage.id,
+                                  sub.id,
+                                  parseInt(e.target.value) || 0,
+                                )
+                              }
+                            />
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant="outline"
                           className={cn(
-                            'text-[10px] h-5 cursor-pointer hover:opacity-80',
+                            'text-[10px] h-5',
+                            !isPartnerView && 'cursor-pointer hover:opacity-80',
                             sub.status === 'delayed'
                               ? 'text-red-600 border-red-200 bg-red-50'
                               : sub.status === 'completed'
                                 ? 'text-green-600 border-green-200 bg-green-50'
                                 : '',
                           )}
-                          onClick={() => handleToggleStatus(stage.id, sub.id)}
+                          onClick={() => {
+                            if (!isPartnerView)
+                              handleToggleStatus(stage.id, sub.id)
+                          }}
                         >
                           {t(`status.${sub.status}`)}
                         </Badge>
@@ -372,45 +424,68 @@ export function ProjectScheduleTable({
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setAssignData({
-                                  stageId: stage.id,
-                                  subStageId: sub.id,
-                                })
-                              }
-                            >
-                              <UserPlus className="mr-2 h-4 w-4" />{' '}
-                              {t('sched.allocate_labor')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleToggleStatus(stage.id, sub.id)
-                              }
-                            >
-                              <CheckCircle2 className="mr-2 h-4 w-4" />
-                              {sub.status === 'completed'
-                                ? t('sched.reopen')
-                                : t('confirm')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleToggleDelay(stage.id, sub.id, sub.status)
-                              }
-                            >
-                              <AlertCircle className="mr-2 h-4 w-4" />
-                              {sub.status === 'delayed'
-                                ? t('sched.remove_delay')
-                                : t('sched.mark_delay')}
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() =>
-                                handleDeleteClick(stage.id, sub.id)
-                              }
-                            >
-                              <Trash2 className="mr-2 h-4 w-4" /> {t('remove')}
-                            </DropdownMenuItem>
+                            {isPartnerView ? (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  setMeasurementData({
+                                    stageId: stage.id,
+                                    subStageId: sub.id,
+                                    currentProgress: sub.progress,
+                                    taskPrice: sub.taskPrice || 0,
+                                  })
+                                }
+                              >
+                                <Ruler className="mr-2 h-4 w-4 text-primary" />
+                                Solicitar Medição
+                              </DropdownMenuItem>
+                            ) : (
+                              <>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    setAssignData({
+                                      stageId: stage.id,
+                                      subStageId: sub.id,
+                                    })
+                                  }
+                                >
+                                  <UserPlus className="mr-2 h-4 w-4" />{' '}
+                                  {t('sched.allocate_labor')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleToggleStatus(stage.id, sub.id)
+                                  }
+                                >
+                                  <CheckCircle2 className="mr-2 h-4 w-4" />
+                                  {sub.status === 'completed'
+                                    ? t('sched.reopen')
+                                    : t('confirm')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onClick={() =>
+                                    handleToggleDelay(
+                                      stage.id,
+                                      sub.id,
+                                      sub.status,
+                                    )
+                                  }
+                                >
+                                  <AlertCircle className="mr-2 h-4 w-4" />
+                                  {sub.status === 'delayed'
+                                    ? t('sched.remove_delay')
+                                    : t('sched.mark_delay')}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() =>
+                                    handleDeleteClick(stage.id, sub.id)
+                                  }
+                                >
+                                  <Trash2 className="mr-2 h-4 w-4" />{' '}
+                                  {t('remove')}
+                                </DropdownMenuItem>
+                              </>
+                            )}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </TableCell>
@@ -418,7 +493,7 @@ export function ProjectScheduleTable({
                   ))}
 
                   {/* Add SubStage Row */}
-                  {newItem?.parentId === stage.id && (
+                  {newItem?.parentId === stage.id && !isPartnerView && (
                     <TableRow className="bg-muted/10">
                       <TableCell className="pl-12">
                         <div className="flex items-center gap-2 border-l-2 border-muted pl-3">
@@ -533,6 +608,56 @@ export function ProjectScheduleTable({
           </div>
           <DialogFooter>
             <Button onClick={handleAssign}>{t('save')}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Request Measurement Dialog */}
+      <Dialog
+        open={!!measurementData}
+        onOpenChange={() => setMeasurementData(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Solicitar Medição</DialogTitle>
+            <DialogDescription>
+              Atualize a porcentagem concluída. O contratante aprovará para
+              gerar a fatura.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>
+                Progresso Atual: {measurementData?.currentProgress}%
+              </Label>
+              <Label className="mt-2">Novo Progresso Solicitado (%)</Label>
+              <Input
+                type="number"
+                min={measurementData?.currentProgress}
+                max={100}
+                value={reqPct}
+                onChange={(e) => setReqPct(Number(e.target.value))}
+              />
+            </div>
+            <div className="bg-muted p-3 rounded-md text-sm">
+              <p>
+                Valor total da tarefa:{' '}
+                {formatCurrency(measurementData?.taskPrice || 0)}
+              </p>
+              <p className="font-semibold text-primary mt-1">
+                Valor a receber nesta medição:{' '}
+                {formatCurrency(
+                  measurementData
+                    ? (Math.max(0, reqPct - measurementData.currentProgress) /
+                        100) *
+                        measurementData.taskPrice
+                    : 0,
+                )}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={handleRequestMeasurement}>Solicitar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

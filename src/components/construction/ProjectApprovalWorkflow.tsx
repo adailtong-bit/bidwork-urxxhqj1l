@@ -29,6 +29,7 @@ import {
   XCircle,
   Clock,
   FileText,
+  Ruler,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -39,8 +40,9 @@ interface ProjectApprovalWorkflowProps {
 export function ProjectApprovalWorkflow({
   projectId,
 }: ProjectApprovalWorkflowProps) {
-  const { getProject, updateApprovalStatus } = useProjectStore()
-  const { t, formatDate } = useLanguageStore()
+  const { getProject, updateApprovalStatus, approveMeasurement } =
+    useProjectStore()
+  const { t, formatDate, formatCurrency } = useLanguageStore()
   const { toast } = useToast()
   const project = getProject(projectId)
 
@@ -51,6 +53,14 @@ export function ProjectApprovalWorkflow({
     toast({
       title: t('success'),
       description: `${t('status')} ${t('proj.approvals.' + status)}`,
+    })
+  }
+
+  const handleApproveMeasurement = (id: string) => {
+    approveMeasurement(projectId, id)
+    toast({
+      title: 'Medição Aprovada',
+      description: 'Fatura gerada e progresso atualizado.',
     })
   }
 
@@ -75,96 +85,183 @@ export function ProjectApprovalWorkflow({
     }
   }
 
+  const pendingMeasurements =
+    project.measurements?.filter((m) => m.status === 'pending') || []
+
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>{t('proj.approvals.title')}</CardTitle>
-        <CardDescription>{t('proj.approvals.desc')}</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{t('proj.approvals.type')}</TableHead>
-                <TableHead>{t('proj.approvals.description')}</TableHead>
-                <TableHead>{t('proj.approvals.date')}</TableHead>
-                <TableHead>{t('proj.approvals.status')}</TableHead>
-                <TableHead>{t('proj.approvals.history')}</TableHead>
-                <TableHead className="w-[50px]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {project.approvalLogs && project.approvalLogs.length > 0 ? (
-                project.approvalLogs.map((log) => (
-                  <TableRow key={log.id}>
-                    <TableCell className="capitalize flex items-center gap-2">
-                      {log.type === 'invoice' ? (
-                        <FileText className="h-4 w-4 text-blue-500" />
-                      ) : (
-                        <Clock className="h-4 w-4 text-orange-500" />
-                      )}
-                      {log.type}
-                    </TableCell>
-                    <TableCell>{log.description}</TableCell>
-                    <TableCell>{formatDate(log.date, 'dd/MM/yyyy')}</TableCell>
-                    <TableCell>{getStatusBadge(log.status)}</TableCell>
-                    <TableCell>
-                      <span className="text-xs text-muted-foreground">
-                        {log.history.length} {t('proj.approvals.changes')}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-4 w-4" />
+    <div className="space-y-6">
+      {pendingMeasurements.length > 0 && (
+        <Card className="w-full border-blue-200">
+          <CardHeader className="bg-blue-50/50 pb-4">
+            <CardTitle className="flex items-center gap-2 text-blue-800">
+              <Ruler className="h-5 w-5" /> Aprovação de Medições (Parceiros)
+            </CardTitle>
+            <CardDescription>
+              Valide o percentual executado para liberar faturamento automático.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data Solicitação</TableHead>
+                    <TableHead>Tarefa / Fase</TableHead>
+                    <TableHead>Parceiro</TableHead>
+                    <TableHead className="text-right">
+                      Progresso Solicitado
+                    </TableHead>
+                    <TableHead className="text-right">
+                      Valor a Liberar
+                    </TableHead>
+                    <TableHead className="text-center">Status</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingMeasurements.map((m) => {
+                    const partner = project.partners?.find(
+                      (p) => p.id === m.partnerId,
+                    )
+                    const stageName =
+                      project.stages.find((s) => s.id === m.stageId)?.name || ''
+                    const subName =
+                      project.stages
+                        .find((s) => s.id === m.stageId)
+                        ?.subStages.find((sub) => sub.id === m.subStageId)
+                        ?.name || ''
+
+                    return (
+                      <TableRow key={m.id}>
+                        <TableCell>
+                          {formatDate(m.date, 'dd/MM/yyyy')}
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-medium">{subName}</span>
+                          <span className="text-xs text-muted-foreground block">
+                            {stageName}
+                          </span>
+                        </TableCell>
+                        <TableCell>{partner?.companyName}</TableCell>
+                        <TableCell className="text-right font-bold">
+                          {m.requestedPercentage}%
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-primary">
+                          {formatCurrency(m.amount)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="secondary">Pendente</Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            size="sm"
+                            onClick={() => handleApproveMeasurement(m.id)}
+                          >
+                            <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
                           </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleStatusChange(log.id, 'approved')
-                            }
-                          >
-                            <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
-                            {t('proj.approvals.approved')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleStatusChange(log.id, 'in_review')
-                            }
-                          >
-                            <Clock className="mr-2 h-4 w-4 text-yellow-500" />
-                            {t('proj.approvals.in_review')}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() =>
-                              handleStatusChange(log.id, 'rejected')
-                            }
-                          >
-                            <XCircle className="mr-2 h-4 w-4 text-red-500" />
-                            {t('proj.approvals.rejected')}
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="w-full">
+        <CardHeader>
+          <CardTitle>{t('proj.approvals.title')}</CardTitle>
+          <CardDescription>{t('proj.approvals.desc')}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{t('proj.approvals.type')}</TableHead>
+                  <TableHead>{t('proj.approvals.description')}</TableHead>
+                  <TableHead>{t('proj.approvals.date')}</TableHead>
+                  <TableHead>{t('proj.approvals.status')}</TableHead>
+                  <TableHead>{t('proj.approvals.history')}</TableHead>
+                  <TableHead className="w-[50px]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {project.approvalLogs && project.approvalLogs.length > 0 ? (
+                  project.approvalLogs.map((log) => (
+                    <TableRow key={log.id}>
+                      <TableCell className="capitalize flex items-center gap-2">
+                        {log.type === 'invoice' ? (
+                          <FileText className="h-4 w-4 text-blue-500" />
+                        ) : (
+                          <Clock className="h-4 w-4 text-orange-500" />
+                        )}
+                        {log.type}
+                      </TableCell>
+                      <TableCell>{log.description}</TableCell>
+                      <TableCell>
+                        {formatDate(log.date, 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell>{getStatusBadge(log.status)}</TableCell>
+                      <TableCell>
+                        <span className="text-xs text-muted-foreground">
+                          {log.history.length} {t('proj.approvals.changes')}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(log.id, 'approved')
+                              }
+                            >
+                              <CheckCircle2 className="mr-2 h-4 w-4 text-green-500" />
+                              {t('proj.approvals.approved')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(log.id, 'in_review')
+                              }
+                            >
+                              <Clock className="mr-2 h-4 w-4 text-yellow-500" />
+                              {t('proj.approvals.in_review')}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() =>
+                                handleStatusChange(log.id, 'rejected')
+                              }
+                            >
+                              <XCircle className="mr-2 h-4 w-4 text-red-500" />
+                              {t('proj.approvals.rejected')}
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-8 text-muted-foreground"
+                    >
+                      {t('proj.approvals.empty')}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-8 text-muted-foreground"
-                  >
-                    {t('proj.approvals.empty')}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </CardContent>
-    </Card>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   )
 }

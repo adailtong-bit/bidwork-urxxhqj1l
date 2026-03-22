@@ -64,11 +64,6 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
     return <Navigate to="/login" replace />
   }
 
-  // Redirect partner to specific dashboard if they try to access main dashboard
-  if (user?.role === 'partner' && window.location.pathname === '/dashboard') {
-    return <Navigate to="/partner/dashboard" replace />
-  }
-
   return (
     <>
       {user?.pendingEvaluation && <EvaluationModal open={true} />}

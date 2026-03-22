@@ -22,11 +22,13 @@ export default function MyJobs() {
 
   if (!user) return null
 
-  const isContractor = user.role === 'contractor'
+  // Since a user can be both Contractor and Executor in a unified dual-role system,
+  // we combine all activities related to this user into one view, categorized nicely.
 
-  const myJobs = isContractor
-    ? jobs.filter((j) => j.ownerId === user.id)
-    : jobs.filter((j) => j.bids.some((b) => b.executorId === user.id))
+  const myContractedJobs = jobs.filter((j) => j.ownerId === user.id)
+  const myExecutedJobs = jobs.filter((j) =>
+    j.bids.some((b) => b.executorId === user.id),
+  )
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -52,65 +54,126 @@ export default function MyJobs() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8 max-w-6xl mx-auto pb-10">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {isContractor ? t('sidebar.my_jobs') : t('sidebar.applications')}
+            Minhas Atividades
           </h1>
           <p className="text-muted-foreground">
-            {t('proj.partner.manage_activities')}
+            Acompanhe vagas que você publicou ou nas quais você se candidatou.
           </p>
         </div>
-        {isContractor && (
-          <Button asChild>
-            <Link to="/post-job">
-              <Plus className="mr-2 h-4 w-4" /> {t('dashboard.post_job')}
-            </Link>
-          </Button>
-        )}
+        <Button asChild>
+          <Link to="/post-job">
+            <Plus className="mr-2 h-4 w-4" /> {t('dashboard.post_job')}
+          </Link>
+        </Button>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>{t('nav.projects')}</CardTitle>
+          <CardTitle>Jobs Publicados (Sou Contratante)</CardTitle>
         </CardHeader>
         <CardContent>
-          {myJobs.length === 0 ? (
-            <div className="text-center py-10 text-muted-foreground">
-              {t('plans.empty_desc')}
+          {myContractedJobs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed">
+              Nenhuma vaga publicada.
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>{t('plans.field.title')}</TableHead>
-                  <TableHead>{t('plans.field.category')}</TableHead>
-                  <TableHead>{t('job.budget')}</TableHead>
-                  <TableHead>{t('status')}</TableHead>
-                  <TableHead>{t('job.proposals')}</TableHead>
-                  <TableHead className="text-right">{t('actions')}</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {myJobs.map((job) => (
-                  <TableRow key={job.id}>
-                    <TableCell className="font-medium">{job.title}</TableCell>
-                    <TableCell>{job.category}</TableCell>
-                    <TableCell>{formatCurrency(job.budget)}</TableCell>
-                    <TableCell>{getStatusBadge(job.status)}</TableCell>
-                    <TableCell>{job.bids.length}</TableCell>
-                    <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link to={`/jobs/${job.id}`}>
-                          <Eye className="h-4 w-4 mr-1" /> {t('view')}
-                        </Link>
-                      </Button>
-                    </TableCell>
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead>{t('plans.field.title')}</TableHead>
+                    <TableHead>{t('plans.field.category')}</TableHead>
+                    <TableHead>{t('job.budget')}</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead>{t('job.proposals')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {myContractedJobs.map((job) => (
+                    <TableRow key={job.id}>
+                      <TableCell className="font-medium">{job.title}</TableCell>
+                      <TableCell>{job.category}</TableCell>
+                      <TableCell>{formatCurrency(job.budget)}</TableCell>
+                      <TableCell>{getStatusBadge(job.status)}</TableCell>
+                      <TableCell>{job.bids.length}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to={`/jobs/${job.id}`}>
+                            <Eye className="h-4 w-4 mr-1" /> {t('view')}
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Candidaturas & Execução (Sou Profissional)</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {myExecutedJobs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground bg-muted/20 rounded-lg border-2 border-dashed">
+              Nenhuma candidatura enviada.
+            </div>
+          ) : (
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader className="bg-muted/50">
+                  <TableRow>
+                    <TableHead>{t('plans.field.title')}</TableHead>
+                    <TableHead>Contratante</TableHead>
+                    <TableHead>Minha Proposta</TableHead>
+                    <TableHead>{t('status')}</TableHead>
+                    <TableHead className="text-right">{t('actions')}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {myExecutedJobs.map((job) => {
+                    const myBid = job.bids.find((b) => b.executorId === user.id)
+                    return (
+                      <TableRow key={job.id}>
+                        <TableCell className="font-medium">
+                          {job.title}
+                        </TableCell>
+                        <TableCell>{job.ownerName}</TableCell>
+                        <TableCell className="font-semibold text-primary">
+                          {formatCurrency(myBid?.amount || 0)}
+                        </TableCell>
+                        <TableCell>
+                          {job.acceptedBidId === myBid?.id ? (
+                            <Badge className="bg-green-500">
+                              Aceito / Ativo
+                            </Badge>
+                          ) : job.acceptedBidId ? (
+                            <Badge variant="destructive">Recusado</Badge>
+                          ) : (
+                            <Badge variant="secondary">Em Análise</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="sm" asChild>
+                            <Link to={`/jobs/${job.id}`}>
+                              <Eye className="h-4 w-4 mr-1" /> {t('view')}
+                            </Link>
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>

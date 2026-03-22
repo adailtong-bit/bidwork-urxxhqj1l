@@ -36,7 +36,6 @@ import { useLanguageStore } from '@/stores/useLanguageStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { AdSection } from '@/components/AdSection'
 
-// Simple string hash for stable pseudo-random sorting
 const hashString = (str: string) => {
   let h = 0
   for (let i = 0; i < str.length; i++)
@@ -55,7 +54,6 @@ export default function FindJobs() {
   const [regionFilter, setRegionFilter] = useState('all')
   const [isSmartSort, setIsSmartSort] = useState(false)
 
-  // Identify if user is on the Free ("Básico") plan
   const isBasicUser = !user || !user.planName || user.planName === 'Básico'
 
   const availableJobs = jobs.filter((job) => job.status === 'open')
@@ -69,7 +67,6 @@ export default function FindJobs() {
 
     return availableJobs
       .filter((job) => {
-        // Base text & select filters
         const matchesSearch =
           job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
           job.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -77,7 +74,8 @@ export default function FindJobs() {
 
         const matchesCategory =
           categoryFilter === 'all' || job.category === categoryFilter
-        const matchesType = typeFilter === 'all' || job.type === typeFilter
+        const matchesType =
+          typeFilter === 'all' || job.listingType === typeFilter
         const matchesRegion =
           regionFilter === 'all' || job.regionCode === regionFilter
 
@@ -91,7 +89,6 @@ export default function FindJobs() {
           matchesDate = isAfter(new Date(job.createdAt), cutoffDate)
         }
 
-        // Visibility Restriction Logic for Free Users
         if (isBasicUser) {
           const isNewListing = isAfter(
             new Date(job.createdAt),
@@ -101,7 +98,6 @@ export default function FindJobs() {
             job.premiumType !== 'none' ||
             (job.creatorPlan && job.creatorPlan !== 'Básico')
 
-          // Hide priority or new (<24h) listings from basic users
           if (isNewListing || isPriorityListing) {
             return false
           }
@@ -121,10 +117,8 @@ export default function FindJobs() {
         }
 
         if (isBasicUser) {
-          // Random Access Logic: Stable randomized sort for free users
           return hashString(a.id) - hashString(b.id)
         } else {
-          // Priority Visibility: Ranked by plan level of the creator
           const getPlanWeight = (plan?: string) => {
             switch (plan) {
               case 'Enterprise':
@@ -148,10 +142,9 @@ export default function FindJobs() {
             getPlanWeight(b.creatorPlan) + (b.premiumType !== 'none' ? 10 : 0)
 
           if (scoreA !== scoreB) {
-            return scoreB - scoreA // Higher weight first
+            return scoreB - scoreA
           }
 
-          // Fallback to recent
           return (
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
@@ -169,14 +162,16 @@ export default function FindJobs() {
   ])
 
   return (
-    <div className="space-y-6 container mx-auto max-w-6xl pb-20">
+    <div className="space-y-6 container mx-auto max-w-6xl pb-20 pt-4">
       <AdSection segment="search" />
 
       <div className="flex flex-col gap-2">
         <h1 className="text-3xl font-bold tracking-tight">
-          {t('dashboard.find_jobs')}
+          Buscar Oportunidades
         </h1>
-        <p className="text-muted-foreground">{t('market.desc')}</p>
+        <p className="text-muted-foreground">
+          Encontre vagas, produtos, aluguéis e mais.
+        </p>
 
         {isBasicUser && (
           <div className="bg-muted p-3 rounded-md text-sm border flex items-center gap-2 mt-2">
@@ -262,14 +257,14 @@ export default function FindJobs() {
 
           <Select value={typeFilter} onValueChange={setTypeFilter}>
             <SelectTrigger className="bg-background">
-              <SelectValue placeholder="Tipo" />
+              <SelectValue placeholder="Tipo de Anúncio" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">{t('find.filter.type.all')}</SelectItem>
-              <SelectItem value="fixed">{t('job.fixed_price')}</SelectItem>
-              <SelectItem value="auction">
-                {t('job.auction_reverse')}
-              </SelectItem>
+              <SelectItem value="all">Todos os Anúncios</SelectItem>
+              <SelectItem value="job">Vagas e Serviços</SelectItem>
+              <SelectItem value="product">Produtos (Venda)</SelectItem>
+              <SelectItem value="rental">Aluguéis</SelectItem>
+              <SelectItem value="community">Comunidade</SelectItem>
             </SelectContent>
           </Select>
 
@@ -306,6 +301,11 @@ export default function FindJobs() {
                   <Badge variant="outline" className="text-xs">
                     {job.category}
                   </Badge>
+                  {job.listingType && job.listingType !== 'job' && (
+                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 uppercase text-[10px]">
+                      {job.listingType}
+                    </Badge>
+                  )}
                   {isSmartSort && job.smartMatchScore && (
                     <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">
                       {job.smartMatchScore}% Match
@@ -369,7 +369,7 @@ export default function FindJobs() {
                   </Badge>
                 )}
                 <span className="font-bold text-lg">
-                  {formatCurrency(job.budget)}
+                  {job.budget === 0 ? 'Grátis' : formatCurrency(job.budget)}
                 </span>
               </div>
             </CardContent>

@@ -24,7 +24,9 @@ export function ListingCard({ image, title, price, location }: ListingProps) {
       </div>
       <CardContent className="p-2">
         <h3 className="font-normal text-sm line-clamp-1 truncate">{title}</h3>
-        <p className="font-bold text-base mt-0.5">{formatCurrency(price)}</p>
+        <p className="font-bold text-base mt-0.5">
+          {price === 0 ? 'Grátis' : formatCurrency(price)}
+        </p>
         {location && (
           <p className="text-xs text-muted-foreground mt-1 truncate">
             {location}

@@ -5,10 +5,8 @@ import { SafeImage } from '@/components/SafeImage'
 
 export function PromoBanner() {
   const { t, formatCurrency } = useLanguageStore()
-  // Use a reliable image URL pattern
   const imgSrc = 'https://img.usecurling.com/p/300/300?q=dog'
 
-  // Using localized service name and a mock price to demonstrate data formatting
   const serviceName = t('home.service.dog_training')
   const promoPrice = 150
 

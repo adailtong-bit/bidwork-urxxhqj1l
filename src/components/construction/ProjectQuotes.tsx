@@ -46,6 +46,7 @@ import {
   Trash2,
   Receipt,
   Upload,
+  PenTool,
 } from 'lucide-react'
 
 export function ProjectQuotes({ projectId }: { projectId: string }) {
@@ -120,6 +121,13 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
       })
     }
     input.click()
+  }
+
+  const handleRequestSignature = (quoteId: string) => {
+    toast({
+      title: 'Assinatura Solicitada',
+      description: `Link seguro enviado ao parceiro: https://bidwork.app/sign/${quoteId}`,
+    })
   }
 
   const getPartnerName = (id: string) =>
@@ -331,13 +339,26 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
                                 </Button>
                               </>
                             )}
-                            {quote.status === 'approved' && (
-                              <div className="flex gap-2 items-center">
+                            {quote.status === 'approved' &&
+                              !quote.contractUrl && (
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="h-8"
+                                  onClick={() =>
+                                    handleRequestSignature(quote.id)
+                                  }
+                                >
+                                  <PenTool className="h-3 w-3 mr-1 text-indigo-500" />{' '}
+                                  Assinatura
+                                </Button>
+                              )}
+                            {quote.status === 'approved' &&
+                              quote.contractUrl && (
                                 <Badge className="bg-green-100 text-green-800 text-[10px]">
                                   Fatura Gerada
                                 </Badge>
-                              </div>
-                            )}
+                              )}
                           </div>
                         </TableCell>
                       </TableRow>
@@ -431,8 +452,11 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => handleUploadContract(quote!.id)}
+                                onClick={() =>
+                                  handleUploadContract(quote?.id || '')
+                                }
                                 title="Anexar Contrato PDF"
+                                disabled={!quote}
                               >
                                 <Upload className="h-4 w-4 mr-2 text-muted-foreground" />{' '}
                                 Anexar
