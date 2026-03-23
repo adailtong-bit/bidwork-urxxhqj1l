@@ -1,54 +1,46 @@
 import { Link, useSearchParams } from 'react-router-dom'
-import { Tag, Wrench, Users, Briefcase, Key } from 'lucide-react'
+import { Tag, Wrench, Briefcase, Key, Gift } from 'lucide-react'
 import { Card } from '@/components/ui/card'
-import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export function CategoryTiles() {
-  const { currentLanguage } = useLanguageStore()
   const [searchParams] = useSearchParams()
   const activeTab = searchParams.get('tab')
 
-  const getLabel = (pt: string, en: string, es: string) => {
-    if (currentLanguage === 'pt') return pt
-    if (currentLanguage === 'es') return es
-    return en
-  }
-
   const tiles = [
     {
-      id: 'sale',
-      label: getLabel('À Venda', 'For Sale', 'En Venta'),
+      id: 'desapego',
+      label: 'Desapego',
       icon: Tag,
-      path: '/?tab=sale',
+      path: '/?tab=desapego',
       color: 'text-green-600',
     },
     {
-      id: 'services',
-      label: getLabel('Serviços', 'Services', 'Servicios'),
-      icon: Wrench,
-      path: '/services',
-      color: 'text-blue-600',
-    },
-    {
-      id: 'community',
-      label: getLabel('Comunidade', 'Community', 'Comunidad'),
-      icon: Users,
-      path: '/?tab=community',
-      color: 'text-purple-600',
+      id: 'doacao',
+      label: 'Doação',
+      icon: Gift,
+      path: '/?tab=doacao',
+      color: 'text-rose-500',
     },
     {
       id: 'jobs',
-      label: getLabel('Vagas', 'Jobs', 'Empleos'),
+      label: 'Vagas',
       icon: Briefcase,
       path: '/?tab=jobs',
       color: 'text-orange-600',
     },
     {
+      id: 'services',
+      label: 'Serviços',
+      icon: Wrench,
+      path: '/services',
+      color: 'text-blue-600',
+    },
+    {
       id: 'rentals',
-      label: getLabel('Aluguéis', 'Rentals', 'Alquileres'),
+      label: 'Aluguéis',
       icon: Key,
       path: '/?tab=rentals',
-      color: 'text-red-600',
+      color: 'text-purple-600',
     },
   ]
 

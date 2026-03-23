@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useSearchParams, useNavigate, Link } from 'react-router-dom'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Card, CardContent } from '@/components/ui/card'
@@ -15,6 +15,7 @@ import {
   Unlock,
   Star,
   ChevronLeft,
+  Paperclip,
 } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -142,6 +143,8 @@ export default function Messages() {
   const [searchQuery, setSearchQuery] = useState('')
   const [activeTab, setActiveTab] = useState<'interests' | 'ongoing'>('ongoing')
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
   useEffect(() => {
     if (convParam) setSelectedConversationId(convParam)
   }, [convParam])
@@ -194,6 +197,23 @@ export default function Messages() {
     if (!messageInput.trim() || !selectedConversationId) return
     sendMessage(selectedConversationId, user.id, messageInput)
     setMessageInput('')
+  }
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files
+    if (files && files.length > 0 && selectedConversationId) {
+      toast({
+        title: 'Arquivo Anexado',
+        description: `O arquivo "${files[0].name}" foi enviado com sucesso.`,
+      })
+      // Simulate sending file message
+      sendMessage(
+        selectedConversationId,
+        user.id,
+        `📎 Arquivo anexo: ${files[0].name}`,
+      )
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
   }
 
   const handleStartSuggestionChat = (sug: (typeof MOCK_SUGGESTIONS)[0]) => {
@@ -607,8 +627,25 @@ export default function Messages() {
                   e.preventDefault()
                   handleSendMessage()
                 }}
-                className="flex gap-2"
+                className="flex gap-2 items-center"
               >
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 text-muted-foreground hover:text-foreground"
+                  onClick={() => fileInputRef.current?.click()}
+                  title="Anexar arquivo"
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+                <input
+                  type="file"
+                  className="hidden"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  accept="image/*,.pdf,.doc,.docx"
+                />
                 <Input
                   value={messageInput}
                   onChange={(e) => setMessageInput(e.target.value)}

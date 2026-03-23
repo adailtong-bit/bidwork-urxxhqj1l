@@ -85,8 +85,9 @@ export function MainSidebar() {
     })
   } else {
     sections.push({
-      label: t('nav.nav_jobs'),
+      label: 'Plataforma',
       items: [
+        { title: t('nav.home'), url: '/', icon: Home },
         { title: t('nav.dashboard'), url: '/dashboard', icon: LayoutDashboard },
         { title: t('sidebar.find_jobs'), url: '/find-jobs', icon: Search },
         { title: t('sidebar.my_jobs'), url: '/my-jobs', icon: HardHat },
