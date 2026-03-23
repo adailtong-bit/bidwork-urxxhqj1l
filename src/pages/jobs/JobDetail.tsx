@@ -16,12 +16,6 @@ import {
   CardDescription,
   CardFooter,
 } from '@/components/ui/card'
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { useToast } from '@/hooks/use-toast'
 import {
   MapPin,
@@ -34,9 +28,8 @@ import {
   CheckCircle,
   MessageSquare,
   CalendarDays,
-  ExternalLink,
-  ImageIcon,
   Settings2,
+  Lock,
 } from 'lucide-react'
 import { addHours } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -47,8 +40,11 @@ export default function JobDetail() {
   const { getJob, addBid, completeJob, openDispute, updateJobStatus } =
     useJobStore()
   const { user, setPendingEvaluation } = useAuthStore()
-  const { getOrCreateConversation, sendMessage: sendChatMessage } =
-    useMessageStore()
+  const {
+    conversations,
+    getOrCreateConversation,
+    sendMessage: sendChatMessage,
+  } = useMessageStore()
   const { addNotification } = useNotificationStore()
   const { toast } = useToast()
   const { t, formatCurrency, formatDate } = useLanguageStore()
@@ -64,7 +60,12 @@ export default function JobDetail() {
     },
   ])
 
-  if (!job) return <div className="p-8">{t('job.not_found')}</div>
+  if (!job)
+    return (
+      <div className="p-8 text-center text-muted-foreground">
+        {t('job.not_found')}
+      </div>
+    )
 
   const isOwner = user?.id === job.ownerId
   const hasBidded = user
@@ -80,6 +81,16 @@ export default function JobDetail() {
     job.bids.length > 0
       ? Math.min(...job.bids.map((b) => b.amount))
       : (job.budget ?? 0)
+
+  const existingConv = user
+    ? conversations.find(
+        (c) =>
+          c.context?.id === job.id &&
+          c.participants.some((p) => p.id === user.id),
+      )
+    : undefined
+
+  const hasInteracted = !!existingConv
 
   const handleBid = () => {
     if (!user || !bidAmount || !bidDescription) return
@@ -183,23 +194,6 @@ export default function JobDetail() {
     setChatMessage('')
   }
 
-  const generateCalendarLink = (type: 'google' | 'outlook') => {
-    const title = encodeURIComponent(job.title)
-    const description = encodeURIComponent(job.description)
-    const location = encodeURIComponent(job.location)
-    const startDate = job.maxExecutionDeadline || new Date()
-    const endDate = addHours(startDate, 2)
-
-    const formatDateGoogle = (date: Date) =>
-      date.toISOString().replace(/-|:|\.\d\d\d/g, '')
-
-    if (type === 'google') {
-      return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&details=${description}&location=${location}&dates=${formatDateGoogle(startDate)}/${formatDateGoogle(endDate)}`
-    } else {
-      return `https://outlook.live.com/calendar/0/deeplink/compose?subject=${title}&body=${description}&location=${location}&startdt=${startDate.toISOString()}&enddt=${endDate.toISOString()}`
-    }
-  }
-
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open':
@@ -216,21 +210,25 @@ export default function JobDetail() {
   const getListingTypeLabel = (type?: string) => {
     switch (type) {
       case 'product':
-        return 'Produto à Venda'
+        return 'Produto / Desapego'
       case 'rental':
-        return 'Imóvel / Equipamento'
+        return 'Aluguel'
       case 'community':
-        return 'Postagem na Comunidade'
+        return 'Comunidade / Doação'
       default:
         return 'Vaga / Serviço'
     }
   }
 
+  let displayPrice = job.budget || 0
+  if (job.listingType === 'product') displayPrice = job.salePrice || 0
+  if (job.listingType === 'rental') displayPrice = job.rentalRate || 0
+
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10">
+    <div className="space-y-6 max-w-5xl mx-auto pb-10 p-4 md:p-8 pt-6 animate-fade-in w-full">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div className="space-y-1">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mb-2">
             <Badge variant="outline" className="border-primary text-primary">
               {getListingTypeLabel(job.listingType)}
             </Badge>
@@ -248,7 +246,7 @@ export default function JobDetail() {
             </Badge>
           </div>
           <h1 className="text-3xl font-bold">{job.title}</h1>
-          <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-1">
             <span className="flex items-center gap-1">
               <MapPin className="h-4 w-4" /> {job.location}
             </span>
@@ -258,87 +256,75 @@ export default function JobDetail() {
             </span>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2">
-          <div className="text-right">
+        <div className="flex flex-col items-start md:items-end gap-2 mt-4 md:mt-0">
+          <div className="text-left md:text-right">
             <div className="text-sm text-muted-foreground">
               {job.type === 'auction'
                 ? 'Orçamento Inicial'
-                : 'Preço / Orçamento'}
+                : job.listingType === 'job'
+                  ? 'Preço / Orçamento'
+                  : 'Valor'}
             </div>
             <div className="text-2xl font-bold text-primary">
-              {job.budget === 0 ? 'Grátis' : formatCurrency(job.budget)}
+              {displayPrice === 0 ? 'Grátis' : formatCurrency(displayPrice)}
             </div>
             {job.type === 'auction' && job.bids.length > 0 && (
               <div className="text-xs font-semibold text-emerald-600">
                 Melhor Oferta: {formatCurrency(lowestBid)}
               </div>
             )}
-            <div className="text-xs text-muted-foreground flex items-center justify-end gap-1">
-              {job.type === 'auction' ? (
-                <Gavel className="h-3 w-3" />
-              ) : (
-                <DollarSign className="h-3 w-3" />
-              )}
-              {job.type === 'auction' ? 'Leilão Reverso' : 'Preço Fixo'}
-            </div>
+            {job.listingType === 'rental' && job.rentalRateType && (
+              <div className="text-xs text-muted-foreground flex items-center justify-start md:justify-end gap-1 mt-1">
+                <CalendarDays className="h-3 w-3" />
+                {job.rentalRateType === 'daily' ? 'Por Dia' : 'Por Mês'}
+              </div>
+            )}
+            {job.listingType === 'job' && (
+              <div className="text-xs text-muted-foreground flex items-center justify-start md:justify-end gap-1 mt-1">
+                {job.type === 'auction' ? (
+                  <Gavel className="h-3 w-3" />
+                ) : (
+                  <DollarSign className="h-3 w-3" />
+                )}
+                {job.type === 'auction' ? 'Leilão Reverso' : 'Preço Fixo'}
+              </div>
+            )}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="mt-2">
-                <CalendarDays className="mr-2 h-4 w-4" /> Agendar
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem asChild>
-                <a
-                  href={generateCalendarLink('google')}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" /> Google Calendar
-                </a>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <a
-                  href={generateCalendarLink('outlook')}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  <ExternalLink className="mr-2 h-4 w-4" /> Outlook
-                </a>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
+          {job.photos && job.photos.length > 0 && (
+            <Card className="overflow-hidden">
+              <img
+                src={job.photos[0]}
+                alt={job.title}
+                className="w-full h-64 md:h-96 object-cover"
+              />
+              {job.photos.length > 1 && (
+                <div className="grid grid-cols-4 gap-2 p-4 bg-muted/20">
+                  {job.photos.slice(1).map((photo, i) => (
+                    <img
+                      key={i}
+                      src={photo}
+                      alt={`Thumbnail ${i + 1}`}
+                      className="w-full h-20 object-cover rounded border cursor-pointer hover:opacity-80 transition-opacity"
+                    />
+                  ))}
+                </div>
+              )}
+            </Card>
+          )}
+
           <Card>
             <CardHeader>
               <CardTitle>Descrição</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <p className="whitespace-pre-line leading-relaxed">
+              <p className="whitespace-pre-line leading-relaxed text-muted-foreground">
                 {job.description}
               </p>
-              {job.photos && job.photos.length > 0 && (
-                <div className="mt-4">
-                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2">
-                    <ImageIcon className="h-4 w-4" /> Fotos / Anexos
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                    {job.photos.map((photo, i) => (
-                      <img
-                        key={i}
-                        src={photo}
-                        alt={`Photo ${i + 1}`}
-                        className="rounded-lg border object-cover w-full h-32 hover:scale-105 transition-transform cursor-pointer"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
 
@@ -393,7 +379,7 @@ export default function JobDetail() {
             </Card>
           )}
 
-          {isOwner && job.status === 'open' && (
+          {isOwner && job.status === 'open' && job.listingType === 'job' && (
             <Card>
               <CardHeader>
                 <CardTitle>Propostas Recebidas ({job.bids.length})</CardTitle>
@@ -443,8 +429,7 @@ export default function JobDetail() {
                             size="sm"
                             onClick={() => handleAcceptBid(bid.id)}
                           >
-                            Aceitar e{' '}
-                            {job.listingType === 'job' ? 'Pagar' : 'Prosseguir'}
+                            Aceitar e Pagar
                           </Button>
                         </div>
                       </div>
@@ -542,20 +527,22 @@ export default function JobDetail() {
         </div>
 
         <div className="space-y-6">
-          {!isOwner && job.status === 'open' && !hasBidded && (
+          {!isOwner && (
             <Card>
               <CardHeader>
                 <CardTitle>
                   {job.listingType === 'job'
-                    ? 'Enviar Proposta'
+                    ? 'Interagir / Proposta'
                     : 'Conversar com o Anunciante'}
                 </CardTitle>
-                {job.type === 'auction' && job.listingType === 'job' && (
-                  <CardDescription className="text-amber-600 font-medium">
-                    Aviso: A oferta deve ser menor que{' '}
-                    {formatCurrency(lowestBid)}
-                  </CardDescription>
-                )}
+                {job.type === 'auction' &&
+                  job.listingType === 'job' &&
+                  job.status === 'open' && (
+                    <CardDescription className="text-amber-600 font-medium">
+                      Aviso: A oferta deve ser menor que{' '}
+                      {formatCurrency(lowestBid)}
+                    </CardDescription>
+                  )}
               </CardHeader>
               <CardContent className="space-y-4">
                 {!user ? (
@@ -565,6 +552,25 @@ export default function JobDetail() {
                     </p>
                     <Button asChild className="w-full">
                       <Link to="/login">Fazer Login</Link>
+                    </Button>
+                  </div>
+                ) : job.status !== 'open' ? (
+                  <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
+                    <Lock className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Este anúncio já foi fechado ou está indisponível.</p>
+                  </div>
+                ) : hasBidded ? (
+                  <div className="text-center py-6 border rounded-lg bg-muted/10">
+                    <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
+                    <p className="font-medium">Proposta Enviada</p>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Aguarde o retorno do contratante.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => navigate('/my-jobs')}
+                    >
+                      Acompanhar Proposta
                     </Button>
                   </div>
                 ) : job.listingType === 'job' ? (
@@ -595,13 +601,30 @@ export default function JobDetail() {
                   </>
                 ) : (
                   <div className="pt-2">
-                    <Button
-                      className="w-full"
-                      size="lg"
-                      onClick={handleContact}
-                    >
-                      <MessageSquare className="mr-2 h-5 w-5" /> Conversar agora
-                    </Button>
+                    {hasInteracted && existingConv ? (
+                      <div className="text-center py-4 border rounded-lg bg-muted/10 space-y-3">
+                        <MessageSquare className="h-6 w-6 mx-auto text-primary" />
+                        <p className="font-medium">Conversa Iniciada</p>
+                        <Button
+                          className="w-full"
+                          variant="outline"
+                          onClick={() =>
+                            navigate(`/messages?conv=${existingConv.id}`)
+                          }
+                        >
+                          Ver Mensagens
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button
+                        className="w-full"
+                        size="lg"
+                        onClick={handleContact}
+                      >
+                        <MessageSquare className="mr-2 h-5 w-5" /> Tenho
+                        Interesse
+                      </Button>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -616,8 +639,9 @@ export default function JobDetail() {
             </CardHeader>
             <CardContent className="space-y-2 text-xs text-blue-700">
               <p>
-                O valor fica retido pelo BIDWORK e só é liberado após a
-                conclusão e aprovação pelas partes.
+                As interações na plataforma são protegidas. Sempre negocie e
+                feche o pagamento através do sistema Escrow do BIDWORK para
+                garantir sua segurança.
               </p>
             </CardContent>
           </Card>

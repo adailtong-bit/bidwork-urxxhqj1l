@@ -122,6 +122,7 @@ const App = () => {
             <Route path="/" element={<Index />} />
             <Route path="/services" element={<Services />} />
             <Route path="/find-jobs" element={<FindJobs />} />
+            <Route path="/jobs/:id" element={<JobDetail />} />
 
             {/* Public Auth Routes */}
             <Route element={<AuthLayout />}>
@@ -144,7 +145,6 @@ const App = () => {
               <Route path="/profile/:id" element={<UserProfile />} />
 
               <Route path="/my-jobs" element={<MyJobs />} />
-              <Route path="/jobs/:id" element={<JobDetail />} />
 
               {/* Admin Routes strictly protected */}
               <Route
