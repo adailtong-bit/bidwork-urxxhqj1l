@@ -61,6 +61,7 @@ export function HeaderSearch({
     e.preventDefault()
     if (query.trim()) {
       setIsOpen(false)
+      inputRef.current?.blur()
       navigate(`/find-jobs?q=${encodeURIComponent(query)}`)
     }
   }
@@ -68,6 +69,7 @@ export function HeaderSearch({
   const handleSelect = (suggestion: string) => {
     setQuery(suggestion)
     setIsOpen(false)
+    inputRef.current?.blur()
     navigate(`/find-jobs?q=${encodeURIComponent(suggestion)}`)
   }
 

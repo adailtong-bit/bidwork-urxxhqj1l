@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import {
   LayoutDashboard,
   Settings,
@@ -59,8 +59,13 @@ export function MainSidebar() {
   const { user, logout } = useAuthStore()
   const { t } = useLanguageStore()
   const location = useLocation()
-  const { state } = useSidebar()
+  const { state, setOpenMobile } = useSidebar()
   const [isPublishOpen, setIsPublishOpen] = useState(false)
+
+  // Automatically close mobile sidebar on any route change
+  useEffect(() => {
+    setOpenMobile(false)
+  }, [location.pathname, location.search, setOpenMobile])
 
   const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
 
@@ -165,7 +170,10 @@ export function MainSidebar() {
 
           {user && state !== 'collapsed' && (
             <Button
-              onClick={() => setIsPublishOpen(true)}
+              onClick={() => {
+                setIsPublishOpen(true)
+                setOpenMobile(false)
+              }}
               className="w-full justify-start shadow-md"
               size="lg"
             >
@@ -174,7 +182,10 @@ export function MainSidebar() {
           )}
           {user && state === 'collapsed' && (
             <Button
-              onClick={() => setIsPublishOpen(true)}
+              onClick={() => {
+                setIsPublishOpen(true)
+                setOpenMobile(false)
+              }}
               className="w-8 h-8 p-0 mx-auto"
             >
               <PlusCircle className="h-5 w-5" />
@@ -237,7 +248,10 @@ export function MainSidebar() {
                     className="w-[--radix-popper-anchor-width]"
                   >
                     <DropdownMenuItem
-                      onClick={logout}
+                      onClick={() => {
+                        logout()
+                        setOpenMobile(false)
+                      }}
                       className="text-destructive focus:text-destructive cursor-pointer"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
