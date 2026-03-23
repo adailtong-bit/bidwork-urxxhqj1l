@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useProjectStore, ComplianceDocument } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import {
@@ -20,6 +20,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
 import {
   Dialog,
   DialogContent,
@@ -36,6 +37,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useToast } from '@/hooks/use-toast'
 import {
   ShieldCheck,
@@ -47,10 +49,21 @@ import {
   FileText,
   History,
   RefreshCw,
+  Download,
 } from 'lucide-react'
 
 interface ProjectComplianceProps {
   projectId: string
+}
+
+const typeLabels: Record<string, string> = {
+  permit: 'Permissão / Alvará',
+  city_hall: 'Doc. Prefeitura',
+  contractor_contract: 'Contrato de Execução',
+  constructor_insurance: 'Seguro Construtor',
+  owner_insurance: 'Seguro Proprietário',
+  technical: 'Técnico',
+  other: 'Outros',
 }
 
 export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
@@ -61,7 +74,7 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
     updateAlertLeadTime,
     renewComplianceDocument,
   } = useProjectStore()
-  const { t, formatDate } = useLanguageStore()
+  const { formatDate } = useLanguageStore()
   const { toast } = useToast()
 
   const project = getProject(projectId)
@@ -70,20 +83,27 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [leadTime, setLeadTime] = useState(project?.alertLeadTimeDays || 30)
 
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [filterCategory, setFilterCategory] = useState<string>('all')
+
   const [newDoc, setNewDoc] = useState<Partial<ComplianceDocument>>({
     name: '',
+    description: '',
     type: 'permit',
     partnerId: 'general',
     isCritical: false,
+    provider: '',
   })
 
   // Renew state
+  const fileInputRenewRef = useRef<HTMLInputElement>(null)
   const [isRenewOpen, setIsRenewOpen] = useState(false)
   const [docToRenew, setDocToRenew] = useState<ComplianceDocument | null>(null)
+  const [renewFile, setRenewFile] = useState<File | null>(null)
   const [renewData, setRenewData] = useState({
     expirationDate: '',
     issueDate: '',
-    url: '',
   })
 
   // History state
@@ -92,48 +112,72 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
 
   if (!project) return null
 
-  const leadTimeDays = project.alertLeadTimeDays || 30
   const docs = project.complianceDocuments || []
   const partners = project.partners || []
 
-  const getDocStatus = (expirationDate: Date) => {
+  const getDocStatusInfo = (expirationDate: Date) => {
     const today = new Date()
+    today.setHours(0, 0, 0, 0)
     const exp = new Date(expirationDate)
+    exp.setHours(0, 0, 0, 0)
     const diffTime = exp.getTime() - today.getTime()
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
 
-    if (diffDays < 0) return 'expired'
-    if (diffDays <= leadTimeDays) return 'expiring_soon'
-    return 'valid'
+    if (diffDays < 0)
+      return {
+        status: 'expired',
+        label: 'Vencido',
+        badgeClass: 'destructive',
+        icon: <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />,
+      }
+    if (diffDays <= 30)
+      return {
+        status: 'warning',
+        label: diffDays === 0 ? 'Vence Hoje' : `Vence em ${diffDays} dias`,
+        badgeClass: 'bg-yellow-500 hover:bg-yellow-600 text-white',
+        icon: <AlertTriangle className="h-4 w-4 text-yellow-500 shrink-0" />,
+      }
+    return {
+      status: 'active',
+      label: 'Ativo',
+      badgeClass: 'bg-green-500 hover:bg-green-600 text-white',
+      icon: <ShieldCheck className="h-4 w-4 text-green-500 shrink-0" />,
+    }
   }
 
   const handleAddDoc = () => {
-    if (!newDoc.name || !newDoc.expirationDate) {
+    if (!newDoc.name || !newDoc.expirationDate || !newDoc.type) {
       toast({
         variant: 'destructive',
         title: 'Preencha os campos obrigatórios',
+        description: 'Título, Categoria e Data de Validade são necessários.',
       })
       return
     }
 
     addComplianceDocument(projectId, {
       name: newDoc.name,
+      description: newDoc.description,
       type: newDoc.type as any,
       provider: newDoc.provider,
       partnerId: newDoc.partnerId,
       expirationDate: new Date(newDoc.expirationDate),
       issueDate: newDoc.issueDate ? new Date(newDoc.issueDate) : undefined,
+      url: selectedFile ? URL.createObjectURL(selectedFile) : undefined,
       isCritical: newDoc.isCritical || false,
     })
 
     setIsAddOpen(false)
     setNewDoc({
       name: '',
+      description: '',
       type: 'permit',
       partnerId: 'general',
       isCritical: false,
+      provider: '',
     })
-    toast({ title: 'Documento de compliance adicionado' })
+    setSelectedFile(null)
+    toast({ title: 'Documento registrado com sucesso!' })
   }
 
   const handleSaveSettings = () => {
@@ -147,23 +191,30 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
     setRenewData({
       expirationDate: '',
       issueDate: '',
-      url: '',
     })
+    setRenewFile(null)
     setIsRenewOpen(true)
   }
 
   const handleRenewSubmit = () => {
-    if (!docToRenew || !renewData.expirationDate) return
+    if (!docToRenew || !renewData.expirationDate) {
+      toast({
+        variant: 'destructive',
+        title: 'A nova data de validade é obrigatória.',
+      })
+      return
+    }
 
     renewComplianceDocument(projectId, docToRenew.id, {
       expirationDate: new Date(renewData.expirationDate),
       issueDate: renewData.issueDate
         ? new Date(renewData.issueDate)
         : undefined,
-      url: renewData.url || undefined,
+      url: renewFile ? URL.createObjectURL(renewFile) : docToRenew.url,
     })
 
     setIsRenewOpen(false)
+    setRenewFile(null)
     toast({
       title: 'Documento Renovado',
       description: 'A nova versão foi ativada e a anterior foi arquivada.',
@@ -175,17 +226,76 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
     setIsHistoryOpen(true)
   }
 
+  const filteredDocs = docs.filter((doc) => {
+    if (filterCategory === 'all') return true
+    if (filterCategory === 'permits')
+      return doc.type === 'permit' || doc.type === 'city_hall'
+    if (filterCategory === 'contracts')
+      return doc.type === 'contractor_contract'
+    if (filterCategory === 'constructor_insurance')
+      return doc.type === 'constructor_insurance'
+    if (filterCategory === 'owner_insurance')
+      return doc.type === 'owner_insurance'
+    if (filterCategory === 'others')
+      return doc.type === 'technical' || doc.type === 'other'
+    return true
+  })
+
+  const summary = docs.reduce(
+    (acc, doc) => {
+      const status = getDocStatusInfo(doc.expirationDate).status
+      if (status === 'expired') acc.expired++
+      else if (status === 'warning') acc.warning++
+      else acc.active++
+      return acc
+    },
+    { active: 0, warning: 0, expired: 0 },
+  )
+
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-green-50 border border-green-200 p-4 rounded-lg flex items-center justify-between">
+          <div>
+            <p className="text-sm text-green-800 font-medium">
+              Documentos Ativos
+            </p>
+            <p className="text-2xl font-bold text-green-900">
+              {summary.active}
+            </p>
+          </div>
+          <ShieldCheck className="h-8 w-8 text-green-500 opacity-50" />
+        </div>
+        <div className="bg-yellow-50 border border-yellow-200 p-4 rounded-lg flex items-center justify-between">
+          <div>
+            <p className="text-sm text-yellow-800 font-medium">
+              Vencendo em breve (30 dias)
+            </p>
+            <p className="text-2xl font-bold text-yellow-900">
+              {summary.warning}
+            </p>
+          </div>
+          <AlertTriangle className="h-8 w-8 text-yellow-500 opacity-50" />
+        </div>
+        <div className="bg-red-50 border border-red-200 p-4 rounded-lg flex items-center justify-between">
+          <div>
+            <p className="text-sm text-red-800 font-medium">Vencidos</p>
+            <p className="text-2xl font-bold text-red-900">{summary.expired}</p>
+          </div>
+          <AlertTriangle className="h-8 w-8 text-red-500 opacity-50" />
+        </div>
+      </div>
+
       <Card>
-        <CardHeader className="flex flex-row justify-between items-start">
+        <CardHeader className="flex flex-row justify-between items-start pb-2">
           <div>
             <CardTitle className="flex items-center gap-2">
               <ShieldCheck className="h-5 w-5 text-primary" /> Compliance &
               Permissões
             </CardTitle>
             <CardDescription>
-              Gerencie documentos críticos. Seja notificado antes do vencimento.
+              Gerencie documentos críticos e previna paralisações por
+              documentação vencida.
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -230,15 +340,18 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                   <Plus className="h-4 w-4 mr-2" /> Novo Documento
                 </Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
-                  <DialogTitle>Adicionar Documento de Compliance</DialogTitle>
+                  <DialogTitle>Registro de Documento</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label>Nome do Documento</Label>
+                    <Label>
+                      Título do Documento{' '}
+                      <span className="text-red-500">*</span>
+                    </Label>
                     <Input
-                      placeholder="Ex: Alvará de Construção"
+                      placeholder="Ex: Alvará de Construção, Contrato Estrutural"
                       value={newDoc.name}
                       onChange={(e) =>
                         setNewDoc({ ...newDoc, name: e.target.value })
@@ -247,7 +360,9 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>Categoria</Label>
+                      <Label>
+                        Categoria <span className="text-red-500">*</span>
+                      </Label>
                       <Select
                         value={newDoc.type}
                         onValueChange={(val) =>
@@ -259,64 +374,24 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="permit">
-                            {t('comp.type.permit') || 'Permissões'}
+                            Permissões / Alvarás
                           </SelectItem>
                           <SelectItem value="city_hall">
-                            {t('comp.type.city_hall') || 'Doc. Prefeitura'}
+                            Doc. Prefeitura
                           </SelectItem>
                           <SelectItem value="contractor_contract">
-                            {t('comp.type.contractor_contract') ||
-                              'Contrato da Construtora'}
+                            Contrato de Execução
                           </SelectItem>
                           <SelectItem value="constructor_insurance">
-                            {t('comp.type.constructor_insurance') ||
-                              'Seguro Construtor'}
+                            Seguro Construtor
                           </SelectItem>
                           <SelectItem value="owner_insurance">
-                            {t('comp.type.owner_insurance') ||
-                              'Seguro Proprietário'}
+                            Seguro Proprietário
                           </SelectItem>
-                          <SelectItem value="other">
-                            {t('comp.type.other') || 'Outros'}
-                          </SelectItem>
+                          <SelectItem value="technical">Técnico</SelectItem>
+                          <SelectItem value="other">Outros</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Data de Emissão (Opcional)</Label>
-                      <Input
-                        type="date"
-                        value={
-                          newDoc.issueDate
-                            ? (newDoc.issueDate as unknown as string)
-                            : ''
-                        }
-                        onChange={(e) =>
-                          setNewDoc({
-                            ...newDoc,
-                            issueDate: e.target.value as any,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Data de Validade</Label>
-                      <Input
-                        type="date"
-                        value={
-                          newDoc.expirationDate
-                            ? (newDoc.expirationDate as unknown as string)
-                            : ''
-                        }
-                        onChange={(e) =>
-                          setNewDoc({
-                            ...newDoc,
-                            expirationDate: e.target.value as any,
-                          })
-                        }
-                      />
                     </div>
                     <div className="grid gap-2">
                       <Label>Vincular a (Parceiro / Geral)</Label>
@@ -342,19 +417,50 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                       </Select>
                     </div>
                   </div>
-                  {(newDoc.type === 'constructor_insurance' ||
-                    newDoc.type === 'owner_insurance') && (
+
+                  <div className="grid gap-2">
+                    <Label>Descrição</Label>
+                    <Textarea
+                      placeholder="Detalhes adicionais do documento..."
+                      value={newDoc.description || ''}
+                      onChange={(e) =>
+                        setNewDoc({ ...newDoc, description: e.target.value })
+                      }
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>Provedor / Seguradora</Label>
+                      <Label>Empresa / Entidade Emissora</Label>
                       <Input
-                        placeholder="Ex: Porto Seguro"
+                        placeholder="Ex: Prefeitura de SP, Seguradora X"
                         value={newDoc.provider || ''}
                         onChange={(e) =>
                           setNewDoc({ ...newDoc, provider: e.target.value })
                         }
                       />
                     </div>
-                  )}
+                    <div className="grid gap-2">
+                      <Label>
+                        Data de Validade <span className="text-red-500">*</span>
+                      </Label>
+                      <Input
+                        type="date"
+                        value={
+                          newDoc.expirationDate
+                            ? (newDoc.expirationDate as unknown as string)
+                            : ''
+                        }
+                        onChange={(e) =>
+                          setNewDoc({
+                            ...newDoc,
+                            expirationDate: e.target.value as any,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+
                   <div className="flex items-center space-x-2 border p-3 rounded-md bg-muted/20 mt-2">
                     <Checkbox
                       id="critical"
@@ -370,15 +476,34 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                       Documento Crítico (Impede a execução da obra se vencido)
                     </label>
                   </div>
-                  <div className="border-2 border-dashed p-4 rounded-md text-center cursor-pointer hover:bg-muted/50 mt-2">
+                  <div
+                    className="border-2 border-dashed p-6 rounded-md text-center cursor-pointer hover:bg-muted/50 mt-2"
+                    onClick={() => {
+                      if (fileInputRef.current) {
+                        fileInputRef.current.value = ''
+                        fileInputRef.current.click()
+                      }
+                    }}
+                  >
                     <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Clique ou arraste o arquivo PDF aqui
+                    <p className="text-sm font-medium">
+                      {selectedFile
+                        ? selectedFile.name
+                        : 'Clique ou arraste o arquivo digital (PDF/Imagem)'}
                     </p>
+                    <input
+                      type="file"
+                      className="hidden"
+                      ref={fileInputRef}
+                      accept=".pdf,.png,.jpg,.jpeg"
+                      onChange={(e) =>
+                        setSelectedFile(e.target.files?.[0] || null)
+                      }
+                    />
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleAddDoc}>Salvar Documento</Button>
+                  <Button onClick={handleAddDoc}>Salvar Registro</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -389,7 +514,7 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                 <DialogHeader>
                   <DialogTitle>Renovar Documento</DialogTitle>
                   <CardDescription>
-                    O documento atual será arquivado no histórico.
+                    O documento atual será arquivado no histórico de versões.
                   </CardDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -419,11 +544,29 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
                       }
                     />
                   </div>
-                  <div className="border-2 border-dashed p-4 rounded-md text-center cursor-pointer hover:bg-muted/50 mt-2">
+                  <div
+                    className="border-2 border-dashed p-4 rounded-md text-center cursor-pointer hover:bg-muted/50 mt-2"
+                    onClick={() => {
+                      if (fileInputRenewRef.current) {
+                        fileInputRenewRef.current.value = ''
+                        fileInputRenewRef.current.click()
+                      }
+                    }}
+                  >
                     <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                    <p className="text-sm text-muted-foreground">
-                      Enviar novo arquivo PDF
+                    <p className="text-sm font-medium">
+                      {renewFile
+                        ? renewFile.name
+                        : 'Anexar novo arquivo PDF/Imagem'}
                     </p>
+                    <input
+                      type="file"
+                      className="hidden"
+                      ref={fileInputRenewRef}
+                      onChange={(e) =>
+                        setRenewFile(e.target.files?.[0] || null)
+                      }
+                    />
                   </div>
                 </div>
                 <DialogFooter>
@@ -490,126 +633,193 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Documento</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Vínculo</TableHead>
-                  <TableHead>Vencimento</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {docs.length > 0 ? (
-                  docs.map((doc) => {
-                    const status = getDocStatus(doc.expirationDate)
-                    const partner = partners.find((p) => p.id === doc.partnerId)
-                    const linkName =
-                      doc.partnerId === 'general'
-                        ? 'Geral'
-                        : partner?.companyName || 'Desconhecido'
+          <Tabs
+            defaultValue="all"
+            className="w-full mt-4"
+            onValueChange={setFilterCategory}
+          >
+            <div className="overflow-x-auto pb-2">
+              <TabsList className="mb-4 flex flex-nowrap h-auto justify-start min-w-max">
+                <TabsTrigger value="all">Todos</TabsTrigger>
+                <TabsTrigger value="permits">Licenças / Prefeitura</TabsTrigger>
+                <TabsTrigger value="contracts">Contratos</TabsTrigger>
+                <TabsTrigger value="constructor_insurance">
+                  Seguros (Construtor)
+                </TabsTrigger>
+                <TabsTrigger value="owner_insurance">
+                  Seguros (Proprietário)
+                </TabsTrigger>
+                <TabsTrigger value="others">Técnico / Outros</TabsTrigger>
+              </TabsList>
+            </div>
 
-                    return (
-                      <TableRow key={doc.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            {doc.isCritical && (
-                              <AlertTriangle
-                                className="h-4 w-4 text-red-500 shrink-0"
-                                title="Crítico"
-                              />
-                            )}
-                            <div>
-                              <p className="font-medium">{doc.name}</p>
+            {filteredDocs.length > 0 ? (
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[30%]">Documento</TableHead>
+                      <TableHead>Categoria</TableHead>
+                      <TableHead>Vínculo / Emissor</TableHead>
+                      <TableHead>Vencimento</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-center">Anexo</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredDocs.map((doc) => {
+                      const statusInfo = getDocStatusInfo(doc.expirationDate)
+                      const partner = partners.find(
+                        (p) => p.id === doc.partnerId,
+                      )
+                      const linkName =
+                        doc.partnerId === 'general'
+                          ? 'Geral'
+                          : partner?.companyName || 'Desconhecido'
+
+                      return (
+                        <TableRow key={doc.id}>
+                          <TableCell>
+                            <div className="flex items-start gap-2">
+                              {statusInfo.icon}
+                              <div>
+                                <div className="flex items-center gap-2 mb-0.5">
+                                  <p className="font-medium">{doc.name}</p>
+                                  {doc.isCritical && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] text-red-600 border-red-200 bg-red-50"
+                                    >
+                                      Crítico
+                                    </Badge>
+                                  )}
+                                </div>
+                                {doc.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-1">
+                                    {doc.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant="secondary"
+                              className="font-normal text-xs"
+                            >
+                              {typeLabels[doc.type] || doc.type}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm">{linkName}</span>
                               {doc.provider && (
-                                <p className="text-xs text-muted-foreground">
+                                <span className="text-xs text-muted-foreground">
                                   {doc.provider}
-                                </p>
+                                </span>
                               )}
                             </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className="font-normal text-xs"
-                          >
-                            {t(`comp.type.${doc.type}`) || doc.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-sm">{linkName}</TableCell>
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium">
-                              {formatDate(doc.expirationDate, 'dd/MM/yyyy')}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          {status === 'valid' && (
-                            <Badge className="bg-green-500 hover:bg-green-600">
-                              Ativo
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="text-sm font-medium">
+                                {formatDate(doc.expirationDate, 'dd/MM/yyyy')}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge
+                              variant={
+                                statusInfo.badgeClass as
+                                  | 'default'
+                                  | 'destructive'
+                                  | 'secondary'
+                                  | 'outline'
+                              }
+                              className={
+                                statusInfo.badgeClass.includes('bg-')
+                                  ? statusInfo.badgeClass
+                                  : ''
+                              }
+                            >
+                              {statusInfo.label}
                             </Badge>
-                          )}
-                          {status === 'expiring_soon' && (
-                            <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
-                              Alerta de Renovação
-                            </Badge>
-                          )}
-                          {status === 'expired' && (
-                            <Badge variant="destructive">Vencido</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right whitespace-nowrap">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Renovar"
-                            onClick={() => handleRenewClick(doc)}
-                          >
-                            <RefreshCw className="h-4 w-4 text-primary" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Ver Histórico"
-                            onClick={() => handleViewHistory(doc)}
-                          >
-                            <History className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() =>
-                              deleteComplianceDocument(projectId, doc.id)
-                            }
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })
-                ) : (
-                  <TableRow>
-                    <TableCell
-                      colSpan={6}
-                      className="text-center py-8 text-muted-foreground"
-                    >
-                      Nenhum documento de compliance cadastrado.
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </div>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {doc.url ? (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                asChild
+                                title="Baixar / Visualizar Anexo"
+                              >
+                                <a
+                                  href={doc.url}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                >
+                                  <Download className="h-4 w-4 text-blue-500" />
+                                </a>
+                              </Button>
+                            ) : (
+                              <span className="text-[10px] text-muted-foreground px-2 italic">
+                                Sem anexo
+                              </span>
+                            )}
+                          </TableCell>
+                          <TableCell className="text-right whitespace-nowrap">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Renovar Documento"
+                              onClick={() => handleRenewClick(doc)}
+                            >
+                              <RefreshCw className="h-4 w-4 text-primary" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Ver Histórico"
+                              onClick={() => handleViewHistory(doc)}
+                            >
+                              <History className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() =>
+                                deleteComplianceDocument(projectId, doc.id)
+                              }
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      )
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+            ) : (
+              <div className="text-center py-16 px-4 border-2 border-dashed rounded-lg bg-muted/10 my-4">
+                <ShieldCheck className="mx-auto h-12 w-12 text-muted-foreground mb-4 opacity-50" />
+                <h3 className="text-lg font-medium mb-2">
+                  Nenhum documento registrado nesta categoria
+                </h3>
+                <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
+                  Registre alvarás, seguros, contratos e outras documentações
+                  para monitorar os prazos de validade e manter a obra regular.
+                </p>
+                <Button onClick={() => setIsAddOpen(true)}>
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Documento
+                </Button>
+              </div>
+            )}
+          </Tabs>
         </CardContent>
       </Card>
     </div>
   )
 }
-

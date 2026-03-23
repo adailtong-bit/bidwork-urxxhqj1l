@@ -260,7 +260,15 @@ export interface ComplianceDocumentHistory {
 export interface ComplianceDocument {
   id: string
   name: string
-  type: 'permit' | 'city_hall' | 'contractor_contract' | 'constructor_insurance' | 'owner_insurance' | 'other'
+  description?: string
+  type:
+    | 'permit'
+    | 'city_hall'
+    | 'contractor_contract'
+    | 'constructor_insurance'
+    | 'owner_insurance'
+    | 'technical'
+    | 'other'
   provider?: string
   partnerId?: string // 'general' or specific partner ID
   expirationDate: Date
@@ -614,26 +622,48 @@ const mockProjects: Project[] = [
       {
         id: 'cd-1',
         name: 'Seguro de Responsabilidade Civil',
+        description:
+          'Seguro obrigatório para cobertura de acidentes de trabalho e danos a terceiros.',
         type: 'constructor_insurance',
         provider: 'Porto Seguro',
         partnerId: 'partner-1',
         expirationDate: new Date(Date.now() + 86400000 * 15), // Expiring soon (15 days)
         isCritical: true,
+        url: 'https://img.usecurling.com/p/400/600?q=insurance%20document',
         history: [],
       },
       {
         id: 'cd-2',
         name: 'Alvará de Construção',
+        description:
+          'Alvará municipal emitido pela prefeitura para liberação da execução da obra.',
         type: 'permit',
+        provider: 'Prefeitura Municipal',
         partnerId: 'general',
         expirationDate: new Date(Date.now() - 86400000 * 2), // Expired 2 days ago
         isCritical: true,
+        url: 'https://img.usecurling.com/p/400/600?q=permit%20document',
         history: [],
       },
       {
         id: 'cd-3',
+        name: 'Contrato de Empreitada - Estrutura',
+        description:
+          'Contrato principal firmado com o parceiro para a execução da fase estrutural.',
+        type: 'contractor_contract',
+        provider: 'Parceiro Construções Ltda',
+        partnerId: 'partner-1',
+        expirationDate: new Date(Date.now() + 86400000 * 180), // Valid
+        isCritical: true,
+        url: 'https://img.usecurling.com/p/400/600?q=contract%20document',
+        history: [],
+      },
+      {
+        id: 'cd-4',
         name: 'Licença Ambiental',
+        description: 'Autorização concedida pelo órgão ambiental competente.',
         type: 'city_hall',
+        provider: 'Órgão Ambiental',
         partnerId: 'general',
         expirationDate: new Date(Date.now() + 86400000 * 180), // Valid
         isCritical: false,
@@ -1854,4 +1884,3 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       ),
     })),
 }))
-
