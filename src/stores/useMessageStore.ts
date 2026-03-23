@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { useAuthStore } from './useAuthStore'
 import React from 'react'
+import { toast } from '@/hooks/use-toast'
 
 export interface ConversationContext {
   type: 'job' | 'profile' | 'general'
@@ -221,45 +222,43 @@ export const useMessageStore = create<MessageState>((set, get) => ({
 
       // Mock Email Notification
       if (prefs.emailInterests !== false) {
-        import('@/hooks/use-toast').then(({ toast }) => {
-          toast({
-            title: `📧 E-mail Automático -> ${authUser.email}`,
-            description: React.createElement(
-              'div',
-              {
-                className:
-                  'mt-2 space-y-2 p-3 bg-muted/50 rounded-md border border-border w-full',
-              },
-              React.createElement(
-                'h4',
-                { className: 'font-bold text-primary text-base' },
-                'BIDWORK',
-              ),
-              React.createElement(
-                'p',
-                { className: 'text-sm text-foreground leading-snug' },
-                'Novo Interesse: ',
-                React.createElement('strong', null, sender.name),
-                ' tem interesse em ',
-                React.createElement(
-                  'strong',
-                  null,
-                  context?.title || 'seu perfil',
-                ),
-                '.',
-              ),
-              React.createElement(
-                'a',
-                {
-                  href: '/dashboard?tab=interests',
-                  className:
-                    'inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 mt-2',
-                },
-                'Ver no BIDWORK',
-              ),
+        toast({
+          title: `📧 E-mail Automático -> ${authUser.email}`,
+          description: React.createElement(
+            'div',
+            {
+              className:
+                'mt-2 space-y-2 p-3 bg-muted/50 rounded-md border border-border w-full',
+            },
+            React.createElement(
+              'h4',
+              { className: 'font-bold text-primary text-base' },
+              'BIDWORK',
             ),
-            duration: 10000,
-          })
+            React.createElement(
+              'p',
+              { className: 'text-sm text-foreground leading-snug' },
+              'Novo Interesse: ',
+              React.createElement('strong', null, sender.name),
+              ' tem interesse em ',
+              React.createElement(
+                'strong',
+                null,
+                context?.title || 'seu perfil',
+              ),
+              '.',
+            ),
+            React.createElement(
+              'a',
+              {
+                href: '/dashboard?tab=interests',
+                className:
+                  'inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 mt-2',
+              },
+              'Ver no BIDWORK',
+            ),
+          ),
+          duration: 10000,
         })
       }
 
