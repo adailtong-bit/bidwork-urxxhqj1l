@@ -66,6 +66,7 @@ export default function JobDetail() {
       </div>
     )
 
+  const isJobListing = !job.listingType || job.listingType === 'job'
   const isOwner = user?.id === job.ownerId
   const hasBidded = user
     ? job.bids.some((b) => b.executorId === user.id)
@@ -221,6 +222,7 @@ export default function JobDetail() {
         return 'Aluguel'
       case 'community':
         return 'Comunidade / Doação'
+      case 'job':
       default:
         return 'Vaga / Serviço'
     }
@@ -267,7 +269,7 @@ export default function JobDetail() {
             <div className="text-sm text-muted-foreground">
               {job.type === 'auction'
                 ? 'Orçamento Inicial'
-                : job.listingType === 'job'
+                : isJobListing
                   ? 'Preço / Orçamento'
                   : 'Valor'}
             </div>
@@ -285,7 +287,7 @@ export default function JobDetail() {
                 {job.rentalRateType === 'daily' ? 'Por Dia' : 'Por Mês'}
               </div>
             )}
-            {job.listingType === 'job' && (
+            {isJobListing && (
               <div className="text-xs text-muted-foreground flex items-center justify-start md:justify-end gap-1 mt-1">
                 {job.type === 'auction' ? (
                   <Gavel className="h-3 w-3" />
@@ -385,7 +387,7 @@ export default function JobDetail() {
             </Card>
           )}
 
-          {isOwner && job.status === 'open' && job.listingType === 'job' && (
+          {isOwner && job.status === 'open' && isJobListing && (
             <Card>
               <CardHeader>
                 <CardTitle>Propostas Recebidas ({job.bids.length})</CardTitle>
@@ -540,12 +542,12 @@ export default function JobDetail() {
             >
               <CardHeader>
                 <CardTitle>
-                  {job.listingType === 'job'
+                  {isJobListing
                     ? 'Interagir / Proposta'
                     : 'Conversar com o Anunciante'}
                 </CardTitle>
                 {job.type === 'auction' &&
-                  job.listingType === 'job' &&
+                  isJobListing &&
                   job.status === 'open' && (
                     <CardDescription className="text-amber-600 font-medium">
                       Aviso: A oferta deve ser menor que{' '}
@@ -598,7 +600,7 @@ export default function JobDetail() {
                       Acompanhar Proposta
                     </Button>
                   </div>
-                ) : job.listingType === 'job' ? (
+                ) : isJobListing ? (
                   <>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Valor (R$)</label>
@@ -611,9 +613,7 @@ export default function JobDetail() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        Detalhes / Mensagem
-                      </label>
+                      <label className="text-sm font-medium">Mensagem</label>
                       <Textarea
                         placeholder="Descreva sua proposta ou dúvidas..."
                         value={bidDescription}
@@ -702,7 +702,7 @@ export default function JobDetail() {
               >
                 Enviada
               </Button>
-            ) : hasInteracted && existingConv && job.listingType !== 'job' ? (
+            ) : hasInteracted && existingConv && !isJobListing ? (
               <Button size="sm" asChild>
                 <Link to={`/messages?conv=${existingConv.id}`}>Ver Chat</Link>
               </Button>
@@ -731,9 +731,7 @@ export default function JobDetail() {
                   }
                 }}
               >
-                {job.listingType === 'job'
-                  ? 'Fazer Proposta'
-                  : 'Tenho Interesse'}
+                {isJobListing ? 'Fazer Proposta' : 'Tenho Interesse'}
               </Button>
             )}
           </div>
