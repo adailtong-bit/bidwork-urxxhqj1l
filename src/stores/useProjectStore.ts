@@ -278,6 +278,21 @@ export interface ComplianceDocument {
   history?: ComplianceDocumentHistory[]
 }
 
+export interface ProjectLedgerEntry {
+  id: string
+  description: string
+  origin: string
+  partnerId: string
+  purchaseDate?: Date
+  deliveryDate?: Date
+  startDate?: Date
+  endDate?: Date
+  estimatedCost: number
+  finalCost: number
+  paymentStatus: 'pending' | 'paid' | 'partially_paid' | 'overdue'
+  executionStatus: 'pending' | 'approved' | 'rejected'
+}
+
 export interface Project {
   id: string
   ownerId: string
@@ -310,6 +325,7 @@ export interface Project {
   measurements?: Measurement[]
   complianceDocuments?: ComplianceDocument[]
   alertLeadTimeDays?: number
+  ledgerEntries?: ProjectLedgerEntry[]
 }
 
 interface ProjectState {
@@ -334,6 +350,7 @@ interface ProjectState {
       | 'measurements'
       | 'complianceDocuments'
       | 'alertLeadTimeDays'
+      | 'ledgerEntries'
     >,
   ) => void
   updateProject: (id: string, data: Partial<Project>) => void
@@ -523,6 +540,19 @@ interface ProjectState {
   ) => void
   deleteComplianceDocument: (projectId: string, docId: string) => void
   updateAlertLeadTime: (projectId: string, days: number) => void
+
+  // Ledger Entries
+  addLedgerEntry: (
+    projectId: string,
+    entry: Omit<ProjectLedgerEntry, 'id'>,
+  ) => void
+  updateLedgerEntry: (
+    projectId: string,
+    id: string,
+    data: Partial<ProjectLedgerEntry>,
+  ) => void
+  deleteLedgerEntry: (projectId: string, id: string) => void
+  approveLedgerEntry: (projectId: string, id: string) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -618,6 +648,22 @@ const mockProjects: Project[] = [
     sqFt: 2500,
     measurements: [],
     alertLeadTimeDays: 30,
+    ledgerEntries: [
+      {
+        id: 'ledg-1',
+        description: 'Estrutura Metálica',
+        origin: 'Contrato Empreitada',
+        partnerId: 'partner-1',
+        purchaseDate: new Date(Date.now() - 86400000 * 20),
+        deliveryDate: new Date(Date.now() - 86400000 * 5),
+        startDate: new Date(Date.now() - 86400000 * 4),
+        endDate: new Date(Date.now() + 86400000 * 10),
+        estimatedCost: 120000,
+        finalCost: 125000,
+        paymentStatus: 'partially_paid',
+        executionStatus: 'pending',
+      },
+    ],
     complianceDocuments: [
       {
         id: 'cd-1',
@@ -667,6 +713,17 @@ const mockProjects: Project[] = [
         partnerId: 'general',
         expirationDate: new Date(Date.now() + 86400000 * 180), // Valid
         isCritical: false,
+        history: [],
+      },
+      {
+        id: 'cd-5',
+        name: 'Certidão Negativa de Débitos (Simulação de Risco)',
+        description: 'CND do parceiro',
+        type: 'other',
+        provider: 'Receita Federal',
+        partnerId: 'partner-1',
+        expirationDate: new Date(Date.now() - 86400000 * 5), // Expired 5 days ago
+        isCritical: true,
         history: [],
       },
     ],
@@ -919,6 +976,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           measurements: [],
           complianceDocuments: [],
           alertLeadTimeDays: 30,
+          ledgerEntries: [],
         },
       ],
     })),
@@ -1881,6 +1939,62 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === projectId ? { ...p, alertLeadTimeDays: days } : p,
+      ),
+    })),
+
+  // Ledger Entries
+  addLedgerEntry: (projectId, entry) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              ledgerEntries: [
+                ...(p.ledgerEntries || []),
+                {
+                  ...entry,
+                  id: Math.random().toString(36).substr(2, 9),
+                },
+              ],
+            }
+          : p,
+      ),
+    })),
+  updateLedgerEntry: (projectId, id, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              ledgerEntries: (p.ledgerEntries || []).map((l) =>
+                l.id === id ? { ...l, ...data } : l,
+              ),
+            }
+          : p,
+      ),
+    })),
+  deleteLedgerEntry: (projectId, id) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              ledgerEntries: (p.ledgerEntries || []).filter((l) => l.id !== id),
+            }
+          : p,
+      ),
+    })),
+  approveLedgerEntry: (projectId, id) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              ledgerEntries: (p.ledgerEntries || []).map((l) =>
+                l.id === id ? { ...l, executionStatus: 'approved' } : l,
+              ),
+            }
+          : p,
       ),
     })),
 }))

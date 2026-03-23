@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useProjectStore } from '@/stores/useProjectStore'
+import { useProjectStore, ProjectLedgerEntry } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { useToast } from '@/hooks/use-toast'
 import {
   Card,
   CardHeader,
@@ -21,12 +22,35 @@ import { Progress } from '@/components/ui/progress'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@/components/ui/dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Label } from '@/components/ui/label'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
+import {
   AlertTriangle,
   Clock,
   TrendingUp,
   Plus,
   CalendarDays,
   FileText,
+  Edit2,
+  Trash2,
 } from 'lucide-react'
 import { CurrencyInput } from '@/components/CurrencyInput'
 import { cn } from '@/lib/utils'
@@ -36,17 +60,62 @@ interface ProjectExecutionProps {
 }
 
 export function ProjectExecution({ projectId }: ProjectExecutionProps) {
-  const { getProject, addLaborAdjustment } = useProjectStore()
+  const {
+    getProject,
+    addLaborAdjustment,
+    addLedgerEntry,
+    updateLedgerEntry,
+    deleteLedgerEntry,
+  } = useProjectStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
+  const { toast } = useToast()
   const project = getProject(projectId)
 
   const [desc, setDesc] = useState('')
   const [amount, setAmount] = useState(0)
 
+  // Ledger State
+  const [isLedgerOpen, setIsLedgerOpen] = useState(false)
+  const [editingLedger, setEditingLedger] = useState<ProjectLedgerEntry | null>(
+    null,
+  )
+  const [ledgerForm, setLedgerForm] = useState<Partial<ProjectLedgerEntry>>({
+    description: '',
+    origin: '',
+    partnerId: '',
+    estimatedCost: 0,
+    finalCost: 0,
+    paymentStatus: 'pending',
+    executionStatus: 'pending',
+  })
+  const [dates, setDates] = useState({
+    purchaseDate: '',
+    deliveryDate: '',
+    startDate: '',
+    endDate: '',
+  })
+
   if (!project) return null
 
   const receiptLabel =
     project.region === 'US' ? 'Invoices / Receipts' : 'Notas Fiscais / Recibos'
+
+  // Ledger Check
+  const getPartnerCompliance = (partnerId: string) => {
+    const docs = project.complianceDocuments || []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return docs.filter(
+      (d) =>
+        (d.partnerId === partnerId || d.partnerId === 'general') &&
+        d.isCritical &&
+        new Date(d.expirationDate) < today,
+    )
+  }
+
+  const ledgerEntries = project.ledgerEntries || []
+  const estLedger = ledgerEntries.reduce((a, b) => a + b.estimatedCost, 0)
+  const actLedger = ledgerEntries.reduce((a, b) => a + b.finalCost, 0)
 
   // Cost Aggregations (Separating CAPEX and Soft Costs)
   const budgetItems = project.budgetItems || []
@@ -116,8 +185,8 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
     { id: 'other', name: t('proj.budget.other'), est: estOth, act: actOth },
   ]
 
-  const totalEst = estCapex + estSoft
-  const totalAct = actCapex + actSoft
+  const totalEst = estCapex + estSoft + estLedger
+  const totalAct = actCapex + actSoft + actLedger
 
   // Timeline & Budget Correlation
   const start = new Date(project.startDate).getTime()
@@ -155,8 +224,254 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
     setAmount(0)
   }
 
+  const handleOpenLedger = (entry?: ProjectLedgerEntry) => {
+    if (entry) {
+      setEditingLedger(entry)
+      setLedgerForm(entry)
+      setDates({
+        purchaseDate: entry.purchaseDate
+          ? new Date(entry.purchaseDate).toISOString().split('T')[0]
+          : '',
+        deliveryDate: entry.deliveryDate
+          ? new Date(entry.deliveryDate).toISOString().split('T')[0]
+          : '',
+        startDate: entry.startDate
+          ? new Date(entry.startDate).toISOString().split('T')[0]
+          : '',
+        endDate: entry.endDate
+          ? new Date(entry.endDate).toISOString().split('T')[0]
+          : '',
+      })
+    } else {
+      setEditingLedger(null)
+      setLedgerForm({
+        description: '',
+        origin: '',
+        partnerId: '',
+        estimatedCost: 0,
+        finalCost: 0,
+        paymentStatus: 'pending',
+        executionStatus: 'pending',
+      })
+      setDates({
+        purchaseDate: '',
+        deliveryDate: '',
+        startDate: '',
+        endDate: '',
+      })
+    }
+    setIsLedgerOpen(true)
+  }
+
+  const handleSaveLedger = () => {
+    const payload = {
+      ...ledgerForm,
+      purchaseDate: dates.purchaseDate
+        ? new Date(dates.purchaseDate + 'T12:00:00')
+        : undefined,
+      deliveryDate: dates.deliveryDate
+        ? new Date(dates.deliveryDate + 'T12:00:00')
+        : undefined,
+      startDate: dates.startDate
+        ? new Date(dates.startDate + 'T12:00:00')
+        : undefined,
+      endDate: dates.endDate
+        ? new Date(dates.endDate + 'T12:00:00')
+        : undefined,
+    } as Omit<ProjectLedgerEntry, 'id'>
+
+    if (editingLedger) {
+      updateLedgerEntry(projectId, editingLedger.id, payload)
+      toast({ title: 'Registro financeiro atualizado.' })
+    } else {
+      addLedgerEntry(projectId, payload)
+      toast({ title: 'Registro financeiro adicionado.' })
+    }
+    setIsLedgerOpen(false)
+  }
+
   return (
     <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center flex-col sm:flex-row gap-4">
+            <div>
+              <CardTitle>Diário de Execução Financeira (Ledger)</CardTitle>
+              <CardDescription>
+                Gerencie todos os custos, fornecedores e cronograma de serviços.
+              </CardDescription>
+            </div>
+            <div className="flex gap-4 items-center bg-muted/20 p-2 rounded-lg border">
+              <div className="text-right">
+                <p className="text-xs text-muted-foreground">Total Previsto</p>
+                <p className="font-bold">{formatCurrency(estLedger)}</p>
+              </div>
+              <div className="h-8 w-px bg-border mx-2" />
+              <div className="text-right mr-4">
+                <p className="text-xs text-muted-foreground">Total Final</p>
+                <p className="font-bold text-primary">
+                  {formatCurrency(actLedger)}
+                </p>
+              </div>
+              <Button onClick={() => handleOpenLedger()} size="sm">
+                <Plus className="h-4 w-4 mr-2" /> Novo Registro
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="rounded-md border overflow-x-auto">
+            <Table>
+              <TableHeader className="bg-muted/30">
+                <TableRow>
+                  <TableHead>Serviço / Origem</TableHead>
+                  <TableHead>Fornecedor</TableHead>
+                  <TableHead>Datas (Compra / Entrega)</TableHead>
+                  <TableHead>Execução (Início / Fim)</TableHead>
+                  <TableHead className="text-right">Custos</TableHead>
+                  <TableHead className="text-center">Status Pag.</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ledgerEntries.length > 0 ? (
+                  ledgerEntries.map((l) => {
+                    const expiredDocs = getPartnerCompliance(l.partnerId)
+                    const partnerName =
+                      project.partners.find((p) => p.id === l.partnerId)
+                        ?.companyName || 'N/A'
+                    return (
+                      <TableRow key={l.id}>
+                        <TableCell>
+                          <p className="font-medium">{l.description}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {l.origin}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-2 font-medium">
+                            {partnerName}
+                            {expiredDocs.length > 0 && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger>
+                                    <AlertTriangle className="h-4 w-4 text-red-500" />
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-red-50 text-red-900 border-red-200">
+                                    Documentos Vencidos ou Críticos!
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-xs">
+                            Cmp:{' '}
+                            {l.purchaseDate
+                              ? formatDate(l.purchaseDate, 'dd/MM/yy')
+                              : '-'}
+                          </p>
+                          <p className="text-xs">
+                            Ent:{' '}
+                            {l.deliveryDate
+                              ? formatDate(l.deliveryDate, 'dd/MM/yy')
+                              : '-'}
+                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <p className="text-xs text-muted-foreground">
+                            Início:{' '}
+                            {l.startDate
+                              ? formatDate(l.startDate, 'dd/MM/yy')
+                              : '-'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Fim:{' '}
+                            {l.endDate
+                              ? formatDate(l.endDate, 'dd/MM/yy')
+                              : '-'}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <p className="text-xs text-muted-foreground line-through">
+                            {formatCurrency(l.estimatedCost)}
+                          </p>
+                          <p className="font-medium text-primary">
+                            {formatCurrency(l.finalCost)}
+                          </p>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <Select
+                            value={l.paymentStatus}
+                            onValueChange={(val) =>
+                              updateLedgerEntry(projectId, l.id, {
+                                paymentStatus: val as any,
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                'h-7 border text-[10px] w-[120px] mx-auto',
+                                l.paymentStatus === 'paid'
+                                  ? 'bg-green-100 text-green-800 border-green-200'
+                                  : l.paymentStatus === 'overdue'
+                                    ? 'bg-red-100 text-red-800 border-red-200'
+                                    : l.paymentStatus === 'partially_paid'
+                                      ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                      : 'bg-secondary',
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                              <SelectItem value="partially_paid">
+                                Parcial
+                              </SelectItem>
+                              <SelectItem value="paid">Pago</SelectItem>
+                              <SelectItem value="overdue">Atrasado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Editar"
+                            onClick={() => handleOpenLedger(l)}
+                          >
+                            <Edit2 className="h-4 w-4 text-muted-foreground" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Excluir"
+                            className="text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteLedgerEntry(projectId, l.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-6 text-muted-foreground"
+                    >
+                      Nenhum registro financeiro / serviço adicionado ao Ledger.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="border-t-4 border-t-primary md:col-span-2">
           <CardHeader className="pb-2">
@@ -394,108 +709,168 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-start gap-4 flex-col sm:flex-row">
-            <div>
-              <CardTitle>Pagamentos e Ajustes Extra</CardTitle>
-              <CardDescription>
-                Registre {receiptLabel} ou ajustes de mão de obra.
-              </CardDescription>
-            </div>
-            <div className="flex gap-4 items-center bg-muted/30 p-3 rounded-lg border">
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {t('proj.execution.labor_estimated')}
-                </p>
-                <p className="font-medium text-sm">{formatCurrency(estLab)}</p>
+      {/* Ledger Modal Form */}
+      <Dialog open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingLedger
+                ? 'Editar Registro (Ledger)'
+                : 'Novo Registro Financeiro'}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>
+                  Descrição / Serviço <span className="text-red-500">*</span>
+                </Label>
+                <Input
+                  value={ledgerForm.description}
+                  onChange={(e) =>
+                    setLedgerForm({
+                      ...ledgerForm,
+                      description: e.target.value,
+                    })
+                  }
+                  placeholder="Ex: Instalação Hidráulica"
+                />
               </div>
-              <div className="h-8 w-px bg-border" />
-              <div>
-                <p className="text-xs text-muted-foreground">
-                  {t('proj.execution.labor_actual')}
-                </p>
-                <p
-                  className={cn(
-                    'font-medium text-sm',
-                    actLab > estLab && 'text-red-600',
-                  )}
-                >
-                  {formatCurrency(actLab)}
-                </p>
+              <div className="space-y-2">
+                <Label>Origem</Label>
+                <Input
+                  value={ledgerForm.origin}
+                  placeholder="Ex: Contrato X, Pedido Y"
+                  onChange={(e) =>
+                    setLedgerForm({ ...ledgerForm, origin: e.target.value })
+                  }
+                />
               </div>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
-            <div className="sm:col-span-6 space-y-1.5">
-              <label className="text-xs font-medium">
-                {t('finance.description')}
-              </label>
-              <Input
-                placeholder={t('proj.execution.labor_adjustments')}
-                value={desc}
-                onChange={(e) => setDesc(e.target.value)}
-              />
-            </div>
-            <div className="sm:col-span-4 space-y-1.5">
-              <label className="text-xs font-medium">
-                {t('finance.value')}
-              </label>
-              <CurrencyInput value={amount} onChange={setAmount} />
-            </div>
-            <div className="sm:col-span-2">
-              <Button onClick={handleAddAdjustment} className="w-full">
-                <Plus className="h-4 w-4 mr-2" /> {t('add')}
-              </Button>
-            </div>
-          </div>
-
-          <div className="rounded-md border">
-            {project.laborAdjustments && project.laborAdjustments.length > 0 ? (
-              <Table>
-                <TableHeader className="bg-muted/30">
-                  <TableRow>
-                    <TableHead>{t('date')}</TableHead>
-                    <TableHead>{t('finance.description')}</TableHead>
-                    <TableHead className="text-right">
-                      {t('finance.value')}
-                    </TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {project.laborAdjustments.map((adj) => (
-                    <TableRow key={adj.id}>
-                      <TableCell className="text-muted-foreground text-sm">
-                        {formatDate(adj.date, 'P')}
-                      </TableCell>
-                      <TableCell>{adj.description}</TableCell>
-                      <TableCell className="text-right font-medium text-red-600">
-                        +{formatCurrency(adj.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title={`Anexar ${receiptLabel}`}
-                        >
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
+            <div className="space-y-2">
+              <Label>
+                Fornecedor / Empresa <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={ledgerForm.partnerId}
+                onValueChange={(val) =>
+                  setLedgerForm({ ...ledgerForm, partnerId: val })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o Fornecedor vinculado" />
+                </SelectTrigger>
+                <SelectContent>
+                  {project.partners.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.companyName}
+                    </SelectItem>
                   ))}
-                </TableBody>
-              </Table>
-            ) : (
-              <div className="p-8 text-center text-muted-foreground text-sm italic">
-                {t('proj.execution.no_adjustments')}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Data de Compra / Pedido</Label>
+                <Input
+                  type="date"
+                  value={dates.purchaseDate}
+                  onChange={(e) =>
+                    setDates({ ...dates, purchaseDate: e.target.value })
+                  }
+                />
               </div>
-            )}
+              <div className="space-y-2">
+                <Label>Data de Entrega (Prevista / Real)</Label>
+                <Input
+                  type="date"
+                  value={dates.deliveryDate}
+                  onChange={(e) =>
+                    setDates({ ...dates, deliveryDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Início da Execução</Label>
+                <Input
+                  type="date"
+                  value={dates.startDate}
+                  onChange={(e) =>
+                    setDates({ ...dates, startDate: e.target.value })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Fim da Execução</Label>
+                <Input
+                  type="date"
+                  value={dates.endDate}
+                  onChange={(e) =>
+                    setDates({ ...dates, endDate: e.target.value })
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 border-t pt-4">
+              <div className="space-y-2">
+                <Label>Custo Previsto</Label>
+                <CurrencyInput
+                  value={ledgerForm.estimatedCost || 0}
+                  onChange={(val) =>
+                    setLedgerForm({ ...ledgerForm, estimatedCost: val })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Custo Final</Label>
+                <CurrencyInput
+                  value={ledgerForm.finalCost || 0}
+                  onChange={(val) =>
+                    setLedgerForm({ ...ledgerForm, finalCost: val })
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Status do Pagamento</Label>
+                <Select
+                  value={ledgerForm.paymentStatus}
+                  onValueChange={(val) =>
+                    setLedgerForm({
+                      ...ledgerForm,
+                      paymentStatus: val as any,
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pendente</SelectItem>
+                    <SelectItem value="partially_paid">
+                      Parcialmente Pago
+                    </SelectItem>
+                    <SelectItem value="paid">Pago</SelectItem>
+                    <SelectItem value="overdue">Atrasado</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+          <DialogFooter>
+            <Button
+              disabled={!ledgerForm.description || !ledgerForm.partnerId}
+              onClick={handleSaveLedger}
+            >
+              Salvar Registro
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

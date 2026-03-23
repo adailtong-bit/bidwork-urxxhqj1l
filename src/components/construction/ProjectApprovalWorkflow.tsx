@@ -21,6 +21,12 @@ import {
   CardDescription,
   CardContent,
 } from '@/components/ui/card'
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import {
@@ -40,8 +46,12 @@ interface ProjectApprovalWorkflowProps {
 export function ProjectApprovalWorkflow({
   projectId,
 }: ProjectApprovalWorkflowProps) {
-  const { getProject, updateApprovalStatus, approveMeasurement } =
-    useProjectStore()
+  const {
+    getProject,
+    updateApprovalStatus,
+    approveMeasurement,
+    approveLedgerEntry,
+  } = useProjectStore()
   const { t, formatDate, formatCurrency } = useLanguageStore()
   const { toast } = useToast()
   const project = getProject(projectId)
@@ -49,7 +59,7 @@ export function ProjectApprovalWorkflow({
   if (!project) return null
 
   const handleStatusChange = (id: string, status: any) => {
-    updateApprovalStatus(projectId, id, status, t('proj.approvals.manager')) // Mock user
+    updateApprovalStatus(projectId, id, status, t('proj.approvals.manager'))
     toast({
       title: t('success'),
       description: `${t('status')} ${t('proj.approvals.' + status)}`,
@@ -61,6 +71,14 @@ export function ProjectApprovalWorkflow({
     toast({
       title: 'Medição Aprovada',
       description: 'Fatura gerada e progresso atualizado.',
+    })
+  }
+
+  const handleApproveLedger = (id: string) => {
+    approveLedgerEntry(projectId, id)
+    toast({
+      title: 'Serviço Aprovado',
+      description: 'Execução do serviço confirmada com sucesso.',
     })
   }
 
@@ -85,11 +103,120 @@ export function ProjectApprovalWorkflow({
     }
   }
 
+  const getPartnerCompliance = (partnerId: string) => {
+    const docs = project.complianceDocuments || []
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return docs.filter(
+      (d) =>
+        (d.partnerId === partnerId || d.partnerId === 'general') &&
+        d.isCritical &&
+        new Date(d.expirationDate) < today,
+    )
+  }
+
   const pendingMeasurements =
     project.measurements?.filter((m) => m.status === 'pending') || []
 
+  const pendingLedgers =
+    project.ledgerEntries?.filter((l) => l.executionStatus === 'pending') || []
+
   return (
     <div className="space-y-6">
+      {pendingLedgers.length > 0 && (
+        <Card className="w-full border-purple-200">
+          <CardHeader className="bg-purple-50/50 pb-4">
+            <CardTitle className="flex items-center gap-2 text-purple-800">
+              <CheckCircle2 className="h-5 w-5" /> Aprovação de Serviços e
+              Fornecedores (Ledger)
+            </CardTitle>
+            <CardDescription>
+              Valide a execução de serviços. O sistema bloqueia a aprovação caso
+              o parceiro tenha documentação vencida.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="rounded-md border">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Serviço / Origem</TableHead>
+                    <TableHead>Fornecedor</TableHead>
+                    <TableHead className="text-right">Custo Final</TableHead>
+                    <TableHead className="text-center">Compliance</TableHead>
+                    <TableHead className="text-right">Ação</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {pendingLedgers.map((l) => {
+                    const partnerName =
+                      project.partners?.find((p) => p.id === l.partnerId)
+                        ?.companyName || 'N/A'
+                    const expiredDocs = getPartnerCompliance(l.partnerId)
+                    const isBlocked = expiredDocs.length > 0
+
+                    return (
+                      <TableRow key={l.id}>
+                        <TableCell>
+                          <span className="font-medium">{l.description}</span>
+                          <span className="text-xs text-muted-foreground block">
+                            {l.origin}
+                          </span>
+                        </TableCell>
+                        <TableCell>{partnerName}</TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(l.finalCost)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {isBlocked ? (
+                            <Badge variant="destructive">
+                              Bloqueado ({expiredDocs.length})
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-green-500">Regular</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isBlocked ? (
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="inline-block cursor-not-allowed">
+                                    <Button
+                                      size="sm"
+                                      disabled
+                                      className="pointer-events-none"
+                                    >
+                                      <XCircle className="mr-1 h-4 w-4" />{' '}
+                                      Bloqueado
+                                    </Button>
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-red-50 text-red-900 border-red-200">
+                                  Docs Vencidos:{' '}
+                                  {expiredDocs.map((d) => d.name).join(', ')}
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => handleApproveLedger(l.id)}
+                            >
+                              <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {pendingMeasurements.length > 0 && (
         <Card className="w-full border-blue-200">
           <CardHeader className="bg-blue-50/50 pb-4">

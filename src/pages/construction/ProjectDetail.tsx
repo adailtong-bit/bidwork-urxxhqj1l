@@ -25,6 +25,7 @@ import {
   Users,
   HardHat,
   Link2,
+  MessageSquare,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -44,8 +45,13 @@ import {
 } from '@/components/ui/dialog'
 import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
+import { ProjectExecution } from '@/components/construction/ProjectExecution'
 import { ProjectFinance } from '@/components/construction/ProjectFinance'
+import { ProjectQuotes } from '@/components/construction/ProjectQuotes'
+import { ProjectChat } from '@/components/construction/ProjectChat'
 import { ProjectCompliance } from '@/components/construction/ProjectCompliance'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { ShieldAlert } from 'lucide-react'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -54,7 +60,7 @@ export default function ProjectDetail() {
   const { toast } = useToast()
   const { t, formatDate, currentLanguage } = useLanguageStore()
 
-  const currentTab = searchParams.get('tab') || 'estimation'
+  const currentTab = searchParams.get('tab') || 'execution'
 
   const csvInputRef = useRef<HTMLInputElement>(null)
   const project = getProject(id!)
@@ -66,6 +72,7 @@ export default function ProjectDetail() {
   const [viewMode, setViewMode] = useState<'cards' | 'table'>('table')
   const [isTeamManagerOpen, setIsTeamManagerOpen] = useState(false)
   const [isSyncOpen, setIsSyncOpen] = useState(false)
+  const [isChatOpen, setIsChatOpen] = useState(false)
 
   // Estimation State
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
@@ -74,8 +81,9 @@ export default function ProjectDetail() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     toast({
-      title: 'Simulação de Upload',
-      description: 'Arquivo processado com sucesso.',
+      title: t('proj.import.simulation') || 'Simulação de Upload',
+      description:
+        t('proj.import.success') || 'Arquivo processado com sucesso.',
     })
     setIsImportOpen(false)
   }
@@ -84,8 +92,30 @@ export default function ProjectDetail() {
     setSearchParams({ tab: val })
   }
 
+  // Check for critical expired documents
+  const today = new Date()
+  const criticalExpiredDocs = (project.complianceDocuments || []).filter(
+    (doc) => doc.isCritical && new Date(doc.expirationDate) < today,
+  )
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10 px-4">
+      {/* Visual Safeguard Warning */}
+      {criticalExpiredDocs.length > 0 && (
+        <Alert
+          variant="destructive"
+          className="mt-4 bg-red-50 text-red-900 border-red-200"
+        >
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Alerta de Risco Operacional!</AlertTitle>
+          <AlertDescription>
+            Existem <strong>{criticalExpiredDocs.length}</strong> documento(s)
+            crítico(s) vencido(s). Risco iminente de paralisação da obra. Acesse
+            a aba de Compliance para regularizar.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Centered Header */}
       <div className="flex flex-col items-center text-center gap-4 py-4 relative">
         <div className="flex items-center gap-2">
@@ -134,6 +164,14 @@ export default function ProjectDetail() {
           >
             <Link2 className="h-4 w-4" />
           </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setIsChatOpen(true)}
+            title="Chat do Projeto"
+          >
+            <MessageSquare className="h-4 w-4" />
+          </Button>
           <Button variant="outline" onClick={() => setIsTeamManagerOpen(true)}>
             <HardHat className="mr-2 h-4 w-4" /> {t('proj.team.btn')}
           </Button>
@@ -147,9 +185,12 @@ export default function ProjectDetail() {
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-4xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
-            <TabsTrigger value="estimation" className="flex-1">
-              {t('est.tab.title')}
+          <TabsList className="w-full max-w-6xl flex-nowrap justify-start md:justify-center min-w-[900px] mb-8 h-auto p-1">
+            <TabsTrigger value="execution" className="flex-1">
+              Execução (Ledger)
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex-1">
+              Financeiro
             </TabsTrigger>
             <TabsTrigger value="stages" className="flex-1">
               {t('proj.detail.schedule')}
@@ -157,23 +198,41 @@ export default function ProjectDetail() {
             <TabsTrigger value="budget" className="flex-1">
               {t('proj.budget.title')}
             </TabsTrigger>
-            <TabsTrigger value="financial" className="flex-1">
-              Financeiro
+            <TabsTrigger value="estimation" className="flex-1">
+              {t('est.tab.title')}
+            </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex-1">
+              Compliance
             </TabsTrigger>
             <TabsTrigger value="partners" className="flex-1">
               {t('proj.detail.partners')}
             </TabsTrigger>
+            <TabsTrigger value="quotes" className="flex-1">
+              Faturas
+            </TabsTrigger>
             <TabsTrigger value="approvals" className="flex-1">
               {t('proj.approvals.title')}
-            </TabsTrigger>
-            <TabsTrigger value="compliance" className="flex-1">
-              Compliance
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1">
               {t('proj.reports.title')}
             </TabsTrigger>
           </TabsList>
         </div>
+
+        {/* Execution Tab */}
+        <TabsContent value="execution" className="w-full animate-fade-in">
+          <ProjectExecution projectId={project.id} />
+        </TabsContent>
+
+        {/* Financial Tab (Integrated View) */}
+        <TabsContent value="financial" className="w-full animate-fade-in">
+          <ProjectFinance projectId={project.id} />
+        </TabsContent>
+
+        {/* Compliance Tab */}
+        <TabsContent value="compliance" className="w-full animate-fade-in">
+          <ProjectCompliance projectId={project.id} />
+        </TabsContent>
 
         <TabsContent
           value="estimation"
@@ -184,7 +243,7 @@ export default function ProjectDetail() {
               <div className="space-y-1">
                 <CardTitle>{t('est.tab.title')}</CardTitle>
                 <CardDescription>
-                  Planejamento e estimativa de custos por etapa ou m².
+                  {t('est.desc') || 'Planejamento e estimativa de custos.'}
                 </CardDescription>
               </div>
               <div className="flex items-center gap-2">
@@ -223,8 +282,8 @@ export default function ProjectDetail() {
                     {t('est.template.select')}
                   </h3>
                   <p className="text-muted-foreground mb-6 max-w-sm mx-auto">
-                    Comece selecionando um modelo padrão ou faça o upload de sua
-                    lista personalizada.
+                    {t('est.empty.desc') ||
+                      'Comece selecionando um modelo padrão.'}
                   </p>
                   <Button onClick={() => setIsTemplateSelectorOpen(true)}>
                     {t('est.template.select')}
@@ -295,7 +354,9 @@ export default function ProjectDetail() {
                           className={
                             stage.status === 'completed'
                               ? 'bg-green-50 text-green-700'
-                              : ''
+                              : stage.status === 'delayed'
+                                ? 'bg-red-50 text-red-700 border-red-200'
+                                : ''
                           }
                         >
                           {t(`status.${stage.status}`)}
@@ -362,11 +423,6 @@ export default function ProjectDetail() {
           <ProjectBudget projectId={project.id} />
         </TabsContent>
 
-        {/* Financial Tab */}
-        <TabsContent value="financial" className="w-full animate-fade-in">
-          <ProjectFinance projectId={project.id} />
-        </TabsContent>
-
         {/* Partners Tab */}
         <TabsContent value="partners" className="w-full animate-fade-in">
           <Card className="max-w-4xl mx-auto">
@@ -375,7 +431,8 @@ export default function ProjectDetail() {
                 <div>
                   <CardTitle>{t('proj.detail.partners')}</CardTitle>
                   <CardDescription>
-                    Gestão de contratos e equipes alocadas.
+                    {t('proj.partners.desc') ||
+                      'Gestão de parceiros, equipes e contratos associados.'}
                   </CardDescription>
                 </div>
               </div>
@@ -393,7 +450,22 @@ export default function ProjectDetail() {
                           <h3 className="font-bold text-xl text-primary">
                             {partner.companyName}
                           </h3>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="text-sm font-medium mt-1">
+                            {partner.email || 'Email não cadastrado'} •{' '}
+                            {partner.phone || 'Telefone não cadastrado'}
+                          </div>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {partner.address
+                              ? `${partner.address.street}, ${partner.address.city} - ${partner.address.state}`
+                              : 'Sem endereço cadastrado'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-3">
+                            <Badge
+                              variant="secondary"
+                              className="bg-primary/10 text-primary hover:bg-primary/20"
+                            >
+                              {partner.specialty || 'Especialidade Geral'}
+                            </Badge>
                             <Badge variant="outline">
                               {t('proj.partner.stage')}:{' '}
                               {t(
@@ -431,9 +503,14 @@ export default function ProjectDetail() {
                                   className="text-sm flex justify-between items-center bg-muted/30 p-2 rounded"
                                 >
                                   <span className="font-medium">{c.name}</span>
-                                  <span className="text-muted-foreground text-xs">
-                                    {c.phone}
-                                  </span>
+                                  <div className="text-right">
+                                    <span className="text-xs text-muted-foreground block">
+                                      {c.email}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground block">
+                                      {c.phone}
+                                    </span>
+                                  </div>
                                 </li>
                               ))}
                             </ul>
@@ -478,26 +555,26 @@ export default function ProjectDetail() {
                 </div>
               ) : (
                 <div className="text-center py-12 text-muted-foreground bg-muted/10 rounded-lg border-2 border-dashed">
-                  {t('proj.partners.empty')}
+                  {t('proj.partners.empty') || 'Nenhum parceiro adicionado'}
                 </div>
               )}
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Approvals Tab */}
-        <TabsContent value="approvals" className="w-full animate-fade-in">
-          <ProjectApprovalWorkflow projectId={project.id} />
-        </TabsContent>
-
-        {/* Compliance Tab */}
-        <TabsContent value="compliance" className="w-full animate-fade-in">
-          <ProjectCompliance projectId={project.id} />
+        {/* Quotes & Invoices Tab */}
+        <TabsContent value="quotes" className="w-full animate-fade-in">
+          <ProjectQuotes projectId={project.id} />
         </TabsContent>
 
         {/* Reports Tab */}
         <TabsContent value="reports" className="w-full animate-fade-in">
           <ProjectReports projectId={project.id} />
+        </TabsContent>
+
+        {/* Approvals Tab */}
+        <TabsContent value="approvals" className="w-full animate-fade-in">
+          <ProjectApprovalWorkflow projectId={project.id} />
         </TabsContent>
       </Tabs>
 
@@ -554,6 +631,13 @@ export default function ProjectDetail() {
       <ExternalIntegrationDialog
         open={isSyncOpen}
         onClose={() => setIsSyncOpen(false)}
+        projectId={project.id}
+      />
+
+      {/* Integrated Chat Drawer */}
+      <ProjectChat
+        open={isChatOpen}
+        onClose={() => setIsChatOpen(false)}
         projectId={project.id}
       />
     </div>
