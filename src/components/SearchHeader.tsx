@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { LanguageSelector } from '@/components/LanguageSelector'
-import { Link, useLocation } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import {
@@ -21,9 +21,22 @@ export function SearchHeader() {
   const { user, isAuthenticated } = useAuthStore()
   const { notifications, getUnreadCount, markAsRead } = useNotificationStore()
   const location = useLocation()
+  const navigate = useNavigate()
 
   const unreadCount = user ? getUnreadCount(user.id) : 0
   const userNotifications = notifications.filter((n) => n.userId === user?.id)
+
+  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
+    const query = formData.get('search')
+    if (query && typeof query === 'string') {
+      navigate(`/find-jobs?q=${encodeURIComponent(query)}`)
+    }
+  }
+
+  const searchParams = new URLSearchParams(location.search)
+  const currentQuery = searchParams.get('q') || ''
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
@@ -41,14 +54,22 @@ export function SearchHeader() {
 
         {/* Search Bar - Global */}
         <div className="flex-1 max-w-md ml-auto">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+          <form className="relative" onSubmit={handleSearch}>
+            <button
+              type="submit"
+              className="absolute left-2.5 top-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+              aria-label="Search"
+            >
+              <Search className="h-4 w-4" />
+            </button>
             <Input
+              name="search"
               type="search"
+              defaultValue={currentQuery}
               placeholder={t('search.placeholder')}
               className="w-full bg-muted pl-9 rounded-full h-9"
             />
-          </div>
+          </form>
         </div>
 
         {/* Right Actions */}
