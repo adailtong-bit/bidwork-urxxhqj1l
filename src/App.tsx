@@ -1,5 +1,11 @@
 import { useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom'
 import { Toaster } from '@/components/ui/toaster'
 import { Toaster as Sonner } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -57,6 +63,16 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 
+const ScrollToTop = () => {
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' })
+  }, [pathname])
+
+  return null
+}
+
 const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   const { isAuthenticated, user } = useAuthStore()
 
@@ -95,6 +111,7 @@ const App = () => {
     <BrowserRouter
       future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
     >
+      <ScrollToTop />
       <TooltipProvider>
         <Toaster />
         <Sonner />

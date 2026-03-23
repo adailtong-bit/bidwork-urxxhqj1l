@@ -12,7 +12,7 @@ export default function Layout() {
 
   if (isAuthPage) {
     return (
-      <div className="min-h-screen bg-background flex flex-col font-sans antialiased">
+      <div className="min-h-screen bg-background flex flex-col justify-start font-sans antialiased">
         <Outlet />
       </div>
     )
@@ -21,9 +21,9 @@ export default function Layout() {
   return (
     <SidebarProvider defaultOpen={true}>
       <MainSidebar />
-      <SidebarInset className="flex flex-col min-h-screen bg-background font-sans antialiased transition-all duration-300 ease-in-out relative">
+      <SidebarInset className="flex flex-col justify-start min-h-screen bg-background font-sans antialiased transition-all duration-300 ease-in-out relative">
         <SearchHeader />
-        <div className="flex-1 pb-20 md:pb-0 relative w-full overflow-x-hidden">
+        <div className="flex-1 pb-20 md:pb-0 relative w-full overflow-x-hidden flex flex-col justify-start">
           <Outlet />
         </div>
         <div className="md:hidden">

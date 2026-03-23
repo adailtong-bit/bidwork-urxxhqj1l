@@ -6,14 +6,14 @@ export default function AuthLayout() {
   const { t } = useLanguageStore()
 
   return (
-    <div className="flex min-h-screen w-full relative">
+    <div className="flex min-h-screen w-full relative bg-background justify-start">
       {/* Language Selector fixed at top-right of the viewport for easy access */}
       <div className="absolute top-4 right-4 z-50">
         <LanguageSelector />
       </div>
 
       {/* Left side - Decorative */}
-      <div className="hidden lg:flex w-1/2 bg-primary relative overflow-hidden items-center justify-center p-12">
+      <div className="hidden lg:flex w-1/2 bg-primary relative overflow-hidden items-start pt-32 justify-center p-12">
         <div className="absolute inset-0 bg-gradient-to-br from-primary via-primary to-indigo-900 opacity-90 z-10" />
         {/* Abstract shapes */}
         <div className="absolute -top-20 -left-20 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob" />
@@ -59,8 +59,8 @@ export default function AuthLayout() {
       </div>
 
       {/* Right side - Content */}
-      <div className="flex-1 flex items-center justify-center p-6 bg-background">
-        <div className="w-full max-w-[400px] animate-fade-in-up">
+      <div className="flex-1 flex items-start justify-center p-6 pt-16 md:pt-32 bg-background">
+        <div className="w-full max-w-[400px] animate-fade-in-down">
           <Outlet />
         </div>
       </div>
