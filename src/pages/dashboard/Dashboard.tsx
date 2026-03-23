@@ -27,6 +27,7 @@ import {
   Clock,
   Activity,
   FileText,
+  MessageSquare,
 } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
@@ -281,7 +282,7 @@ export default function Dashboard() {
           >
             Interesses Recebidos
             {myPendingInterests.length > 0 && (
-              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white">
                 {myPendingInterests.length}
               </span>
             )}
@@ -598,9 +599,9 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             {myPendingInterests.length === 0 ? (
-              <div className="text-center py-10 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground">
-                <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-50" />
-                <p>Nenhum interesse pendente no momento.</p>
+              <div className="text-center py-10 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground flex flex-col items-center">
+                <MessageSquare className="h-10 w-10 mb-3 opacity-30" />
+                <p>Você ainda não recebeu nenhum interesse.</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -609,7 +610,7 @@ export default function Dashboard() {
                     key={interest.id}
                     className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg bg-card shadow-sm gap-4"
                   >
-                    <div className="flex items-center gap-4">
+                    <div className="flex items-start sm:items-center gap-4">
                       <Avatar className="h-12 w-12 border">
                         <AvatarImage src={interest.senderAvatar} />
                         <AvatarFallback>
@@ -623,13 +624,25 @@ export default function Dashboard() {
                         >
                           {interest.senderName}
                         </Link>
-                        <p className="text-sm text-muted-foreground">
-                          Solicitou contato em{' '}
+                        {interest.context && (
+                          <div className="mt-1 flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {interest.context.type === 'job'
+                                ? 'Vaga/Serviço'
+                                : 'Perfil'}
+                            </Badge>
+                            <span className="text-sm font-medium">
+                              {interest.context.title}
+                            </span>
+                          </div>
+                        )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Recebido em{' '}
                           {formatDate(interest.createdAt, 'dd/MM/yyyy HH:mm')}
                         </p>
                       </div>
                     </div>
-                    <div className="flex gap-2 w-full sm:w-auto">
+                    <div className="flex gap-2 w-full sm:w-auto mt-2 sm:mt-0">
                       <Button
                         variant="outline"
                         className="flex-1 sm:flex-none"
@@ -640,13 +653,15 @@ export default function Dashboard() {
                       <Button
                         className="flex-1 sm:flex-none"
                         onClick={() => {
-                          acceptInterest(interest.id)
+                          const convId = acceptInterest(interest.id)
                           toast({
                             title: 'Interesse aceito',
                             description:
                               'Uma nova conversa foi iniciada com sucesso.',
                           })
-                          navigate('/messages')
+                          navigate(
+                            `/messages${convId ? `?conv=${convId}` : ''}`,
+                          )
                         }}
                       >
                         Aceitar Chat

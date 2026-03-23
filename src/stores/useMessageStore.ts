@@ -47,7 +47,7 @@ interface MessageState {
     targetId: string,
     context?: ConversationContext,
   ) => void
-  acceptInterest: (interestId: string) => void
+  acceptInterest: (interestId: string) => string | undefined
   declineInterest: (interestId: string) => void
   sendMessage: (
     conversationId: string,
@@ -160,12 +160,31 @@ export const useMessageStore = create<MessageState>((set, get) => ({
   interests: [
     {
       id: 'mock-int-1',
-      senderId: 'mock-sender-1',
-      senderName: 'Carlos Interessado',
-      senderAvatar: 'https://img.usecurling.com/ppl/thumbnail?seed=carlos',
-      targetId: 'owner-1', // Admin Tech Corp mock ID
+      senderId: 'exec-pj-1',
+      senderName: 'Soluções Rápidas Ltda',
+      senderAvatar: 'https://img.usecurling.com/ppl/thumbnail?seed=exec-pj-1',
+      targetId: 'owner-1', // Targets the Admin Tech Corp (Contractor)
       status: 'pending',
       createdAt: new Date(),
+      context: {
+        type: 'job',
+        id: 'job-1',
+        title: 'Reforma Completa de Fachada (Novo & Premium)',
+      },
+    },
+    {
+      id: 'mock-int-2',
+      senderId: 'owner-2',
+      senderName: 'Startup Alpha',
+      senderAvatar: 'https://img.usecurling.com/ppl/thumbnail?seed=owner-2',
+      targetId: 'exec-1', // Targets João Freelancer (Executor)
+      status: 'pending',
+      createdAt: new Date(Date.now() - 3600000),
+      context: {
+        type: 'job',
+        id: 'job-2',
+        title: 'Desenvolvimento de Aplicativo',
+      },
     },
   ],
   sendInterest: (sender, targetId, context) =>
@@ -184,12 +203,14 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         },
       ],
     })),
-  acceptInterest: (id) =>
+  acceptInterest: (id) => {
+    let newConvId: string | undefined
+
     set((state) => {
       const interest = state.interests.find((i) => i.id === id)
       if (!interest) return state
 
-      const newConvId = Math.random().toString(36).substr(2, 9)
+      newConvId = Math.random().toString(36).substr(2, 9)
       const newConv: Conversation = {
         id: newConvId,
         participants: [
@@ -216,7 +237,10 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         ),
         conversations: [newConv, ...state.conversations],
       }
-    }),
+    })
+
+    return newConvId
+  },
   declineInterest: (id) =>
     set((state) => ({
       interests: state.interests.map((i) =>
