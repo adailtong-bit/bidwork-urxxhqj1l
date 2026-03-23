@@ -24,72 +24,83 @@ export default function ConstructionPlans() {
   const getIcon = (complexity?: string) => {
     switch (complexity) {
       case 'High':
-        return <Crown className="h-8 w-8 text-amber-500 mb-2" />
+        return <Crown className="h-6 w-6 md:h-8 md:w-8 text-amber-500 mb-2" />
       case 'Medium':
-        return <Building2 className="h-8 w-8 text-blue-500 mb-2" />
+        return (
+          <Building2 className="h-6 w-6 md:h-8 md:w-8 text-blue-500 mb-2" />
+        )
       default:
-        return <HardHat className="h-8 w-8 text-orange-500 mb-2" />
+        return (
+          <HardHat className="h-6 w-6 md:h-8 md:w-8 text-orange-500 mb-2" />
+        )
     }
   }
 
   return (
-    <div className="max-w-6xl mx-auto space-y-8 py-10 px-4">
-      <div className="text-center space-y-4 max-w-2xl mx-auto">
-        <h1 className="text-4xl font-bold tracking-tight">
+    <div className="max-w-6xl mx-auto space-y-6 md:space-y-8 py-8 md:py-10 px-4">
+      <div className="text-center space-y-3 md:space-y-4 max-w-2xl mx-auto px-2">
+        <h1 className="text-2xl md:text-4xl font-bold tracking-tight break-words">
           Planos de Gestão de Obras
         </h1>
-        <p className="text-xl text-muted-foreground">
+        <p className="text-sm md:text-xl text-muted-foreground break-words">
           Escolha o plano ideal para o tamanho e complexidade do seu projeto.
           Desbloqueie ferramentas avançadas de controle.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pt-4 md:pt-8">
         {availablePlans.map((plan) => (
           <Card
             key={plan.id}
-            className={`flex flex-col relative border-border hover:border-primary/50 transition-colors`}
+            className={`flex flex-col relative border-border hover:border-primary/50 transition-colors w-full overflow-hidden`}
           >
-            <CardHeader>
+            <CardHeader className="pb-4">
               {getIcon(plan.complexity)}
-              <CardTitle className="text-2xl">{plan.name}</CardTitle>
-              <div className="mt-4">
-                <span className="text-4xl font-bold">
+              <CardTitle className="text-lg md:text-xl leading-tight break-words">
+                {plan.name}
+              </CardTitle>
+              <div className="mt-2 md:mt-4 flex flex-wrap items-baseline gap-1">
+                <span className="text-2xl md:text-3xl font-bold tracking-tight break-all sm:break-words">
                   {formatCurrency(plan.price)}
                 </span>
-                <span className="text-muted-foreground">
+                <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
                   /{plan.billingCycle === 'monthly' ? 'mês' : 'ciclo'}
                 </span>
               </div>
-              <CardDescription className="mt-2 min-h-[40px]">
+              <CardDescription className="mt-2 min-h-[40px] text-xs md:text-sm leading-relaxed break-words">
                 {plan.description}
               </CardDescription>
             </CardHeader>
             <CardContent className="flex-1">
               <ul className="space-y-3">
                 {plan.workSize && (
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">
-                      Tamanho da Obra: <strong>{plan.workSize}</strong>
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 md:h-5 md:w-5 text-green-500 shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm leading-tight text-muted-foreground break-words flex-1">
+                      Tamanho da Obra:{' '}
+                      <strong className="text-foreground block mt-0.5 sm:inline sm:mt-0">
+                        {plan.workSize}
+                      </strong>
                     </span>
                   </li>
                 )}
                 {plan.maxProjects && (
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 md:h-5 md:w-5 text-green-500 shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm leading-tight text-muted-foreground break-words flex-1">
                       Limite de Projetos Ativos:{' '}
-                      <strong>{plan.maxProjects}</strong>
+                      <strong className="text-foreground block mt-0.5 sm:inline sm:mt-0">
+                        {plan.maxProjects}
+                      </strong>
                     </span>
                   </li>
                 )}
                 {plan.complexity && (
-                  <li className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">
+                  <li className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 md:h-5 md:w-5 text-green-500 shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm leading-tight text-muted-foreground break-words flex-1">
                       Complexidade de Gestão:{' '}
-                      <strong>
+                      <strong className="text-foreground block mt-0.5 sm:inline sm:mt-0">
                         {plan.complexity === 'Low'
                           ? 'Baixa'
                           : plan.complexity === 'Medium'
@@ -100,16 +111,18 @@ export default function ConstructionPlans() {
                   </li>
                 )}
                 {plan.features?.map((feature, i) => (
-                  <li key={i} className="flex items-start gap-2">
-                    <Check className="h-5 w-5 text-green-500 shrink-0" />
-                    <span className="text-sm">{feature}</span>
+                  <li key={i} className="flex items-start gap-2.5">
+                    <Check className="h-4 w-4 md:h-5 md:w-5 text-green-500 shrink-0 mt-0.5" />
+                    <span className="text-xs md:text-sm leading-tight text-muted-foreground break-words flex-1">
+                      {feature}
+                    </span>
                   </li>
                 ))}
               </ul>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="pt-2 md:pt-4">
               <Button
-                className="w-full"
+                className="w-full text-sm"
                 size="lg"
                 onClick={() => navigate(`/construction/checkout/${plan.id}`)}
               >
