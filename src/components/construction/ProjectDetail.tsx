@@ -91,7 +91,7 @@ export default function ProjectDetail() {
   )
 
   return (
-    <div className="space-y-8 max-w-6xl mx-auto pb-10 px-4">
+    <div className="space-y-8 w-full max-w-6xl mx-auto pb-10 px-4 min-w-0">
       {/* Visual Safeguard Warning */}
       {criticalExpiredDocs.length > 0 && (
         <Alert
@@ -109,7 +109,7 @@ export default function ProjectDetail() {
       )}
 
       {/* Centered Header */}
-      <div className="flex flex-col items-center text-center gap-4 py-4 relative">
+      <div className="flex flex-col items-center text-center gap-4 py-4 relative min-w-0">
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"
@@ -128,18 +128,18 @@ export default function ProjectDetail() {
           </Badge>
         </div>
 
-        <h1 className="text-4xl font-bold tracking-tight text-foreground">
+        <h1 className="text-4xl font-bold tracking-tight text-foreground truncate max-w-full">
           {project.name}
         </h1>
 
         <div className="flex flex-wrap justify-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
+          <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full whitespace-nowrap">
             <MapPin className="h-3 w-3" />
             {project.address
               ? `${project.address.city} - ${project.address.state}`
               : project.location}
           </span>
-          <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full">
+          <span className="flex items-center gap-1 bg-muted/50 px-3 py-1 rounded-full whitespace-nowrap">
             <CalendarIcon className="h-3 w-3" />{' '}
             {formatDate(project.startDate, 'P')} -{' '}
             {formatDate(project.endDate, 'P')}
@@ -172,7 +172,7 @@ export default function ProjectDetail() {
 
       <Tabs
         defaultValue="financial"
-        className="w-full flex flex-col items-center"
+        className="w-full flex flex-col items-center min-w-0"
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
@@ -211,18 +211,24 @@ export default function ProjectDetail() {
         </div>
 
         {/* Financial Tab (Integrated View) */}
-        <TabsContent value="financial" className="w-full animate-fade-in">
+        <TabsContent
+          value="financial"
+          className="w-full min-w-0 animate-fade-in"
+        >
           <ProjectFinance projectId={project.id} />
         </TabsContent>
 
         {/* Compliance Tab */}
-        <TabsContent value="compliance" className="w-full animate-fade-in">
+        <TabsContent
+          value="compliance"
+          className="w-full min-w-0 animate-fade-in"
+        >
           <ProjectCompliance projectId={project.id} />
         </TabsContent>
 
         <TabsContent
           value="estimation"
-          className="w-full animate-fade-in space-y-6"
+          className="w-full min-w-0 animate-fade-in space-y-6"
         >
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -282,7 +288,7 @@ export default function ProjectDetail() {
 
         <TabsContent
           value="stages"
-          className="w-full space-y-6 animate-fade-in"
+          className="w-full min-w-0 space-y-6 animate-fade-in"
         >
           <div className="flex flex-col sm:flex-row justify-between items-center gap-4 mb-4 bg-card p-4 rounded-lg border shadow-sm">
             <div className="flex items-center gap-2">
@@ -317,9 +323,9 @@ export default function ProjectDetail() {
             </Button>
           </div>
 
-          <div className="rounded-xl overflow-hidden">
+          <div className="rounded-xl overflow-hidden w-full">
             {viewMode === 'table' ? (
-              <div className="bg-card border shadow-sm rounded-xl">
+              <div className="bg-card border shadow-sm rounded-xl overflow-x-auto w-full">
                 <ProjectScheduleTable
                   projectId={project.id}
                   stages={project.stages}
@@ -405,17 +411,23 @@ export default function ProjectDetail() {
         </TabsContent>
 
         {/* Budget Tab */}
-        <TabsContent value="budget" className="w-full animate-fade-in">
+        <TabsContent value="budget" className="w-full min-w-0 animate-fade-in">
           <ProjectBudget projectId={project.id} />
         </TabsContent>
 
         {/* Execution Tab */}
-        <TabsContent value="execution" className="w-full animate-fade-in">
+        <TabsContent
+          value="execution"
+          className="w-full min-w-0 animate-fade-in"
+        >
           <ProjectExecution projectId={project.id} />
         </TabsContent>
 
         {/* Partners Tab */}
-        <TabsContent value="partners" className="w-full animate-fade-in">
+        <TabsContent
+          value="partners"
+          className="w-full min-w-0 animate-fade-in"
+        >
           <Card className="max-w-4xl mx-auto">
             <CardHeader>
               <div className="flex justify-between items-center">
@@ -554,17 +566,20 @@ export default function ProjectDetail() {
         </TabsContent>
 
         {/* Quotes & Invoices Tab */}
-        <TabsContent value="quotes" className="w-full animate-fade-in">
+        <TabsContent value="quotes" className="w-full min-w-0 animate-fade-in">
           <ProjectQuotes projectId={project.id} />
         </TabsContent>
 
         {/* Reports Tab */}
-        <TabsContent value="reports" className="w-full animate-fade-in">
+        <TabsContent value="reports" className="w-full min-w-0 animate-fade-in">
           <ProjectReports projectId={project.id} />
         </TabsContent>
 
         {/* Approvals Tab */}
-        <TabsContent value="approvals" className="w-full animate-fade-in">
+        <TabsContent
+          value="approvals"
+          className="w-full min-w-0 animate-fade-in"
+        >
           <ProjectApprovalWorkflow projectId={project.id} />
         </TabsContent>
       </Tabs>

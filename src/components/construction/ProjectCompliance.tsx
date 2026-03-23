@@ -253,7 +253,7 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-green-50 border border-green-200 p-4 rounded-lg flex items-center justify-between">
           <div>
@@ -635,7 +635,7 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
         <CardContent>
           <Tabs
             defaultValue="all"
-            className="w-full mt-4"
+            className="w-full mt-4 min-w-0"
             onValueChange={setFilterCategory}
           >
             <div className="overflow-x-auto pb-2">
@@ -654,8 +654,8 @@ export function ProjectCompliance({ projectId }: ProjectComplianceProps) {
             </div>
 
             {filteredDocs.length > 0 ? (
-              <div className="rounded-md border">
-                <Table>
+              <div className="rounded-md border overflow-x-auto w-full block">
+                <Table className="min-w-[800px] w-full">
                   <TableHeader>
                     <TableRow>
                       <TableHead className="w-[30%]">Documento</TableHead>

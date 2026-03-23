@@ -159,7 +159,7 @@ export function ProjectApprovalWorkflow({
     ) || []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       {pendingLedgers.length > 0 && (
         <Card className="w-full border-purple-200 shadow-sm">
           <CardHeader className="bg-purple-50/50 pb-4">
@@ -173,8 +173,8 @@ export function ProjectApprovalWorkflow({
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="rounded-md border overflow-x-auto">
-              <Table className="min-w-[800px]">
+            <div className="rounded-md border overflow-x-auto w-full block">
+              <Table className="min-w-[800px] w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Serviço / Origem</TableHead>
@@ -296,8 +296,8 @@ export function ProjectApprovalWorkflow({
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="rounded-md border overflow-x-auto">
-              <Table className="min-w-[900px]">
+            <div className="rounded-md border overflow-x-auto w-full block">
+              <Table className="min-w-[900px] w-full">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data Solicitação</TableHead>
@@ -436,8 +436,8 @@ export function ProjectApprovalWorkflow({
           <CardDescription>{t('proj.approvals.desc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table className="min-w-[800px]">
+          <div className="rounded-md border overflow-x-auto w-full block">
+            <Table className="min-w-[800px] w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('proj.approvals.type')}</TableHead>

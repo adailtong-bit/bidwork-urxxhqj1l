@@ -72,7 +72,7 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
   const totalBudget = budgetItems.reduce((acc, item) => acc + item.totalCost, 0)
 
   return (
-    <Card className="w-full">
+    <Card className="w-full min-w-0">
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
@@ -181,8 +181,8 @@ export function ProjectBudget({ projectId }: ProjectBudgetProps) {
           </div>
 
           {/* Budget Table */}
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto w-full block">
+            <Table className="min-w-[800px] w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('proj.budget.item')}</TableHead>

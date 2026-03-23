@@ -473,15 +473,33 @@ interface ProjectState {
     projectId: string,
     platform: Integration['platform'],
   ) => void
-  addAllocatedCost: (projectId: string, cost: Omit<CostItem, 'id'>) => void
+
   addCheckingAccount: (
     projectId: string,
     account: Omit<CheckingAccount, 'id'>,
   ) => void
+
+  // Financial Movements
   addFinancialMovement: (
     projectId: string,
     movement: Omit<FinancialMovement, 'id'>,
   ) => void
+  updateFinancialMovement: (
+    projectId: string,
+    id: string,
+    data: Partial<FinancialMovement>,
+  ) => void
+  deleteFinancialMovement: (projectId: string, id: string) => void
+
+  // Allocated Costs
+  addAllocatedCost: (projectId: string, cost: Omit<CostItem, 'id'>) => void
+  updateAllocatedCost: (
+    projectId: string,
+    id: string,
+    data: Partial<CostItem>,
+  ) => void
+  deleteAllocatedCost: (projectId: string, id: string) => void
+
   setProjectSqFt: (projectId: string, sqFt: number) => void
   applyTemplate: (projectId: string, items: ConstructionItem[]) => void
   addConstructionItem: (
@@ -1474,31 +1492,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return p
       }),
     })),
-  addAllocatedCost: (projectId, cost) =>
-    set((state) => ({
-      projects: state.projects.map((p) => {
-        if (p.id === projectId) {
-          const newAllocatedCosts = [
-            ...(p.allocatedCosts || []),
-            { ...cost, id: Math.random().toString(36).substr(2, 9) },
-          ]
-          const totalAllocated = newAllocatedCosts.reduce(
-            (acc, c) => acc + c.amount,
-            0,
-          )
-          const stagesSpent = (p.stages || []).reduce(
-            (acc, s) => acc + s.actualMaterial + s.actualLabor,
-            0,
-          )
-          return {
-            ...p,
-            allocatedCosts: newAllocatedCosts,
-            totalSpent: stagesSpent + totalAllocated,
-          }
-        }
-        return p
-      }),
-    })),
   addCheckingAccount: (projectId, account) =>
     set((state) => ({
       projects: state.projects.map((p) => {
@@ -1524,6 +1517,99 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               ...(p.financialMovements || []),
               { ...movement, id: Math.random().toString(36).substr(2, 9) },
             ],
+          }
+        }
+        return p
+      }),
+    })),
+  updateFinancialMovement: (projectId, id, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              financialMovements: p.financialMovements?.map((m) =>
+                m.id === id ? { ...m, ...data } : m,
+              ),
+            }
+          : p,
+      ),
+    })),
+  deleteFinancialMovement: (projectId, id) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              financialMovements: p.financialMovements?.filter(
+                (m) => m.id !== id,
+              ),
+            }
+          : p,
+      ),
+    })),
+  addAllocatedCost: (projectId, cost) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newAllocatedCosts = [
+            ...(p.allocatedCosts || []),
+            { ...cost, id: Math.random().toString(36).substr(2, 9) },
+          ]
+          const totalAllocated = newAllocatedCosts.reduce(
+            (acc, c) => acc + c.amount,
+            0,
+          )
+          const stagesSpent = (p.stages || []).reduce(
+            (acc, s) => acc + s.actualMaterial + s.actualLabor,
+            0,
+          )
+          return {
+            ...p,
+            allocatedCosts: newAllocatedCosts,
+            totalSpent: stagesSpent + totalAllocated,
+          }
+        }
+        return p
+      }),
+    })),
+  updateAllocatedCost: (projectId, id, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newCosts = p.allocatedCosts?.map((c) =>
+            c.id === id ? { ...c, ...data } : c,
+          )
+          const totalAllocated =
+            newCosts?.reduce((acc, c) => acc + c.amount, 0) || 0
+          const stagesSpent = (p.stages || []).reduce(
+            (acc, s) => acc + s.actualMaterial + s.actualLabor,
+            0,
+          )
+          return {
+            ...p,
+            allocatedCosts: newCosts,
+            totalSpent: stagesSpent + totalAllocated,
+          }
+        }
+        return p
+      }),
+    })),
+  deleteAllocatedCost: (projectId, id) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newCosts = p.allocatedCosts?.filter((c) => c.id !== id)
+          const totalAllocated =
+            newCosts?.reduce((acc, c) => acc + c.amount, 0) || 0
+          const stagesSpent = (p.stages || []).reduce(
+            (acc, s) => acc + s.actualMaterial + s.actualLabor,
+            0,
+          )
+          return {
+            ...p,
+            allocatedCosts: newCosts,
+            totalSpent: stagesSpent + totalAllocated,
           }
         }
         return p

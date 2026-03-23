@@ -43,12 +43,13 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Plus,
-  DollarSign,
   WalletCards,
   PieChart,
   AlertCircle,
   TrendingDown,
   TrendingUp,
+  Edit2,
+  Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -57,7 +58,11 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
     getProject,
     addCheckingAccount,
     addFinancialMovement,
+    updateFinancialMovement,
+    deleteFinancialMovement,
     addAllocatedCost,
+    updateAllocatedCost,
+    deleteAllocatedCost,
   } = useProjectStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
   const project = getProject(projectId)
@@ -74,6 +79,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
 
   // Movement Dialog State
   const [isAddMovOpen, setIsAddMovOpen] = useState(false)
+  const [editingMovId, setEditingMovId] = useState<string | null>(null)
   const [movData, setMovData] = useState({
     accountId: '',
     description: '',
@@ -87,6 +93,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
 
   // Allocated Cost Dialog State
   const [isAddCostOpen, setIsAddCostOpen] = useState(false)
+  const [editingCostId, setEditingCostId] = useState<string | null>(null)
   const [costData, setCostData] = useState({
     description: '',
     category: 'material',
@@ -181,8 +188,38 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
     })
   }
 
-  const handleAddMovement = () => {
-    addFinancialMovement(projectId, {
+  // --- Movimentações (Conta Corrente) ---
+  const handleOpenMovDialog = (mov?: any) => {
+    if (mov) {
+      setEditingMovId(mov.id)
+      setMovData({
+        accountId: mov.accountId,
+        description: mov.description,
+        category: mov.category || 'Geral',
+        amount: mov.amount,
+        type: mov.type,
+        date: new Date(mov.date).toISOString().split('T')[0],
+        stageId: mov.stageId || 'none',
+        budgetItemId: mov.budgetItemId || 'none',
+      })
+    } else {
+      setEditingMovId(null)
+      setMovData({
+        accountId: '',
+        description: '',
+        category: '',
+        amount: 0,
+        type: 'out',
+        date: new Date().toISOString().split('T')[0],
+        stageId: 'none',
+        budgetItemId: 'none',
+      })
+    }
+    setIsAddMovOpen(true)
+  }
+
+  const handleSaveMovement = () => {
+    const payload = {
       accountId: movData.accountId,
       description: movData.description,
       category: movData.category || 'Geral',
@@ -192,46 +229,68 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
       stageId: movData.stageId !== 'none' ? movData.stageId : undefined,
       budgetItemId:
         movData.budgetItemId !== 'none' ? movData.budgetItemId : undefined,
-    })
+    }
+
+    if (editingMovId) {
+      updateFinancialMovement(projectId, editingMovId, payload)
+    } else {
+      addFinancialMovement(projectId, payload)
+    }
+
     setIsAddMovOpen(false)
-    setMovData({
-      accountId: '',
-      description: '',
-      category: '',
-      amount: 0,
-      type: 'out',
-      date: new Date().toISOString().split('T')[0],
-      stageId: 'none',
-      budgetItemId: 'none',
-    })
   }
 
-  const handleAddCost = () => {
-    addAllocatedCost(projectId, {
+  // --- Custos Alocados ---
+  const handleOpenCostDialog = (cost?: any) => {
+    if (cost) {
+      setEditingCostId(cost.id)
+      setCostData({
+        description: cost.description,
+        category: cost.category,
+        amount: cost.amount,
+        date: new Date(cost.date).toISOString().split('T')[0],
+        stageId: cost.stageId || 'none',
+        budgetItemId: cost.budgetItemId || 'none',
+      })
+    } else {
+      setEditingCostId(null)
+      setCostData({
+        description: '',
+        category: 'material',
+        amount: 0,
+        date: new Date().toISOString().split('T')[0],
+        stageId: 'none',
+        budgetItemId: 'none',
+      })
+    }
+    setIsAddCostOpen(true)
+  }
+
+  const handleSaveCost = () => {
+    const payload = {
       description: costData.description,
       category: costData.category as any,
       amount: costData.amount,
-      type: 'actual',
+      type: 'actual' as const,
       date: new Date(costData.date + 'T12:00:00'),
       stageId: costData.stageId !== 'none' ? costData.stageId : undefined,
       budgetItemId:
         costData.budgetItemId !== 'none' ? costData.budgetItemId : undefined,
-    })
+    }
+
+    if (editingCostId) {
+      updateAllocatedCost(projectId, editingCostId, payload)
+    } else {
+      addAllocatedCost(projectId, payload)
+    }
+
     setIsAddCostOpen(false)
-    setCostData({
-      description: '',
-      category: 'material',
-      amount: 0,
-      date: new Date().toISOString().split('T')[0],
-      stageId: 'none',
-      budgetItemId: 'none',
-    })
   }
 
   const isOverBudget = financialVariance < 0
 
   return (
-    <Card className="w-full">
+    <Card className="w-full min-w-0">
       <CardHeader className="pb-4">
         <CardTitle>Painel Financeiro Integrado</CardTitle>
         <CardDescription>
@@ -239,7 +298,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
           Cronograma.
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="min-w-0">
         {/* Unified Financial Status Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <div className="bg-blue-50/50 dark:bg-blue-950/20 p-5 rounded-xl border border-blue-100 dark:border-blue-900/50">
@@ -324,7 +383,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
           </Alert>
         )}
 
-        <Tabs defaultValue="visao_geral">
+        <Tabs defaultValue="visao_geral" className="w-full min-w-0">
           <TabsList className="mb-6 w-full max-w-[500px] grid grid-cols-2">
             <TabsTrigger
               value="visao_geral"
@@ -343,10 +402,10 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
           {/* CUSTOS ALOCADOS TAB */}
           <TabsContent
             value="visao_geral"
-            className="space-y-8 animate-fade-in"
+            className="space-y-8 animate-fade-in w-full min-w-0"
           >
             <div className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h3 className="text-lg font-semibold tracking-tight">
                     Custos Alocados
@@ -356,15 +415,25 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                     orçamento.
                   </p>
                 </div>
-                <Dialog open={isAddCostOpen} onOpenChange={setIsAddCostOpen}>
+                <Dialog
+                  open={isAddCostOpen}
+                  onOpenChange={(open) => {
+                    if (!open) setEditingCostId(null)
+                    setIsAddCostOpen(open)
+                  }}
+                >
                   <DialogTrigger asChild>
-                    <Button size="sm">
+                    <Button size="sm" onClick={() => handleOpenCostDialog()}>
                       <Plus className="h-4 w-4 mr-2" /> Registrar Custo
                     </Button>
                   </DialogTrigger>
                   <DialogContent>
                     <DialogHeader>
-                      <DialogTitle>Registrar Custo Alocado</DialogTitle>
+                      <DialogTitle>
+                        {editingCostId
+                          ? 'Editar Custo Alocado'
+                          : 'Registrar Custo Alocado'}
+                      </DialogTitle>
                     </DialogHeader>
                     <div className="grid gap-4 py-4">
                       <div className="grid gap-2">
@@ -478,7 +547,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                     </div>
                     <DialogFooter>
                       <Button
-                        onClick={handleAddCost}
+                        onClick={handleSaveCost}
                         disabled={!costData.description || !costData.amount}
                       >
                         Salvar Custo
@@ -488,9 +557,9 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                 </Dialog>
               </div>
 
-              <div className="border rounded-md bg-card">
+              <div className="border rounded-md bg-card overflow-x-auto w-full block">
                 {allocated.length > 0 ? (
-                  <Table>
+                  <Table className="min-w-[800px] w-full">
                     <TableHeader className="bg-muted/50">
                       <TableRow>
                         <TableHead>Data</TableHead>
@@ -499,6 +568,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                         <TableHead>Etapa Relacionada</TableHead>
                         <TableHead>Item do Orçamento</TableHead>
                         <TableHead className="text-right">Valor</TableHead>
+                        <TableHead className="text-right">Ações</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -543,6 +613,27 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                             <TableCell className="text-right font-medium">
                               {formatCurrency(cost.amount)}
                             </TableCell>
+                            <TableCell className="text-right">
+                              <div className="flex items-center justify-end">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleOpenCostDialog(cost)}
+                                >
+                                  <Edit2 className="h-4 w-4 text-muted-foreground" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    deleteAllocatedCost(projectId, cost.id)
+                                  }
+                                  className="text-destructive hover:bg-destructive/10"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         ))}
                     </TableBody>
@@ -559,7 +650,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
           {/* CONTA CORRENTE TAB */}
           <TabsContent
             value="conta_corrente"
-            className="space-y-8 animate-fade-in"
+            className="space-y-8 animate-fade-in w-full min-w-0"
           >
             {/* Contas Bancárias Section */}
             <div className="space-y-4">
@@ -724,15 +815,25 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                     </SelectContent>
                   </Select>
 
-                  <Dialog open={isAddMovOpen} onOpenChange={setIsAddMovOpen}>
+                  <Dialog
+                    open={isAddMovOpen}
+                    onOpenChange={(open) => {
+                      if (!open) setEditingMovId(null)
+                      setIsAddMovOpen(open)
+                    }}
+                  >
                     <DialogTrigger asChild>
-                      <Button size="sm">
+                      <Button size="sm" onClick={() => handleOpenMovDialog()}>
                         <Plus className="h-4 w-4 mr-2" /> Movimentação
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Registrar Movimentação</DialogTitle>
+                        <DialogTitle>
+                          {editingMovId
+                            ? 'Editar Movimentação'
+                            : 'Registrar Movimentação'}
+                        </DialogTitle>
                       </DialogHeader>
                       <div className="grid gap-4 py-4">
                         <div className="grid gap-2">
@@ -875,10 +976,10 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                       </div>
                       <DialogFooter>
                         <Button
-                          onClick={handleAddMovement}
+                          onClick={handleSaveMovement}
                           disabled={!movData.accountId || !movData.amount}
                         >
-                          Registrar
+                          Salvar
                         </Button>
                       </DialogFooter>
                     </DialogContent>
@@ -886,8 +987,8 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                 </div>
               </div>
 
-              <div className="border rounded-md bg-card">
-                <Table>
+              <div className="border rounded-md bg-card overflow-x-auto w-full block">
+                <Table className="min-w-[800px] w-full">
                   <TableHeader className="bg-muted/50">
                     <TableRow>
                       <TableHead>Data</TableHead>
@@ -896,6 +997,7 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                       <TableHead>Conta</TableHead>
                       <TableHead>Tipo</TableHead>
                       <TableHead className="text-right">Valor</TableHead>
+                      <TableHead className="text-right">Ações</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -945,12 +1047,33 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                             {mov.type === 'in' ? '+' : '-'}
                             {formatCurrency(mov.amount)}
                           </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleOpenMovDialog(mov)}
+                              >
+                                <Edit2 className="h-4 w-4 text-muted-foreground" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  deleteFinancialMovement(projectId, mov.id)
+                                }
+                                className="text-destructive hover:bg-destructive/10"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
                         </TableRow>
                       ))
                     ) : (
                       <TableRow>
                         <TableCell
-                          colSpan={6}
+                          colSpan={7}
                           className="text-center py-8 text-muted-foreground italic"
                         >
                           Nenhuma movimentação financeira encontrada.

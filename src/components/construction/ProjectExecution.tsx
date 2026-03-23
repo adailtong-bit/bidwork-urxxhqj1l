@@ -59,19 +59,11 @@ interface ProjectExecutionProps {
 }
 
 export function ProjectExecution({ projectId }: ProjectExecutionProps) {
-  const {
-    getProject,
-    addLaborAdjustment,
-    addLedgerEntry,
-    updateLedgerEntry,
-    deleteLedgerEntry,
-  } = useProjectStore()
+  const { getProject, addLedgerEntry, updateLedgerEntry, deleteLedgerEntry } =
+    useProjectStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
   const { toast } = useToast()
   const project = getProject(projectId)
-
-  const [desc, setDesc] = useState('')
-  const [amount, setAmount] = useState(0)
 
   // Ledger State
   const [isLedgerOpen, setIsLedgerOpen] = useState(false)
@@ -276,7 +268,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 min-w-0">
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center flex-col sm:flex-row gap-4">
@@ -305,21 +297,21 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto w-full">
-            <Table className="min-w-[1200px]">
+          <div className="rounded-md border overflow-x-auto w-full max-w-full block">
+            <Table className="min-w-[1200px] w-full">
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead>Serviço</TableHead>
+                  <TableHead>Descrição do Serviço</TableHead>
                   <TableHead>Origem</TableHead>
-                  <TableHead>Empresa (Fornecedor)</TableHead>
-                  <TableHead>Data Compra</TableHead>
-                  <TableHead>Data Entrega</TableHead>
-                  <TableHead>Início Execução</TableHead>
-                  <TableHead>Fim Execução</TableHead>
+                  <TableHead>Empresa Fornecedora</TableHead>
+                  <TableHead>Data de Compra</TableHead>
+                  <TableHead>Data de Entrega</TableHead>
+                  <TableHead>Data de Início da Execução</TableHead>
+                  <TableHead>Data de Término da Execução</TableHead>
                   <TableHead className="text-right">Custo Previsto</TableHead>
                   <TableHead className="text-right">Custo Final</TableHead>
                   <TableHead className="text-center">
-                    Status Pagamento
+                    Status do Pagamento
                   </TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
@@ -340,19 +332,16 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                           <span className="text-sm">{l.origin || '-'}</span>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2 font-medium">
-                            {partnerName}
+                          <div className="flex flex-col gap-1 font-medium">
+                            <span>{partnerName}</span>
                             {expiredDocs.length > 0 && (
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger>
-                                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-red-50 text-red-900 border-red-200">
-                                    Documentos Vencidos ou Críticos!
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                              <Badge
+                                variant="destructive"
+                                className="text-[10px] w-fit whitespace-nowrap"
+                              >
+                                <AlertTriangle className="h-3 w-3 mr-1" />
+                                Bloqueio de Compliance
+                              </Badge>
                             )}
                           </div>
                         </TableCell>
@@ -422,7 +411,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                             <SelectContent>
                               <SelectItem value="pending">Pendente</SelectItem>
                               <SelectItem value="partially_paid">
-                                Parcial
+                                Parcialmente Pago
                               </SelectItem>
                               <SelectItem value="paid">Pago</SelectItem>
                               <SelectItem value="overdue">Atrasado</SelectItem>
@@ -430,23 +419,25 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                           </Select>
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Editar"
-                            onClick={() => handleOpenLedger(l)}
-                          >
-                            <Edit2 className="h-4 w-4 text-muted-foreground" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            title="Excluir"
-                            className="text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteLedgerEntry(projectId, l.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="flex items-center justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Editar"
+                              onClick={() => handleOpenLedger(l)}
+                            >
+                              <Edit2 className="h-4 w-4 text-muted-foreground" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              title="Excluir"
+                              className="text-destructive hover:bg-destructive/10"
+                              onClick={() => deleteLedgerEntry(projectId, l.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -626,7 +617,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
           <CardDescription>{t('proj.finance.desc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
+          <div className="rounded-md border overflow-x-auto w-full">
             <Table>
               <TableHeader className="bg-muted/50">
                 <TableRow>
@@ -705,12 +696,35 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
       </Card>
 
       {/* Ledger Modal Form */}
-      <Dialog open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
+      <Dialog
+        open={isLedgerOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingLedger(null)
+            setLedgerForm({
+              description: '',
+              origin: '',
+              partnerId: '',
+              estimatedCost: 0,
+              finalCost: 0,
+              paymentStatus: 'pending',
+              executionStatus: 'pending',
+            })
+            setDates({
+              purchaseDate: '',
+              deliveryDate: '',
+              startDate: '',
+              endDate: '',
+            })
+          }
+          setIsLedgerOpen(open)
+        }}
+      >
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingLedger
-                ? 'Editar Registro (Ledger)'
+                ? 'Editar Registro Financeiro'
                 : 'Novo Registro Financeiro'}
             </DialogTitle>
           </DialogHeader>
@@ -718,7 +732,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>
-                  Descrição / Serviço <span className="text-red-500">*</span>
+                  Descrição do Serviço <span className="text-red-500">*</span>
                 </Label>
                 <Input
                   value={ledgerForm.description}
@@ -744,7 +758,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
             </div>
             <div className="space-y-2">
               <Label>
-                Fornecedor / Empresa <span className="text-red-500">*</span>
+                Empresa Fornecedora <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={ledgerForm.partnerId}
@@ -767,7 +781,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Data de Compra / Pedido</Label>
+                <Label>Data de Compra</Label>
                 <Input
                   type="date"
                   value={dates.purchaseDate}
@@ -777,7 +791,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Data de Entrega (Prevista / Real)</Label>
+                <Label>Data de Entrega</Label>
                 <Input
                   type="date"
                   value={dates.deliveryDate}
@@ -790,7 +804,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Início da Execução</Label>
+                <Label>Data de Início da Execução</Label>
                 <Input
                   type="date"
                   value={dates.startDate}
@@ -800,7 +814,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Fim da Execução</Label>
+                <Label>Data de Término da Execução</Label>
                 <Input
                   type="date"
                   value={dates.endDate}

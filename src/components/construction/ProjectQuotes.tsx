@@ -136,7 +136,7 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
     project.stages.find((s) => s.id === id)?.name || 'Geral'
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       <Card>
         <CardHeader className="flex flex-row justify-between items-center">
           <div>
@@ -152,7 +152,7 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
                 <Plus className="h-4 w-4 mr-2" /> Novo Orçamento
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl overflow-y-auto max-h-[90vh]">
               <DialogHeader>
                 <DialogTitle>Enviar Orçamento</DialogTitle>
               </DialogHeader>
@@ -251,8 +251,8 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
           </Dialog>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto w-full block">
+            <Table className="min-w-[700px] w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>
@@ -389,8 +389,8 @@ export function ProjectQuotes({ projectId }: { projectId: string }) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto w-full block">
+            <Table className="min-w-[700px] w-full">
               <TableHeader>
                 <TableRow>
                   <TableHead>Data</TableHead>

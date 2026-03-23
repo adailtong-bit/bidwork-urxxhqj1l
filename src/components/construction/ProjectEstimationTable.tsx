@@ -84,9 +84,12 @@ export function ProjectEstimationTable({
   }))
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 min-w-0">
       {groupedItems.map((group) => (
-        <div key={group.stage} className="border rounded-lg overflow-hidden">
+        <div
+          key={group.stage}
+          className="border rounded-lg overflow-hidden w-full"
+        >
           <div className="bg-muted/50 p-4 flex justify-between items-center border-b">
             <h3 className="font-semibold text-lg">
               {t(`est.stage.${group.stage.toLowerCase()}`) || group.stage}
@@ -107,146 +110,155 @@ export function ProjectEstimationTable({
               </Button>
             </div>
           </div>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[30%]">{t('est.table.item')}</TableHead>
-                <TableHead className="w-[15%]">
-                  {t('est.table.start')}
-                </TableHead>
-                <TableHead className="w-[15%]">{t('est.table.end')}</TableHead>
-                <TableHead className="w-[15%] text-right">
-                  {t('est.table.sqft_price')}
-                </TableHead>
-                <TableHead className="w-[15%] text-right">
-                  {t('est.table.total')}
-                </TableHead>
-                <TableHead className="w-[10%]"></TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {group.items.length > 0 ? (
-                group.items.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>
-                      <Input
-                        value={
-                          t(item.name) === item.name ? item.name : t(item.name)
-                        }
-                        onChange={(e) =>
-                          handleUpdateItem(item.id, 'name', e.target.value)
-                        }
-                        className="h-8"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full justify-start text-left font-normal h-8 text-xs',
-                              !item.startDate && 'text-muted-foreground',
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-3 w-3" />
-                            {item.startDate ? (
-                              formatDate(item.startDate, 'P')
-                            ) : (
-                              <span>{t('general.select')}</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={item.startDate}
-                            onSelect={(date) =>
-                              date &&
-                              handleUpdateItem(item.id, 'startDate', date)
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                    <TableCell>
-                      <Popover>
-                        <PopoverTrigger asChild>
-                          <Button
-                            variant={'outline'}
-                            className={cn(
-                              'w-full justify-start text-left font-normal h-8 text-xs',
-                              !item.endDate && 'text-muted-foreground',
-                            )}
-                          >
-                            <CalendarIcon className="mr-2 h-3 w-3" />
-                            {item.endDate ? (
-                              formatDate(item.endDate, 'P')
-                            ) : (
-                              <span>{t('general.select')}</span>
-                            )}
-                          </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-auto p-0">
-                          <Calendar
-                            mode="single"
-                            selected={item.endDate}
-                            onSelect={(date) =>
-                              date && handleUpdateItem(item.id, 'endDate', date)
-                            }
-                            initialFocus
-                          />
-                        </PopoverContent>
-                      </Popover>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <CurrencyInput
-                        className="h-8 text-right"
-                        value={item.pricePerSqFt || 0}
-                        placeholder={project.sqFt ? '0' : '-'}
-                        disabled={!project.sqFt}
-                        onChange={(val) =>
-                          handleUpdateItem(item.id, 'pricePerSqFt', val)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <CurrencyInput
-                        className="h-8 text-right font-bold"
-                        value={item.totalPrice}
-                        disabled={!!item.pricePerSqFt && !!project.sqFt}
-                        onChange={(val) =>
-                          handleUpdateItem(item.id, 'totalPrice', val)
-                        }
-                      />
-                    </TableCell>
-                    <TableCell>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-destructive hover:bg-destructive/10"
-                        onClick={() =>
-                          removeConstructionItem(projectId, item.id)
-                        }
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+          <div className="overflow-x-auto w-full block">
+            <Table className="min-w-[800px] w-full">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[30%]">
+                    {t('est.table.item')}
+                  </TableHead>
+                  <TableHead className="w-[15%]">
+                    {t('est.table.start')}
+                  </TableHead>
+                  <TableHead className="w-[15%]">
+                    {t('est.table.end')}
+                  </TableHead>
+                  <TableHead className="w-[15%] text-right">
+                    {t('est.table.sqft_price')}
+                  </TableHead>
+                  <TableHead className="w-[15%] text-right">
+                    {t('est.table.total')}
+                  </TableHead>
+                  <TableHead className="w-[10%]"></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {group.items.length > 0 ? (
+                  group.items.map((item) => (
+                    <TableRow key={item.id}>
+                      <TableCell>
+                        <Input
+                          value={
+                            t(item.name) === item.name
+                              ? item.name
+                              : t(item.name)
+                          }
+                          onChange={(e) =>
+                            handleUpdateItem(item.id, 'name', e.target.value)
+                          }
+                          className="h-8"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={'outline'}
+                              className={cn(
+                                'w-full justify-start text-left font-normal h-8 text-xs',
+                                !item.startDate && 'text-muted-foreground',
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-3 w-3" />
+                              {item.startDate ? (
+                                formatDate(item.startDate, 'P')
+                              ) : (
+                                <span>{t('general.select')}</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={item.startDate}
+                              onSelect={(date) =>
+                                date &&
+                                handleUpdateItem(item.id, 'startDate', date)
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                      <TableCell>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button
+                              variant={'outline'}
+                              className={cn(
+                                'w-full justify-start text-left font-normal h-8 text-xs',
+                                !item.endDate && 'text-muted-foreground',
+                              )}
+                            >
+                              <CalendarIcon className="mr-2 h-3 w-3" />
+                              {item.endDate ? (
+                                formatDate(item.endDate, 'P')
+                              ) : (
+                                <span>{t('general.select')}</span>
+                              )}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0">
+                            <Calendar
+                              mode="single"
+                              selected={item.endDate}
+                              onSelect={(date) =>
+                                date &&
+                                handleUpdateItem(item.id, 'endDate', date)
+                              }
+                              initialFocus
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <CurrencyInput
+                          className="h-8 text-right"
+                          value={item.pricePerSqFt || 0}
+                          placeholder={project.sqFt ? '0' : '-'}
+                          disabled={!project.sqFt}
+                          onChange={(val) =>
+                            handleUpdateItem(item.id, 'pricePerSqFt', val)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <CurrencyInput
+                          className="h-8 text-right font-bold"
+                          value={item.totalPrice}
+                          disabled={!!item.pricePerSqFt && !!project.sqFt}
+                          onChange={(val) =>
+                            handleUpdateItem(item.id, 'totalPrice', val)
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          onClick={() =>
+                            removeConstructionItem(projectId, item.id)
+                          }
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={6}
+                      className="text-center py-4 text-muted-foreground text-xs"
+                    >
+                      {t('inventory.empty')}
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={6}
-                    className="text-center py-4 text-muted-foreground text-xs"
-                  >
-                    {t('inventory.empty')}
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       ))}
     </div>
