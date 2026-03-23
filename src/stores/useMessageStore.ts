@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 
+export interface ConversationContext {
+  type: 'job' | 'profile' | 'general'
+  id: string
+  title: string
+}
+
 export interface Message {
   id: string
   senderId: string
@@ -18,6 +24,7 @@ export interface Conversation {
   participants: ConversationParticipant[]
   messages: Message[]
   updatedAt: Date
+  context?: ConversationContext
 }
 
 export interface Interest {
@@ -28,6 +35,7 @@ export interface Interest {
   targetId: string
   status: 'pending' | 'accepted' | 'declined'
   createdAt: Date
+  context?: ConversationContext
 }
 
 interface MessageState {
@@ -36,6 +44,7 @@ interface MessageState {
   sendInterest: (
     sender: { id: string; name: string; avatar?: string },
     targetId: string,
+    context?: ConversationContext,
   ) => void
   acceptInterest: (interestId: string) => void
   declineInterest: (interestId: string) => void
@@ -47,6 +56,7 @@ interface MessageState {
   getOrCreateConversation: (
     userA: ConversationParticipant,
     userB: ConversationParticipant,
+    context?: ConversationContext,
   ) => string
 }
 
@@ -63,7 +73,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       createdAt: new Date(),
     },
   ],
-  sendInterest: (sender, targetId) =>
+  sendInterest: (sender, targetId, context) =>
     set((state) => ({
       interests: [
         ...state.interests,
@@ -75,6 +85,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           targetId,
           status: 'pending',
           createdAt: new Date(),
+          context,
         },
       ],
     })),
@@ -100,13 +111,14 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         ],
         messages: [],
         updatedAt: new Date(),
+        context: interest.context,
       }
 
       return {
         interests: state.interests.map((i) =>
           i.id === id ? { ...i, status: 'accepted' } : i,
         ),
-        conversations: [...state.conversations, newConv],
+        conversations: [newConv, ...state.conversations],
       }
     }),
   declineInterest: (id) =>
@@ -135,25 +147,27 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           : c,
       ),
     })),
-  getOrCreateConversation: (userA, userB) => {
+  getOrCreateConversation: (userA, userB, context) => {
     const state = get()
     const existing = state.conversations.find(
       (c) =>
         c.participants.some((p) => p.id === userA.id) &&
-        c.participants.some((p) => p.id === userB.id),
+        c.participants.some((p) => p.id === userB.id) &&
+        (context ? c.context?.id === context.id : true),
     )
     if (existing) return existing.id
 
     const newConvId = Math.random().toString(36).substr(2, 9)
     set((s) => ({
       conversations: [
-        ...s.conversations,
         {
           id: newConvId,
           participants: [userA, userB],
           messages: [],
           updatedAt: new Date(),
+          context,
         },
+        ...s.conversations,
       ],
     }))
     return newConvId

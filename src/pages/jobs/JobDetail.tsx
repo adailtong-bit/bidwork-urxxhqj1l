@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useMessageStore } from '@/stores/useMessageStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -46,6 +47,8 @@ export default function JobDetail() {
   const { getJob, addBid, completeJob, openDispute, updateJobStatus } =
     useJobStore()
   const { user, setPendingEvaluation } = useAuthStore()
+  const { getOrCreateConversation, sendMessage: sendChatMessage } =
+    useMessageStore()
   const { addNotification } = useNotificationStore()
   const { toast } = useToast()
   const { t, formatCurrency, formatDate } = useLanguageStore()
@@ -109,9 +112,24 @@ export default function JobDetail() {
       link: `/jobs/${job.id}`,
     })
 
+    const convId = getOrCreateConversation(
+      { id: user.id, name: user.name, avatar: user.avatar || '' },
+      {
+        id: job.ownerId,
+        name: job.ownerName,
+        avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${job.ownerId}`,
+      },
+      { type: 'job', id: job.id, title: job.title },
+    )
+    sendChatMessage(
+      convId,
+      user.id,
+      `Enviei uma proposta de ${formatCurrency(amount)}:\n${bidDescription}`,
+    )
+
     toast({
       title: 'Lance/Proposta enviado!',
-      description: 'O anunciante será notificado.',
+      description: 'O anunciante será notificado e uma conversa foi iniciada.',
     })
     setBidAmount('')
     setBidDescription('')
