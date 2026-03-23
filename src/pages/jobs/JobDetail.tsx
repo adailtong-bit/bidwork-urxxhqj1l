@@ -31,7 +31,6 @@ import {
   Settings2,
   Lock,
 } from 'lucide-react'
-import { addHours } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function JobDetail() {
@@ -93,7 +92,11 @@ export default function JobDetail() {
   const hasInteracted = !!existingConv
 
   const handleBid = () => {
-    if (!user || !bidAmount || !bidDescription) return
+    if (!user) {
+      navigate('/login', { state: { returnTo: `/jobs/${job.id}` } })
+      return
+    }
+    if (!bidAmount || !bidDescription) return
 
     const amount = Number(bidAmount)
 
@@ -149,7 +152,10 @@ export default function JobDetail() {
   }
 
   const handleContact = () => {
-    if (!user) return
+    if (!user) {
+      navigate('/login', { state: { returnTo: `/jobs/${job.id}` } })
+      return
+    }
     const convId = getOrCreateConversation(
       { id: user.id, name: user.name, avatar: user.avatar || '' },
       {
@@ -225,7 +231,7 @@ export default function JobDetail() {
   if (job.listingType === 'rental') displayPrice = job.rentalRate || 0
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-10 p-4 md:p-8 pt-6 animate-fade-in w-full">
+    <div className="space-y-6 max-w-5xl mx-auto pb-24 lg:pb-10 p-4 md:p-8 pt-6 animate-fade-in w-full">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2 mb-2">
@@ -293,7 +299,7 @@ export default function JobDetail() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         <div className="lg:col-span-2 space-y-6">
           {job.photos && job.photos.length > 0 && (
             <Card className="overflow-hidden">
@@ -526,9 +532,12 @@ export default function JobDetail() {
             )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-6 lg:sticky lg:top-24">
           {!isOwner && (
-            <Card>
+            <Card
+              id="interaction-card"
+              className="transition-all duration-300 shadow-md border-primary/10"
+            >
               <CardHeader>
                 <CardTitle>
                   {job.listingType === 'job'
@@ -546,13 +555,29 @@ export default function JobDetail() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {!user ? (
-                  <div className="text-center py-4">
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Você precisa estar logado para interagir.
-                    </p>
-                    <Button asChild className="w-full">
-                      <Link to="/login">Fazer Login</Link>
-                    </Button>
+                  <div className="flex flex-col items-center text-center p-6 border-2 border-dashed rounded-xl bg-muted/30 space-y-4">
+                    <div className="h-14 w-14 rounded-full bg-primary/10 flex items-center justify-center mb-1">
+                      <Lock className="h-7 w-7 text-primary" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg text-foreground">
+                        Faça login para interagir
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Você precisa ter uma conta para enviar propostas ou
+                        conversar com o anunciante.
+                      </p>
+                    </div>
+                    <div className="w-full flex flex-col gap-3 pt-2">
+                      <Button asChild className="w-full">
+                        <Link to={`/login?redirect=/jobs/${job.id}`}>
+                          Fazer Login
+                        </Link>
+                      </Button>
+                      <Button asChild variant="outline" className="w-full">
+                        <Link to="/register">Criar Conta Grátis</Link>
+                      </Button>
+                    </div>
                   </div>
                 ) : job.status !== 'open' ? (
                   <div className="text-center py-6 text-muted-foreground border-2 border-dashed rounded-lg bg-muted/20">
@@ -595,7 +620,7 @@ export default function JobDetail() {
                         onChange={(e) => setBidDescription(e.target.value)}
                       />
                     </div>
-                    <Button className="w-full" onClick={handleBid}>
+                    <Button className="w-full" size="lg" onClick={handleBid}>
                       Enviar Proposta
                     </Button>
                   </>
@@ -647,6 +672,73 @@ export default function JobDetail() {
           </Card>
         </div>
       </div>
+
+      {/* Mobile Sticky Bottom Bar */}
+      {!isOwner && (
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/90 backdrop-blur-md border-t shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 lg:hidden flex items-center justify-between gap-4 animate-fade-in-up">
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground truncate">
+              {job.title}
+            </p>
+            <p className="font-bold text-primary truncate">
+              {displayPrice === 0 ? 'Grátis' : formatCurrency(displayPrice)}
+            </p>
+          </div>
+          <div>
+            {!user ? (
+              <Button asChild size="sm">
+                <Link to={`/login?redirect=/jobs/${job.id}`}>Fazer Login</Link>
+              </Button>
+            ) : job.status !== 'open' ? (
+              <Button disabled size="sm" variant="secondary">
+                Indisponível
+              </Button>
+            ) : hasBidded ? (
+              <Button
+                disabled
+                size="sm"
+                variant="outline"
+                className="border-green-500 text-green-600"
+              >
+                Enviada
+              </Button>
+            ) : hasInteracted && existingConv && job.listingType !== 'job' ? (
+              <Button size="sm" asChild>
+                <Link to={`/messages?conv=${existingConv.id}`}>Ver Chat</Link>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => {
+                  document.getElementById('interaction-card')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'center',
+                  })
+                  const card = document.getElementById('interaction-card')
+                  if (card) {
+                    card.classList.add(
+                      'ring-2',
+                      'ring-primary',
+                      'ring-offset-2',
+                    )
+                    setTimeout(() => {
+                      card.classList.remove(
+                        'ring-2',
+                        'ring-primary',
+                        'ring-offset-2',
+                      )
+                    }, 1500)
+                  }
+                }}
+              >
+                {job.listingType === 'job'
+                  ? 'Fazer Proposta'
+                  : 'Tenho Interesse'}
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
