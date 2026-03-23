@@ -5,15 +5,13 @@ import { PromoBanner } from '@/components/home/PromoBanner'
 import { ListingCard } from '@/components/home/ListingCard'
 import { MyAdsDashboard } from '@/components/home/MyAdsDashboard'
 import { Button } from '@/components/ui/button'
-import { SlidersHorizontal, ArrowRight } from 'lucide-react'
-import { useSearchParams, Link } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { useJobStore } from '@/stores/useJobStore'
 
 export default function Index() {
   const { t } = useLanguageStore()
-  const [searchParams] = useSearchParams()
-  const activeTab = searchParams.get('tab') || 'all'
 
   const { jobs, addJob } = useJobStore()
   const initialized = useRef(false)
@@ -62,7 +60,7 @@ export default function Index() {
           price: 0,
           image: 'https://img.usecurling.com/p/400/400?q=clothes',
           location: 'Sanford, FL',
-          type: 'product',
+          type: 'community',
           budget: 0,
         },
         {
@@ -70,7 +68,7 @@ export default function Index() {
           price: 0,
           image: 'https://img.usecurling.com/p/400/400?q=chair',
           location: 'Orlando, FL',
-          type: 'product',
+          type: 'community',
           budget: 0,
         },
         {
@@ -108,7 +106,10 @@ export default function Index() {
             country: 'US',
           },
           budget: item.budget,
-          salePrice: item.type === 'product' ? item.price : undefined,
+          salePrice:
+            item.type === 'product' || item.type === 'community'
+              ? item.price
+              : undefined,
           rentalRate: item.type === 'rental' ? item.price : undefined,
           listingType: item.type as any,
           photos: [item.image],
@@ -129,12 +130,13 @@ export default function Index() {
     if (j.listingType === 'product') {
       tabType = j.salePrice === 0 || j.budget === 0 ? 'doacao' : 'desapego'
     }
+    if (j.listingType === 'community') tabType = 'doacao'
 
     return {
       id: j.id,
       title: j.title,
       price:
-        j.listingType === 'product'
+        j.listingType === 'product' || j.listingType === 'community'
           ? (j.salePrice ?? j.budget)
           : j.listingType === 'rental'
             ? (j.rentalRate ?? j.budget)
@@ -146,11 +148,7 @@ export default function Index() {
     }
   })
 
-  const filteredListings = mappedListings.filter(
-    (item) => activeTab === 'all' || item.type === activeTab,
-  )
-
-  const renderSection = (title: string, type: string) => {
+  const renderSection = (title: string, type: string, filterType: string) => {
     const items = mappedListings
       .filter((item) => item.type === type)
       .slice(0, 4)
@@ -161,7 +159,7 @@ export default function Index() {
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-xl font-bold">{title}</CardTitle>
           <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
-            <Link to={`/?tab=${type}`}>
+            <Link to={`/find-jobs?type=${filterType}`}>
               Ver todos <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -186,7 +184,7 @@ export default function Index() {
             asChild
             className="w-full mt-4 sm:hidden"
           >
-            <Link to={`/?tab=${type}`}>
+            <Link to={`/find-jobs?type=${filterType}`}>
               Ver todos <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
@@ -202,47 +200,12 @@ export default function Index() {
       <MyAdsDashboard />
 
       <div className="px-4 mt-2">
-        {activeTab === 'all' ? (
-          <div className="space-y-2 pt-2">
-            {renderSection('Desapego (Marketplace)', 'desapego')}
-            {renderSection('Doação', 'doacao')}
-            {renderSection('Aluguéis', 'rentals')}
-            {renderSection('Vagas em Destaque', 'jobs')}
-          </div>
-        ) : (
-          <>
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold capitalize">
-                {activeTab === 'desapego' && 'Desapego (Produtos)'}
-                {activeTab === 'doacao' && 'Doações Disponíveis'}
-                {activeTab === 'rentals' && 'Aluguéis Disponíveis'}
-                {activeTab === 'jobs' && 'Vagas em Destaque'}
-              </h2>
-              <Button variant="ghost" size="icon">
-                <SlidersHorizontal className="h-5 w-5" />
-              </Button>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {filteredListings.map((item) => (
-                <ListingCard
-                  key={item.id}
-                  id={item.id}
-                  title={item.title}
-                  price={item.price}
-                  image={item.image}
-                  location={item.location}
-                  status={item.status}
-                />
-              ))}
-              {filteredListings.length === 0 && (
-                <div className="col-span-full py-10 text-center text-muted-foreground">
-                  Nenhum item encontrado para esta categoria.
-                </div>
-              )}
-            </div>
-          </>
-        )}
+        <div className="space-y-2 pt-2">
+          {renderSection('Desapego (Marketplace)', 'desapego', 'product')}
+          {renderSection('Doações e Comunidade', 'doacao', 'community')}
+          {renderSection('Aluguéis', 'rentals', 'rental')}
+          {renderSection('Vagas em Destaque', 'jobs', 'job')}
+        </div>
       </div>
     </div>
   )

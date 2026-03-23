@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -47,9 +47,13 @@ export default function FindJobs() {
   const { jobs } = useJobStore()
   const { user } = useAuthStore()
   const { t, formatCurrency, getDateLocale } = useLanguageStore()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const initialType = searchParams.get('type') || 'all'
+
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
-  const [typeFilter, setTypeFilter] = useState('all')
+  const [typeFilter, setTypeFilter] = useState(initialType)
   const [dateFilter, setDateFilter] = useState('all')
   const [regionFilter, setRegionFilter] = useState('all')
   const [isSmartSort, setIsSmartSort] = useState(false)
@@ -60,6 +64,26 @@ export default function FindJobs() {
   const regions = Array.from(new Set(jobs.map((j) => j.regionCode))).filter(
     Boolean,
   )
+
+  useEffect(() => {
+    const tParam = searchParams.get('type') || 'all'
+    setTypeFilter(tParam)
+  }, [searchParams])
+
+  const handleTypeChange = (val: string) => {
+    setTypeFilter(val)
+    setSearchParams(
+      (prev) => {
+        if (val === 'all') {
+          prev.delete('type')
+        } else {
+          prev.set('type', val)
+        }
+        return prev
+      },
+      { replace: true },
+    )
+  }
 
   const filteredJobs = useMemo(() => {
     const now = new Date()
@@ -255,7 +279,7 @@ export default function FindJobs() {
             </SelectContent>
           </Select>
 
-          <Select value={typeFilter} onValueChange={setTypeFilter}>
+          <Select value={typeFilter} onValueChange={handleTypeChange}>
             <SelectTrigger className="bg-background">
               <SelectValue placeholder="Tipo de Anúncio" />
             </SelectTrigger>
@@ -264,7 +288,7 @@ export default function FindJobs() {
               <SelectItem value="job">Vagas e Serviços</SelectItem>
               <SelectItem value="product">Produtos (Venda)</SelectItem>
               <SelectItem value="rental">Aluguéis</SelectItem>
-              <SelectItem value="community">Comunidade</SelectItem>
+              <SelectItem value="community">Doação / Comunidade</SelectItem>
             </SelectContent>
           </Select>
 
@@ -283,103 +307,115 @@ export default function FindJobs() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredJobs.map((job) => (
-          <Card
-            key={job.id}
-            className={`flex flex-col hover:border-primary/50 transition-colors ${
-              job.premiumType === 'category' ||
-              (job.creatorPlan && job.creatorPlan !== 'Básico')
-                ? 'border-l-4 border-l-yellow-500 shadow-md bg-yellow-50/10'
-                : job.premiumType === 'region'
-                  ? 'border-l-4 border-l-blue-500 shadow-sm'
-                  : ''
-            }`}
-          >
-            <CardHeader>
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex gap-2 flex-wrap">
-                  <Badge variant="outline" className="text-xs">
-                    {job.category}
-                  </Badge>
-                  {job.listingType && job.listingType !== 'job' && (
-                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 uppercase text-[10px]">
-                      {job.listingType}
+        {filteredJobs.map((job) => {
+          let displayPrice = job.budget || 0
+          if (job.listingType === 'product' || job.listingType === 'community')
+            displayPrice = job.salePrice || 0
+          if (job.listingType === 'rental') displayPrice = job.rentalRate || 0
+
+          return (
+            <Card
+              key={job.id}
+              className={`flex flex-col hover:border-primary/50 transition-colors ${
+                job.premiumType === 'category' ||
+                (job.creatorPlan && job.creatorPlan !== 'Básico')
+                  ? 'border-l-4 border-l-yellow-500 shadow-md bg-yellow-50/10'
+                  : job.premiumType === 'region'
+                    ? 'border-l-4 border-l-blue-500 shadow-sm'
+                    : ''
+              }`}
+            >
+              <CardHeader>
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex gap-2 flex-wrap">
+                    <Badge variant="outline" className="text-xs">
+                      {job.category}
                     </Badge>
-                  )}
-                  {isSmartSort && job.smartMatchScore && (
-                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">
-                      {job.smartMatchScore}% Match
-                    </Badge>
-                  )}
-                  {(job.premiumType !== 'none' ||
-                    (job.creatorPlan && job.creatorPlan !== 'Básico')) &&
-                    !isSmartSort && (
-                      <Badge
-                        variant="secondary"
-                        className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
-                      >
-                        <Zap className="h-3 w-3 fill-current" />{' '}
-                        {job.creatorPlan && job.creatorPlan !== 'Básico'
-                          ? job.creatorPlan
-                          : t('ad.highlight')}
+                    {job.listingType && job.listingType !== 'job' && (
+                      <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200 uppercase text-[10px]">
+                        {job.listingType}
                       </Badge>
                     )}
-                </div>
-                <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
-                  <Calendar className="h-3 w-3" />
-                  {formatDistanceToNow(job.createdAt, {
-                    addSuffix: true,
-                    locale: getDateLocale(),
-                  })}
-                </span>
-              </div>
-              <CardTitle className="line-clamp-1 text-lg">
-                {job.title}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-1 space-y-4">
-              <p className="text-sm text-muted-foreground line-clamp-3">
-                {job.description}
-              </p>
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <MapPin className="h-4 w-4" />
-                  <span>{job.location}</span>
-                </div>
-                {job.photos && job.photos.length > 0 && (
-                  <div className="flex items-center gap-1 text-xs">
-                    <ImageIcon className="h-3 w-3" /> {job.photos.length}
+                    {isSmartSort && job.smartMatchScore && (
+                      <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">
+                        {job.smartMatchScore}% Match
+                      </Badge>
+                    )}
+                    {(job.premiumType !== 'none' ||
+                      (job.creatorPlan && job.creatorPlan !== 'Básico')) &&
+                      !isSmartSort && (
+                        <Badge
+                          variant="secondary"
+                          className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 gap-1 text-[10px]"
+                        >
+                          <Zap className="h-3 w-3 fill-current" />{' '}
+                          {job.creatorPlan && job.creatorPlan !== 'Básico'
+                            ? job.creatorPlan
+                            : t('ad.highlight')}
+                        </Badge>
+                      )}
                   </div>
-                )}
-              </div>
-              <div className="flex items-center gap-2">
-                {job.type === 'auction' ? (
-                  <Badge
-                    variant="secondary"
-                    className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 flex gap-1"
-                  >
-                    <Gavel className="h-3 w-3" /> {t('job.auction_reverse')}
-                  </Badge>
-                ) : (
-                  <Badge
-                    variant="secondary"
-                    className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 flex gap-1"
-                  >
-                    <Tag className="h-3 w-3" /> {t('job.fixed_price')}
-                  </Badge>
-                )}
-                <span className="font-bold text-lg">
-                  {job.budget === 0 ? 'Grátis' : formatCurrency(job.budget)}
-                </span>
-              </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <Button className="w-full" asChild>
-                <Link to={`/jobs/${job.id}`}>{t('view')}</Link>
-              </Button>
-            </CardFooter>
-          </Card>
-        ))}
+                  <span className="text-xs text-muted-foreground flex items-center gap-1 whitespace-nowrap">
+                    <Calendar className="h-3 w-3" />
+                    {formatDistanceToNow(job.createdAt, {
+                      addSuffix: true,
+                      locale: getDateLocale(),
+                    })}
+                  </span>
+                </div>
+                <CardTitle className="line-clamp-1 text-lg">
+                  {job.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="flex-1 space-y-4">
+                <p className="text-sm text-muted-foreground line-clamp-3">
+                  {job.description}
+                </p>
+                <div className="flex items-center justify-between text-sm text-muted-foreground">
+                  <div className="flex items-center gap-1">
+                    <MapPin className="h-4 w-4" />
+                    <span>{job.location}</span>
+                  </div>
+                  {job.photos && job.photos.length > 0 && (
+                    <div className="flex items-center gap-1 text-xs">
+                      <ImageIcon className="h-3 w-3" /> {job.photos.length}
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {job.type === 'auction' && job.listingType === 'job' ? (
+                    <Badge
+                      variant="secondary"
+                      className="bg-indigo-100 text-indigo-800 hover:bg-indigo-100 flex gap-1"
+                    >
+                      <Gavel className="h-3 w-3" /> {t('job.auction_reverse')}
+                    </Badge>
+                  ) : (
+                    <Badge
+                      variant="secondary"
+                      className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 flex gap-1"
+                    >
+                      <Tag className="h-3 w-3" />{' '}
+                      {job.listingType === 'job'
+                        ? t('job.fixed_price')
+                        : 'Valor'}
+                    </Badge>
+                  )}
+                  <span className="font-bold text-lg text-primary">
+                    {displayPrice === 0
+                      ? 'Grátis'
+                      : formatCurrency(displayPrice)}
+                  </span>
+                </div>
+              </CardContent>
+              <CardFooter className="border-t pt-4">
+                <Button className="w-full" asChild>
+                  <Link to={`/jobs/${job.id}`}>{t('view')}</Link>
+                </Button>
+              </CardFooter>
+            </Card>
+          )
+        })}
         {filteredJobs.length === 0 && (
           <div className="col-span-full flex flex-col items-center justify-center py-20 text-center text-muted-foreground">
             <Filter className="h-10 w-10 mb-4 opacity-20" />
