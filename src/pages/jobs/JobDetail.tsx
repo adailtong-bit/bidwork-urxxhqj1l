@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, Link } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useMessageStore } from '@/stores/useMessageStore'
@@ -65,22 +65,24 @@ export default function JobDetail() {
   ])
 
   if (!job) return <div className="p-8">{t('job.not_found')}</div>
-  if (!user) return <div className="p-8">{t('job.login_required')}</div>
 
-  const isOwner = user.id === job.ownerId
-  const hasBidded = job.bids.some((b) => b.executorId === user.id)
+  const isOwner = user?.id === job.ownerId
+  const hasBidded = user
+    ? job.bids.some((b) => b.executorId === user.id)
+    : false
   const acceptedBid = job.acceptedBidId
     ? job.bids.find((b) => b.id === job.acceptedBidId)
     : null
-  const isExecutor = acceptedBid?.executorId === user.id
+  const isExecutor = user ? acceptedBid?.executorId === user.id : false
+  const canViewChat = user && (isOwner || isExecutor)
 
   const lowestBid =
     job.bids.length > 0
       ? Math.min(...job.bids.map((b) => b.amount))
-      : job.budget
+      : (job.budget ?? 0)
 
   const handleBid = () => {
-    if (!bidAmount || !bidDescription) return
+    if (!user || !bidAmount || !bidDescription) return
 
     const amount = Number(bidAmount)
 
@@ -135,11 +137,27 @@ export default function JobDetail() {
     setBidDescription('')
   }
 
+  const handleContact = () => {
+    if (!user) return
+    const convId = getOrCreateConversation(
+      { id: user.id, name: user.name, avatar: user.avatar || '' },
+      {
+        id: job.ownerId,
+        name: job.ownerName,
+        avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${job.ownerId}`,
+      },
+      { type: 'job', id: job.id, title: job.title },
+      'analysis',
+    )
+    navigate(`/messages?conv=${convId}`)
+  }
+
   const handleAcceptBid = (bidId: string) => {
     navigate(`/payment/checkout/${job.id}/${bidId}`)
   }
 
   const handleComplete = () => {
+    if (!user) return
     setPendingEvaluation({
       jobId: job.id,
       targetId: acceptedBid?.executorId || '',
@@ -154,24 +172,13 @@ export default function JobDetail() {
     })
   }
 
-  const handleExecutorEvaluation = () => {
-    if (!isExecutor) return
-    setPendingEvaluation({
-      jobId: job.id,
-      targetId: job.ownerId,
-      targetName: job.ownerName,
-      type: 'executor_to_contractor',
-    })
-    window.location.reload()
-  }
-
   const handleDispute = () => {
     openDispute(job.id)
     navigate(`/disputes/new/${job.id}`)
   }
 
   const handleSendMessage = () => {
-    if (!chatMessage) return
+    if (!user || !chatMessage) return
     setMessages([...messages, { user: user.name, text: chatMessage }])
     setChatMessage('')
   }
@@ -196,11 +203,11 @@ export default function JobDetail() {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'open':
-        return 'Aberto / Disponível'
+        return 'Disponível'
       case 'in_progress':
-        return 'Em Andamento'
+        return 'Em Negociação'
       case 'completed':
-        return 'Finalizado'
+        return 'Fechado'
       default:
         return status
     }
@@ -219,8 +226,6 @@ export default function JobDetail() {
     }
   }
 
-  const canViewChat = isOwner || isExecutor
-
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-10">
       <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
@@ -233,12 +238,11 @@ export default function JobDetail() {
             <Badge
               variant={
                 job.status === 'open'
-                  ? 'secondary'
+                  ? 'default'
                   : job.status === 'completed'
-                    ? 'default'
-                    : 'outline'
+                    ? 'destructive'
+                    : 'secondary'
               }
-              className={job.status === 'completed' ? 'bg-green-600' : ''}
             >
               {getStatusLabel(job.status)}
             </Badge>
@@ -371,18 +375,18 @@ export default function JobDetail() {
                         : ''
                     }
                   >
-                    Em Andamento / Reservado
+                    Em Negociação
                   </Button>
                   <Button
                     variant={job.status === 'completed' ? 'default' : 'outline'}
                     onClick={() => updateJobStatus(job.id, 'completed')}
                     className={
                       job.status === 'completed'
-                        ? 'bg-green-600 hover:bg-green-700 pointer-events-none'
+                        ? 'bg-destructive hover:bg-destructive/90 text-destructive-foreground pointer-events-none'
                         : ''
                     }
                   >
-                    Finalizado / Fechado
+                    Fechado / Indisponível
                   </Button>
                 </div>
               </CardContent>
@@ -474,10 +478,10 @@ export default function JobDetail() {
                     {messages.map((msg, idx) => (
                       <div
                         key={idx}
-                        className={`flex flex-col ${msg.user === user.name ? 'items-end' : 'items-start'}`}
+                        className={`flex ${msg.user === user?.name ? 'items-end' : 'items-start'}`}
                       >
                         <div
-                          className={`max-w-[80%] rounded-lg p-3 ${msg.user === user.name ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+                          className={`max-w-[80%] rounded-lg p-3 ${msg.user === user?.name ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
                         >
                           <p className="text-sm">{msg.text}</p>
                         </div>
@@ -544,9 +548,9 @@ export default function JobDetail() {
                 <CardTitle>
                   {job.listingType === 'job'
                     ? 'Enviar Proposta'
-                    : 'Enviar Interesse/Oferta'}
+                    : 'Conversar com o Anunciante'}
                 </CardTitle>
-                {job.type === 'auction' && (
+                {job.type === 'auction' && job.listingType === 'job' && (
                   <CardDescription className="text-amber-600 font-medium">
                     Aviso: A oferta deve ser menor que{' '}
                     {formatCurrency(lowestBid)}
@@ -554,29 +558,52 @@ export default function JobDetail() {
                 )}
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Valor (R$)</label>
-                  <Input
-                    type="number"
-                    placeholder="0.00"
-                    value={bidAmount}
-                    onChange={(e) => setBidAmount(e.target.value)}
-                    max={job.type === 'auction' ? lowestBid - 1 : undefined}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Detalhes / Mensagem
-                  </label>
-                  <Textarea
-                    placeholder="Descreva sua proposta ou dúvidas..."
-                    value={bidDescription}
-                    onChange={(e) => setBidDescription(e.target.value)}
-                  />
-                </div>
-                <Button className="w-full" onClick={handleBid}>
-                  Enviar Proposta
-                </Button>
+                {!user ? (
+                  <div className="text-center py-4">
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Você precisa estar logado para interagir.
+                    </p>
+                    <Button asChild className="w-full">
+                      <Link to="/login">Fazer Login</Link>
+                    </Button>
+                  </div>
+                ) : job.listingType === 'job' ? (
+                  <>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Valor (R$)</label>
+                      <Input
+                        type="number"
+                        placeholder="0.00"
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        max={job.type === 'auction' ? lowestBid - 1 : undefined}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        Detalhes / Mensagem
+                      </label>
+                      <Textarea
+                        placeholder="Descreva sua proposta ou dúvidas..."
+                        value={bidDescription}
+                        onChange={(e) => setBidDescription(e.target.value)}
+                      />
+                    </div>
+                    <Button className="w-full" onClick={handleBid}>
+                      Enviar Proposta
+                    </Button>
+                  </>
+                ) : (
+                  <div className="pt-2">
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      onClick={handleContact}
+                    >
+                      <MessageSquare className="mr-2 h-5 w-5" /> Conversar agora
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}
