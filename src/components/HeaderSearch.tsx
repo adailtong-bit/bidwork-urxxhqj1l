@@ -8,21 +8,41 @@ import { cn } from '@/lib/utils'
 interface HeaderSearchProps {
   className?: string
   inputClassName?: string
+  autoFocus?: boolean
 }
 
-export function HeaderSearch({ className, inputClassName }: HeaderSearchProps) {
+export function HeaderSearch({
+  className,
+  inputClassName,
+  autoFocus,
+}: HeaderSearchProps) {
   const { t } = useLanguageStore()
   const navigate = useNavigate()
   const location = useLocation()
   const [isOpen, setIsOpen] = useState(false)
   const [query, setQuery] = useState('')
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (autoFocus && inputRef.current) {
+      const timer = setTimeout(() => {
+        inputRef.current?.focus()
+      }, 100)
+      return () => clearTimeout(timer)
+    }
+  }, [autoFocus])
 
   useEffect(() => {
     const searchParams = new URLSearchParams(location.search)
     const currentQuery = searchParams.get('q') || ''
     setQuery(currentQuery)
   }, [location.search])
+
+  useEffect(() => {
+    // Ensure dropdown closes automatically upon any navigation
+    setIsOpen(false)
+  }, [location.pathname, location.search])
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -76,6 +96,7 @@ export function HeaderSearch({ className, inputClassName }: HeaderSearchProps) {
           <Search className="h-4 w-4" />
         </button>
         <Input
+          ref={inputRef}
           type="search"
           value={query}
           onChange={(e) => {
