@@ -59,6 +59,7 @@ import ConstructionDocuments from '@/pages/construction/ConstructionDocuments'
 import ConstructionPlans from '@/pages/construction/ConstructionPlans'
 import ConstructionCheckout from '@/pages/construction/ConstructionCheckout'
 import Messages from '@/pages/messages/Messages'
+import UserProfile from '@/pages/UserProfile'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
@@ -139,6 +140,8 @@ const App = () => {
             >
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/partner/dashboard" element={<PartnerDashboard />} />
+
+              <Route path="/profile/:id" element={<UserProfile />} />
 
               <Route path="/my-jobs" element={<MyJobs />} />
               <Route path="/jobs/:id" element={<JobDetail />} />

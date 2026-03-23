@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -7,115 +8,49 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Search, Send, MessageSquare } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useAuthStore } from '@/stores/useAuthStore'
-
-interface Message {
-  id: string
-  senderId: string
-  content: string
-  timestamp: Date
-}
-
-interface Conversation {
-  id: string
-  partnerName: string
-  partnerAvatar: string
-  lastMessage: string
-  lastMessageTime: Date
-  unreadCount: number
-  messages: Message[]
-}
-
-const mockConversations: Conversation[] = [
-  {
-    id: '1',
-    partnerName: 'Ana Silva',
-    partnerAvatar:
-      'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=1',
-    lastMessage: 'Podemos agendar a visita para amanhã?',
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
-    unreadCount: 2,
-    messages: [
-      {
-        id: 'm1',
-        senderId: 'partner',
-        content: 'Olá, vi seu anúncio de reforma.',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24),
-      },
-      {
-        id: 'm2',
-        senderId: 'me',
-        content: 'Olá Ana! Claro, quando você tem disponibilidade?',
-        timestamp: new Date(Date.now() - 1000 * 60 * 60 * 23),
-      },
-      {
-        id: 'm3',
-        senderId: 'partner',
-        content: 'Podemos agendar a visita para amanhã?',
-        timestamp: new Date(Date.now() - 1000 * 60 * 30),
-      },
-    ],
-  },
-  {
-    id: '2',
-    partnerName: 'Carlos Tech',
-    partnerAvatar:
-      'https://img.usecurling.com/ppl/thumbnail?gender=male&seed=2',
-    lastMessage: 'Projeto finalizado, aguardando aprovação.',
-    lastMessageTime: new Date(Date.now() - 1000 * 60 * 60 * 5), // 5 hours ago
-    unreadCount: 0,
-    messages: [],
-  },
-]
+import { useMessageStore } from '@/stores/useMessageStore'
 
 export default function Messages() {
   const { t, getDateLocale } = useLanguageStore()
   const { user } = useAuthStore()
+  const { conversations, sendMessage } = useMessageStore()
+  const [searchParams] = useSearchParams()
+
+  const convParam = searchParams.get('conv')
   const [selectedConversationId, setSelectedConversationId] = useState<
     string | null
-  >(null)
+  >(convParam)
   const [messageInput, setMessageInput] = useState('')
-  const [conversations, setConversations] = useState(mockConversations)
 
-  const selectedConversation = conversations.find(
+  useEffect(() => {
+    if (convParam) setSelectedConversationId(convParam)
+  }, [convParam])
+
+  if (!user) return null
+
+  const myConversations = conversations.filter((c) =>
+    c.participants.some((p) => p.id === user.id),
+  )
+
+  const selectedConversation = myConversations.find(
     (c) => c.id === selectedConversationId,
   )
 
   const handleSendMessage = () => {
     if (!messageInput.trim() || !selectedConversationId) return
-
-    const newMessage: Message = {
-      id: Math.random().toString(36).substr(2, 9),
-      senderId: 'me',
-      content: messageInput,
-      timestamp: new Date(),
-    }
-
-    setConversations((prev) =>
-      prev.map((c) => {
-        if (c.id === selectedConversationId) {
-          return {
-            ...c,
-            lastMessage: messageInput,
-            lastMessageTime: new Date(),
-            messages: [...c.messages, newMessage],
-          }
-        }
-        return c
-      }),
-    )
+    sendMessage(selectedConversationId, user.id, messageInput)
     setMessageInput('')
   }
 
-  // Helper to format date strictly with locale
   const formatTimeAgo = (date: Date) => {
-    return formatDistanceToNow(date, {
+    return formatDistanceToNow(new Date(date), {
       addSuffix: true,
       locale: getDateLocale(),
     })
   }
 
   return (
-    <div className="flex h-[calc(100vh-100px)] gap-4 pb-20 md:pb-0">
+    <div className="flex h-[calc(100vh-100px)] gap-4 pb-20 md:pb-0 pt-4">
       {/* Conversation List */}
       <div
         className={`${selectedConversationId ? 'hidden md:flex' : 'flex'} w-full md:w-1/3 flex-col gap-4`}
@@ -136,49 +71,65 @@ export default function Messages() {
         </div>
 
         <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-          {conversations.length === 0 ? (
+          {myConversations.length === 0 ? (
             <div className="text-center py-10 text-muted-foreground">
               {t('messages.no_messages')}
             </div>
           ) : (
-            conversations.map((conv) => (
-              <Card
-                key={conv.id}
-                className={`cursor-pointer hover:bg-muted/50 transition-colors ${
-                  selectedConversationId === conv.id
-                    ? 'bg-muted border-primary'
-                    : ''
-                }`}
-                onClick={() => setSelectedConversationId(conv.id)}
-              >
-                <CardContent className="p-4 flex items-center gap-4">
-                  <div className="relative">
-                    <Avatar>
-                      <AvatarImage src={conv.partnerAvatar} />
-                      <AvatarFallback>{conv.partnerName[0]}</AvatarFallback>
-                    </Avatar>
-                    {conv.unreadCount > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
-                        {conv.unreadCount}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-start">
-                      <span className="font-semibold truncate">
-                        {conv.partnerName}
-                      </span>
-                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                        {formatTimeAgo(conv.lastMessageTime)}
-                      </span>
-                    </div>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {conv.lastMessage}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))
+            myConversations
+              .sort(
+                (a, b) =>
+                  new Date(b.updatedAt).getTime() -
+                  new Date(a.updatedAt).getTime(),
+              )
+              .map((conv) => {
+                const partner =
+                  conv.participants.find((p) => p.id !== user.id) ||
+                  conv.participants[0]
+                const lastMessage = conv.messages[conv.messages.length - 1]
+                const lastMessageText = lastMessage
+                  ? lastMessage.content
+                  : 'Nova conversa iniciada'
+                const lastMessageTime = lastMessage
+                  ? lastMessage.timestamp
+                  : conv.updatedAt
+
+                return (
+                  <Card
+                    key={conv.id}
+                    className={`cursor-pointer hover:bg-muted/50 transition-colors ${
+                      selectedConversationId === conv.id
+                        ? 'bg-muted border-primary'
+                        : ''
+                    }`}
+                    onClick={() => setSelectedConversationId(conv.id)}
+                  >
+                    <CardContent className="p-4 flex items-center gap-4">
+                      <div className="relative">
+                        <Avatar>
+                          <AvatarImage src={partner.avatar} />
+                          <AvatarFallback>
+                            {partner.name.charAt(0)}
+                          </AvatarFallback>
+                        </Avatar>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start">
+                          <span className="font-semibold truncate">
+                            {partner.name}
+                          </span>
+                          <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                            {formatTimeAgo(lastMessageTime)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground truncate">
+                          {lastMessageText}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )
+              })
           )}
         </div>
       </div>
@@ -196,18 +147,29 @@ export default function Messages() {
                 className="md:hidden"
                 onClick={() => setSelectedConversationId(null)}
               >
-                <Search className="h-4 w-4" />{' '}
-                {/* Use generic back icon if needed */}
+                <Search className="h-4 w-4" />
               </Button>
               <Avatar className="h-10 w-10">
-                <AvatarImage src={selectedConversation.partnerAvatar} />
+                <AvatarImage
+                  src={
+                    selectedConversation.participants.find(
+                      (p) => p.id !== user.id,
+                    )?.avatar
+                  }
+                />
                 <AvatarFallback>
-                  {selectedConversation.partnerName[0]}
+                  {selectedConversation.participants
+                    .find((p) => p.id !== user.id)
+                    ?.name.charAt(0)}
                 </AvatarFallback>
               </Avatar>
               <div>
                 <h3 className="font-semibold">
-                  {selectedConversation.partnerName}
+                  {
+                    selectedConversation.participants.find(
+                      (p) => p.id !== user.id,
+                    )?.name
+                  }
                 </h3>
                 <span className="text-xs text-muted-foreground flex items-center gap-1">
                   <div className="w-2 h-2 rounded-full bg-green-500" /> Online
@@ -219,11 +181,11 @@ export default function Messages() {
               {selectedConversation.messages.map((msg) => (
                 <div
                   key={msg.id}
-                  className={`flex ${msg.senderId === 'me' ? 'justify-end' : 'justify-start'}`}
+                  className={`flex ${msg.senderId === user.id ? 'justify-end' : 'justify-start'}`}
                 >
                   <div
                     className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                      msg.senderId === 'me'
+                      msg.senderId === user.id
                         ? 'bg-primary text-primary-foreground rounded-br-none'
                         : 'bg-muted text-foreground rounded-bl-none'
                     }`}
@@ -235,6 +197,11 @@ export default function Messages() {
                   </div>
                 </div>
               ))}
+              {selectedConversation.messages.length === 0 && (
+                <div className="text-center py-10 text-muted-foreground text-sm">
+                  Envie a primeira mensagem para iniciar a conversa.
+                </div>
+              )}
             </div>
 
             <div className="p-4 border-t bg-background rounded-b-lg">

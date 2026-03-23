@@ -2,6 +2,7 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useJobStore } from '@/stores/useJobStore'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useConstructionDocumentStore } from '@/stores/useConstructionDocumentStore'
+import { useMessageStore } from '@/stores/useMessageStore'
 import {
   Card,
   CardContent,
@@ -27,23 +28,33 @@ import {
   Activity,
   FileText,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { AINotifications } from '@/components/AINotifications'
 import { AdSection } from '@/components/AdSection'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { differenceInDays, isBefore } from 'date-fns'
+import { differenceInDays } from 'date-fns'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { useToast } from '@/hooks/use-toast'
 
 export default function Dashboard() {
   const { user } = useAuthStore()
   const { jobs } = useJobStore()
   const { projects } = useProjectStore()
   const { documents } = useConstructionDocumentStore()
+  const { interests, acceptInterest, declineInterest } = useMessageStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
+  const { toast } = useToast()
+  const navigate = useNavigate()
 
   const isAdmin = user?.role === 'admin'
   const isContractor = user?.role === 'contractor'
+
+  const myPendingInterests = interests.filter(
+    (i) => i.targetId === user?.id && i.status === 'pending',
+  )
 
   if (isAdmin) {
     return (
@@ -221,7 +232,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="space-y-6 pb-10">
+    <Tabs defaultValue="overview" className="space-y-6 pb-10">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
@@ -256,301 +267,398 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <AINotifications />
+      <div className="border-b">
+        <TabsList className="bg-transparent space-x-2">
+          <TabsTrigger
+            value="overview"
+            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border"
+          >
+            Visão Geral
+          </TabsTrigger>
+          <TabsTrigger
+            value="interests"
+            className="relative data-[state=active]:bg-primary data-[state=active]:text-primary-foreground border"
+          >
+            Interesses Recebidos
+            {myPendingInterests.length > 0 && (
+              <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+                {myPendingInterests.length}
+              </span>
+            )}
+          </TabsTrigger>
+        </TabsList>
+      </div>
 
-      <AdSection segment="dashboard" />
+      <TabsContent value="overview" className="space-y-6 mt-0">
+        <AINotifications />
 
-      {/* Corporate / Construction Executive KPIs */}
-      {isPJWithConstruction && activeProjects.length > 0 && (
-        <div className="grid gap-4 md:grid-cols-2 mb-6">
-          <Card className="border-t-4 border-t-primary shadow-sm bg-gradient-to-br from-card to-muted/20">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <Clock className="h-4 w-4" /> {t('dashboard.kpi.spi')}
-                </p>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-4xl font-bold">
-                    {globalSPI.toFixed(2)}
-                  </span>
-                  <Badge
-                    variant={globalSPI >= 1 ? 'default' : 'destructive'}
-                    className={globalSPI >= 1 ? 'bg-green-500' : ''}
-                  >
-                    {globalSPI >= 1 ? 'Adiantado' : 'Atrasado'}
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {t('dashboard.kpi.spi_desc')}
-                </p>
-              </div>
-              <Activity
-                className={`h-16 w-16 opacity-20 ${globalSPI >= 1 ? 'text-green-500' : 'text-red-500'}`}
-              />
-            </CardContent>
-          </Card>
+        <AdSection segment="dashboard" />
 
-          <Card className="border-t-4 border-t-blue-500 shadow-sm bg-gradient-to-br from-card to-muted/20">
-            <CardContent className="p-6 flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
-                  <Wallet className="h-4 w-4" /> {t('dashboard.kpi.cpi')}
-                </p>
-                <div className="flex items-baseline gap-2 mt-2">
-                  <span className="text-4xl font-bold">
-                    {globalCPI.toFixed(2)}
-                  </span>
-                  <Badge
-                    variant={globalCPI >= 1 ? 'default' : 'destructive'}
-                    className={globalCPI >= 1 ? 'bg-green-500' : ''}
-                  >
-                    {globalCPI >= 1 ? 'No Orçamento' : 'Sobre Custo'}
-                  </Badge>
+        {/* Corporate / Construction Executive KPIs */}
+        {isPJWithConstruction && activeProjects.length > 0 && (
+          <div className="grid gap-4 md:grid-cols-2 mb-6">
+            <Card className="border-t-4 border-t-primary shadow-sm bg-gradient-to-br from-card to-muted/20">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Clock className="h-4 w-4" /> {t('dashboard.kpi.spi')}
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-4xl font-bold">
+                      {globalSPI.toFixed(2)}
+                    </span>
+                    <Badge
+                      variant={globalSPI >= 1 ? 'default' : 'destructive'}
+                      className={globalSPI >= 1 ? 'bg-green-500' : ''}
+                    >
+                      {globalSPI >= 1 ? 'Adiantado' : 'Atrasado'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {t('dashboard.kpi.spi_desc')}
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-2">
-                  {t('dashboard.kpi.cpi_desc')}
-                </p>
-              </div>
-              <Wallet
-                className={`h-16 w-16 opacity-20 ${globalCPI >= 1 ? 'text-green-500' : 'text-red-500'}`}
-              />
-            </CardContent>
-          </Card>
-        </div>
-      )}
+                <Activity
+                  className={`h-16 w-16 opacity-20 ${globalSPI >= 1 ? 'text-green-500' : 'text-red-500'}`}
+                />
+              </CardContent>
+            </Card>
 
-      {/* Smart Alerts for Construction */}
-      {isPJWithConstruction &&
-        (docsExpiringSoon.length > 0 || pendingInspections.length > 0) && (
-          <Card className="border-orange-200 bg-orange-50/30">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2 text-orange-800">
-                <AlertTriangle className="h-5 w-5" />{' '}
-                {t('dashboard.alerts.title')}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              {docsExpiringSoon.length > 0 && (
-                <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
-                  <h4 className="font-semibold text-sm text-orange-800 flex items-center gap-1 mb-2">
-                    <FileText className="h-4 w-4" />{' '}
-                    {t('dashboard.alerts.docs')}
-                  </h4>
-                  <ul className="space-y-2">
-                    {docsExpiringSoon.map((doc) => (
-                      <li
-                        key={doc.id}
-                        className="text-xs flex justify-between items-center"
-                      >
-                        <span className="truncate pr-2">{doc.name}</span>
-                        <Badge variant="destructive" className="shrink-0">
-                          {formatDate(new Date(doc.validity!), 'dd/MM/yy')}
-                        </Badge>
-                      </li>
-                    ))}
-                  </ul>
+            <Card className="border-t-4 border-t-blue-500 shadow-sm bg-gradient-to-br from-card to-muted/20">
+              <CardContent className="p-6 flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground flex items-center gap-1">
+                    <Wallet className="h-4 w-4" /> {t('dashboard.kpi.cpi')}
+                  </p>
+                  <div className="flex items-baseline gap-2 mt-2">
+                    <span className="text-4xl font-bold">
+                      {globalCPI.toFixed(2)}
+                    </span>
+                    <Badge
+                      variant={globalCPI >= 1 ? 'default' : 'destructive'}
+                      className={globalCPI >= 1 ? 'bg-green-500' : ''}
+                    >
+                      {globalCPI >= 1 ? 'No Orçamento' : 'Sobre Custo'}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    {t('dashboard.kpi.cpi_desc')}
+                  </p>
                 </div>
-              )}
-              {pendingInspections.length > 0 && (
-                <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
-                  <h4 className="font-semibold text-sm text-orange-800 flex items-center gap-1 mb-2">
-                    <ShieldCheck className="h-4 w-4" />{' '}
-                    {t('dashboard.alerts.inspections')}
-                  </h4>
-                  <ul className="space-y-2">
-                    {pendingInspections.map((insp) => (
-                      <li
-                        key={insp.id}
-                        className="text-xs flex flex-col gap-0.5"
-                      >
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium">{insp.name}</span>
-                          <Badge
-                            variant="outline"
-                            className={
-                              insp.status === 'rejected'
-                                ? 'text-red-600 bg-red-50 border-red-200'
-                                : 'text-yellow-600 bg-yellow-50 border-yellow-200'
-                            }
-                          >
-                            {insp.status === 'rejected'
-                              ? 'Reprovada'
-                              : 'Pendente'}
-                          </Badge>
-                        </div>
-                        <span className="text-muted-foreground truncate">
-                          Obra: {insp.projectName}
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                <Wallet
+                  className={`h-16 w-16 opacity-20 ${globalCPI >= 1 ? 'text-green-500' : 'text-red-500'}`}
+                />
+              </CardContent>
+            </Card>
+          </div>
         )}
 
-      {/* General Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('dashboard.reputation')}
-            </CardTitle>
-            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {user?.reputation.toFixed(1)}/5.0
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {t('dashboard.jobs_finished', { count: completedJobs })}
-            </p>
-          </CardContent>
-        </Card>
+        {/* Smart Alerts for Construction */}
+        {isPJWithConstruction &&
+          (docsExpiringSoon.length > 0 || pendingInspections.length > 0) && (
+            <Card className="border-orange-200 bg-orange-50/30">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2 text-orange-800">
+                  <AlertTriangle className="h-5 w-5" />{' '}
+                  {t('dashboard.alerts.title')}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="grid gap-4 md:grid-cols-2">
+                {docsExpiringSoon.length > 0 && (
+                  <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
+                    <h4 className="font-semibold text-sm text-orange-800 flex items-center gap-1 mb-2">
+                      <FileText className="h-4 w-4" />{' '}
+                      {t('dashboard.alerts.docs')}
+                    </h4>
+                    <ul className="space-y-2">
+                      {docsExpiringSoon.map((doc) => (
+                        <li
+                          key={doc.id}
+                          className="text-xs flex justify-between items-center"
+                        >
+                          <span className="truncate pr-2">{doc.name}</span>
+                          <Badge variant="destructive" className="shrink-0">
+                            {formatDate(new Date(doc.validity!), 'dd/MM/yy')}
+                          </Badge>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {pendingInspections.length > 0 && (
+                  <div className="bg-white p-3 rounded-lg border border-orange-100 shadow-sm">
+                    <h4 className="font-semibold text-sm text-orange-800 flex items-center gap-1 mb-2">
+                      <ShieldCheck className="h-4 w-4" />{' '}
+                      {t('dashboard.alerts.inspections')}
+                    </h4>
+                    <ul className="space-y-2">
+                      {pendingInspections.map((insp) => (
+                        <li
+                          key={insp.id}
+                          className="text-xs flex flex-col gap-0.5"
+                        >
+                          <div className="flex justify-between items-center">
+                            <span className="font-medium">{insp.name}</span>
+                            <Badge
+                              variant="outline"
+                              className={
+                                insp.status === 'rejected'
+                                  ? 'text-red-600 bg-red-50 border-red-200'
+                                  : 'text-yellow-600 bg-yellow-50 border-yellow-200'
+                              }
+                            >
+                              {insp.status === 'rejected'
+                                ? 'Reprovada'
+                                : 'Pendente'}
+                            </Badge>
+                          </div>
+                          <span className="text-muted-foreground truncate">
+                            Obra: {insp.projectName}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {t('dashboard.active_jobs')}
-            </CardTitle>
-            <TrendingUp className="h-4 w-4 text-emerald-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeJobs}</div>
-            <p className="text-xs text-muted-foreground">
-              {t('dashboard.active_jobs_desc')}
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              {isContractor
-                ? t('dashboard.total_spent')
-                : t('dashboard.total_earned')}
-            </CardTitle>
-            <Wallet className="h-4 w-4 text-indigo-500" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(9600)}</div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <ShieldCheck className="h-3 w-3" />{' '}
-              {t('dashboard.escrow_protected')}
-            </p>
-          </CardContent>
-        </Card>
-
-        {user?.role === 'executor' && (
+        {/* General Stats */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
-                {t('dashboard.credits')}
+                {t('dashboard.reputation')}
               </CardTitle>
-              <Zap className="h-4 w-4 text-yellow-500" />
+              <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{user.credits}</div>
-              <Button
-                variant="link"
-                className="h-auto p-0 text-xs text-primary"
-                asChild
-              >
-                <Link to="/credits">{t('dashboard.buy_more')}</Link>
-              </Button>
+              <div className="text-2xl font-bold">
+                {user?.reputation.toFixed(1)}/5.0
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {t('dashboard.jobs_finished', { count: completedJobs })}
+              </p>
             </CardContent>
           </Card>
-        )}
-      </div>
 
-      {/* General Charts */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>
-              {isContractor
-                ? t('dashboard.chart.spent')
-                : t('dashboard.chart.earnings')}
-            </CardTitle>
-            <CardDescription>{t('dashboard.chart.desc')}</CardDescription>
-          </CardHeader>
-          <CardContent className="pl-2">
-            <div className="h-[250px]">
-              <ChartContainer config={chartConfig} className="w-full h-full">
-                <LineChart data={earningsData}>
-                  <XAxis
-                    dataKey="month"
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                  />
-                  <YAxis
-                    stroke="#888888"
-                    fontSize={12}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={(value) => formatCurrency(value)}
-                  />
-                  <Tooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) => formatCurrency(Number(value))}
-                      />
-                    }
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="value"
-                    strokeWidth={2}
-                    activeDot={{ r: 8 }}
-                    stroke="var(--color-value)"
-                  />
-                </LineChart>
-              </ChartContainer>
-            </div>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {t('dashboard.active_jobs')}
+              </CardTitle>
+              <TrendingUp className="h-4 w-4 text-emerald-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{activeJobs}</div>
+              <p className="text-xs text-muted-foreground">
+                {t('dashboard.active_jobs_desc')}
+              </p>
+            </CardContent>
+          </Card>
 
-        <Card className="col-span-3">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">
+                {isContractor
+                  ? t('dashboard.total_spent')
+                  : t('dashboard.total_earned')}
+              </CardTitle>
+              <Wallet className="h-4 w-4 text-indigo-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(9600)}</div>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <ShieldCheck className="h-3 w-3" />{' '}
+                {t('dashboard.escrow_protected')}
+              </p>
+            </CardContent>
+          </Card>
+
+          {user?.role === 'executor' && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">
+                  {t('dashboard.credits')}
+                </CardTitle>
+                <Zap className="h-4 w-4 text-yellow-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{user.credits}</div>
+                <Button
+                  variant="link"
+                  className="h-auto p-0 text-xs text-primary"
+                  asChild
+                >
+                  <Link to="/credits">{t('dashboard.buy_more')}</Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        {/* General Charts */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="col-span-4">
+            <CardHeader>
+              <CardTitle>
+                {isContractor
+                  ? t('dashboard.chart.spent')
+                  : t('dashboard.chart.earnings')}
+              </CardTitle>
+              <CardDescription>{t('dashboard.chart.desc')}</CardDescription>
+            </CardHeader>
+            <CardContent className="pl-2">
+              <div className="h-[250px]">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <LineChart data={earningsData}>
+                    <XAxis
+                      dataKey="month"
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                    />
+                    <YAxis
+                      stroke="#888888"
+                      fontSize={12}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value) => formatCurrency(value)}
+                    />
+                    <Tooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) => formatCurrency(Number(value))}
+                        />
+                      }
+                    />
+                    <Line
+                      type="monotone"
+                      dataKey="value"
+                      strokeWidth={2}
+                      activeDot={{ r: 8 }}
+                      stroke="var(--color-value)"
+                    />
+                  </LineChart>
+                </ChartContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="col-span-3">
+            <CardHeader>
+              <CardTitle>{t('dashboard.market_insights')}</CardTitle>
+              <CardDescription>
+                {t('dashboard.market_insights_desc')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[250px]">
+                <ChartContainer config={chartConfig} className="w-full h-full">
+                  <BarChart data={marketInsightsData} layout="vertical">
+                    <XAxis type="number" hide />
+                    <YAxis
+                      dataKey="category"
+                      type="category"
+                      tickLine={false}
+                      axisLine={false}
+                      fontSize={12}
+                    />
+                    <Tooltip
+                      content={
+                        <ChartTooltipContent
+                          formatter={(value) => formatCurrency(Number(value))}
+                        />
+                      }
+                    />
+                    <Bar
+                      dataKey="avgPrice"
+                      fill="var(--color-avgPrice)"
+                      radius={[0, 4, 4, 0]}
+                      barSize={20}
+                    />
+                  </BarChart>
+                </ChartContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="interests" className="space-y-6 mt-0">
+        <Card>
           <CardHeader>
-            <CardTitle>{t('dashboard.market_insights')}</CardTitle>
+            <CardTitle>Interesses de Comunicação</CardTitle>
             <CardDescription>
-              {t('dashboard.market_insights_desc')}
+              Pessoas que desejam iniciar uma conversa com você. Ao aceitar, o
+              chat será liberado na aba de Mensagens.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="h-[250px]">
-              <ChartContainer config={chartConfig} className="w-full h-full">
-                <BarChart data={marketInsightsData} layout="vertical">
-                  <XAxis type="number" hide />
-                  <YAxis
-                    dataKey="category"
-                    type="category"
-                    tickLine={false}
-                    axisLine={false}
-                    fontSize={12}
-                  />
-                  <Tooltip
-                    content={
-                      <ChartTooltipContent
-                        formatter={(value) => formatCurrency(Number(value))}
-                      />
-                    }
-                  />
-                  <Bar
-                    dataKey="avgPrice"
-                    fill="var(--color-avgPrice)"
-                    radius={[0, 4, 4, 0]}
-                    barSize={20}
-                  />
-                </BarChart>
-              </ChartContainer>
-            </div>
+            {myPendingInterests.length === 0 ? (
+              <div className="text-center py-10 border-2 border-dashed rounded-lg bg-muted/20 text-muted-foreground">
+                <ShieldCheck className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                <p>Nenhum interesse pendente no momento.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {myPendingInterests.map((interest) => (
+                  <div
+                    key={interest.id}
+                    className="flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 border rounded-lg bg-card shadow-sm gap-4"
+                  >
+                    <div className="flex items-center gap-4">
+                      <Avatar className="h-12 w-12 border">
+                        <AvatarImage src={interest.senderAvatar} />
+                        <AvatarFallback>
+                          {interest.senderName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <Link
+                          to={`/profile/${interest.senderId}`}
+                          className="font-semibold text-lg hover:underline hover:text-primary transition-colors"
+                        >
+                          {interest.senderName}
+                        </Link>
+                        <p className="text-sm text-muted-foreground">
+                          Solicitou contato em{' '}
+                          {formatDate(interest.createdAt, 'dd/MM/yyyy HH:mm')}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2 w-full sm:w-auto">
+                      <Button
+                        variant="outline"
+                        className="flex-1 sm:flex-none"
+                        onClick={() => declineInterest(interest.id)}
+                      >
+                        Recusar
+                      </Button>
+                      <Button
+                        className="flex-1 sm:flex-none"
+                        onClick={() => {
+                          acceptInterest(interest.id)
+                          toast({
+                            title: 'Interesse aceito',
+                            description:
+                              'Uma nova conversa foi iniciada com sucesso.',
+                          })
+                          navigate('/messages')
+                        }}
+                      >
+                        Aceitar Chat
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
-      </div>
-    </div>
+      </TabsContent>
+    </Tabs>
   )
 }

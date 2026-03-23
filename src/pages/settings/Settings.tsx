@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Slider } from '@/components/ui/slider'
+import { Switch } from '@/components/ui/switch'
 import {
   Form,
   FormControl,
@@ -21,6 +22,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormDescription,
 } from '@/components/ui/form'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
@@ -40,6 +42,7 @@ import {
   X,
   CreditCard,
   Globe,
+  Lock,
 } from 'lucide-react'
 import { AdSection } from '@/components/AdSection'
 import {
@@ -85,6 +88,7 @@ export default function Settings() {
       city: z.string().min(2, t('val.required')),
       state: z.string().min(2, t('val.required')),
       zipCode: zip,
+      openChat: z.boolean().default(false),
     })
   }
 
@@ -102,6 +106,7 @@ export default function Settings() {
       city: user?.address?.city || '',
       state: user?.address?.state || '',
       zipCode: user?.address?.zipCode || '',
+      openChat: user?.openChat || false,
     },
   })
 
@@ -127,6 +132,7 @@ export default function Settings() {
         city: user.address?.city || '',
         state: user.address?.state || '',
         zipCode: user.address?.zipCode || '',
+        openChat: user.openChat || false,
       })
 
       if (user.address?.country) {
@@ -153,6 +159,7 @@ export default function Settings() {
       companyName: data.companyName,
       phone: data.phone,
       taxId: data.taxId,
+      openChat: data.openChat,
       address: {
         street: data.street,
         number: data.number,
@@ -356,6 +363,38 @@ export default function Settings() {
                 </div>
 
                 <Separator className="my-4" />
+
+                <div className="bg-muted/20 border rounded-lg p-4 mb-4">
+                  <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                    <Lock className="h-4 w-4" /> Controles de Privacidade
+                  </h3>
+                  <FormField
+                    control={form.control}
+                    name="openChat"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 bg-background">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base font-medium">
+                            Open Chat (Chat Aberto)
+                          </FormLabel>
+                          <FormDescription>
+                            Permite que qualquer usuário inicie uma conversa
+                            diretamente com você sem precisar de aprovação
+                            prévia de interesse.
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                            disabled={!isEditing}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="text-sm font-medium flex items-center gap-2">
                     <MapPin className="h-4 w-4" /> {t('settings.address.title')}

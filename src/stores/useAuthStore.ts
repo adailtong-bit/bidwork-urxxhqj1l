@@ -91,6 +91,7 @@ export interface User {
   loyaltyHistory: LoyaltyTransaction[]
   teamMembers?: TeamMember[]
   badges: Badge[]
+  openChat: boolean
 }
 
 export interface RegisterData {
@@ -282,6 +283,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         loyaltyHistory: [],
         teamMembers,
         badges,
+        openChat: false,
       },
     })
   },
@@ -316,6 +318,7 @@ export const useAuthStore = create<AuthState>((set) => ({
         loyaltyPoints: 0,
         loyaltyHistory: [],
         badges: [],
+        openChat: false,
       },
     })
   },
