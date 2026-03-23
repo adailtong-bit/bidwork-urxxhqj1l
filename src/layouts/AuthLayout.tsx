@@ -1,4 +1,4 @@
-import { Outlet } from 'react-router-dom'
+import { Outlet, Link } from 'react-router-dom'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { LanguageSelector } from '@/components/LanguageSelector'
 
@@ -20,12 +20,15 @@ export default function AuthLayout() {
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-lg max-h-lg border border-white/10 rounded-full animate-spin-slow" />
 
         <div className="relative z-20 text-white max-w-lg">
-          <div className="mb-8 flex items-center gap-3">
+          <Link
+            to="/"
+            className="mb-8 flex items-center gap-3 w-fit hover:opacity-90 transition-opacity"
+          >
             <div className="h-10 w-10 bg-white rounded-lg flex items-center justify-center text-primary font-bold text-xl">
               B
             </div>
             <span className="text-2xl font-bold tracking-tight">BIDWORK</span>
-          </div>
+          </Link>
           <h1 className="text-4xl font-bold tracking-tight mb-6 leading-tight">
             {t('layout.hero.title')}
           </h1>

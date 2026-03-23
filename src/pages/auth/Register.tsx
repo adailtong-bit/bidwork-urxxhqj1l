@@ -21,6 +21,7 @@ import {
   Building2,
   UserCircle,
   CreditCard,
+  ArrowLeft,
 } from 'lucide-react'
 import {
   Form,
@@ -169,6 +170,14 @@ export default function Register() {
 
   return (
     <div className="space-y-6 max-w-lg mx-auto w-full pb-8">
+      <Link
+        to="/"
+        className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Voltar para o início
+      </Link>
+
       <div className="space-y-2 text-center">
         <h1 className="text-3xl font-bold tracking-tight">{t('nav.start')}</h1>
       </div>
