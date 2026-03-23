@@ -18,17 +18,23 @@ interface CategoryState {
   addCategory: (name: string) => void
   removeCategory: (id: string) => void
   updateCategory: (id: string, name: string) => void
+  addSubCategory: (categoryId: string, name: string) => void
+  removeSubCategory: (categoryId: string, subId: string) => void
+  updateSubCategory: (categoryId: string, subId: string, name: string) => void
 }
 
-const createSubCat = (name: string): SubCategory => ({
-  id: Math.random().toString(36).substr(2, 9),
-  name,
-  slug: name
+const createSlug = (name: string) =>
+  name
     .toLowerCase()
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .replace(/ /g, '-')
-    .replace(/[^\w-]+/g, ''),
+    .replace(/[^\w-]+/g, '')
+
+const createSubCat = (name: string): SubCategory => ({
+  id: Math.random().toString(36).substr(2, 9),
+  name,
+  slug: createSlug(name),
 })
 
 export const useCategoryStore = create<CategoryState>((set) => ({
@@ -95,10 +101,7 @@ export const useCategoryStore = create<CategoryState>((set) => ({
         {
           id: Math.random().toString(36).substr(2, 9),
           name,
-          slug: name
-            .toLowerCase()
-            .replace(/ /g, '-')
-            .replace(/[^\w-]+/g, ''),
+          slug: createSlug(name),
           subCategories: [],
         },
       ],
@@ -110,14 +113,37 @@ export const useCategoryStore = create<CategoryState>((set) => ({
   updateCategory: (id, name) =>
     set((state) => ({
       categories: state.categories.map((c) =>
-        c.id === id
+        c.id === id ? { ...c, name, slug: createSlug(name) } : c,
+      ),
+    })),
+  addSubCategory: (categoryId, name) =>
+    set((state) => ({
+      categories: state.categories.map((c) =>
+        c.id === categoryId
+          ? { ...c, subCategories: [...c.subCategories, createSubCat(name)] }
+          : c,
+      ),
+    })),
+  removeSubCategory: (categoryId, subId) =>
+    set((state) => ({
+      categories: state.categories.map((c) =>
+        c.id === categoryId
           ? {
               ...c,
-              name,
-              slug: name
-                .toLowerCase()
-                .replace(/ /g, '-')
-                .replace(/[^\w-]+/g, ''),
+              subCategories: c.subCategories.filter((s) => s.id !== subId),
+            }
+          : c,
+      ),
+    })),
+  updateSubCategory: (categoryId, subId, name) =>
+    set((state) => ({
+      categories: state.categories.map((c) =>
+        c.id === categoryId
+          ? {
+              ...c,
+              subCategories: c.subCategories.map((s) =>
+                s.id === subId ? { ...s, name, slug: createSlug(name) } : s,
+              ),
             }
           : c,
       ),
