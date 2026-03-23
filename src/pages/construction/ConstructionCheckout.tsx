@@ -31,7 +31,11 @@ export default function ConstructionCheckout() {
   const [paymentType, setPaymentType] = useState('credit')
 
   if (!plan)
-    return <div className="p-10 text-center">Plano não encontrado.</div>
+    return (
+      <div className="p-10 text-center text-muted-foreground">
+        Plano não encontrado.
+      </div>
+    )
 
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -53,86 +57,102 @@ export default function ConstructionCheckout() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto py-10 px-4">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Checkout Seguro</h1>
-        <p className="text-muted-foreground">
+    <div className="max-w-4xl mx-auto py-6 md:py-10 px-4 sm:px-6">
+      <div className="mb-6 md:mb-8 text-center space-y-2">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight break-words">
+          Checkout Seguro
+        </h1>
+        <p className="text-sm md:text-base text-muted-foreground break-words max-w-lg mx-auto">
           Finalize sua assinatura para liberar a Gestão de Obras.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+        <div className="lg:col-span-2 space-y-4 md:space-y-6">
           <form onSubmit={handlePayment} id="checkout-form">
-            <Card>
-              <CardHeader>
-                <CardTitle>Método de Pagamento</CardTitle>
-                <CardDescription>
+            <Card className="overflow-hidden">
+              <CardHeader className="p-4 md:p-6 pb-4">
+                <CardTitle className="text-lg md:text-xl break-words">
+                  Método de Pagamento
+                </CardTitle>
+                <CardDescription className="text-xs md:text-sm break-words">
                   Aceitamos cartões de crédito e débito.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-6">
+              <CardContent className="p-4 md:p-6 pt-0 space-y-4 md:space-y-6">
                 <RadioGroup
                   value={paymentType}
                   onValueChange={setPaymentType}
-                  className="grid grid-cols-2 gap-4"
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4"
                 >
-                  <div className="flex items-center space-x-2 border p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center space-x-2 border p-3 md:p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                     <RadioGroupItem value="credit" id="credit" />
                     <Label
                       htmlFor="credit"
-                      className="flex items-center gap-2 cursor-pointer w-full font-medium"
+                      className="flex items-center gap-2 cursor-pointer w-full text-xs md:text-sm font-medium break-words"
                     >
-                      <CreditCard className="h-5 w-5 text-blue-600" /> Cartão de
-                      Crédito
+                      <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-blue-600 shrink-0" />{' '}
+                      Cartão de Crédito
                     </Label>
                   </div>
-                  <div className="flex items-center space-x-2 border p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center space-x-2 border p-3 md:p-4 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                     <RadioGroupItem value="debit" id="debit" />
                     <Label
                       htmlFor="debit"
-                      className="flex items-center gap-2 cursor-pointer w-full font-medium"
+                      className="flex items-center gap-2 cursor-pointer w-full text-xs md:text-sm font-medium break-words"
                     >
-                      <CreditCard className="h-5 w-5 text-green-600" /> Cartão
-                      de Débito
+                      <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-green-600 shrink-0" />{' '}
+                      Cartão de Débito
                     </Label>
                   </div>
                 </RadioGroup>
 
                 <div className="space-y-4 pt-4 border-t">
                   <div className="space-y-2">
-                    <Label htmlFor="cardName">Nome no Cartão</Label>
+                    <Label htmlFor="cardName" className="text-xs md:text-sm">
+                      Nome no Cartão
+                    </Label>
                     <Input
                       id="cardName"
                       placeholder="Ex: JOAO DA SILVA"
+                      className="h-9 md:h-10 text-sm"
                       required
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="cardNumber">Número do Cartão</Label>
+                    <Label htmlFor="cardNumber" className="text-xs md:text-sm">
+                      Número do Cartão
+                    </Label>
                     <Input
                       id="cardNumber"
                       placeholder="0000 0000 0000 0000"
                       maxLength={19}
+                      className="h-9 md:h-10 text-sm"
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3 md:gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="expiry">Validade (MM/AA)</Label>
+                      <Label htmlFor="expiry" className="text-xs md:text-sm">
+                        Validade (MM/AA)
+                      </Label>
                       <Input
                         id="expiry"
                         placeholder="MM/AA"
                         maxLength={5}
+                        className="h-9 md:h-10 text-sm"
                         required
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="cvv">CVV</Label>
+                      <Label htmlFor="cvv" className="text-xs md:text-sm">
+                        CVV
+                      </Label>
                       <Input
                         id="cvv"
                         placeholder="123"
                         maxLength={4}
+                        className="h-9 md:h-10 text-sm"
                         required
                       />
                     </div>
@@ -142,58 +162,65 @@ export default function ConstructionCheckout() {
             </Card>
           </form>
 
-          <div className="flex items-center gap-2 text-sm text-muted-foreground bg-blue-50 p-4 rounded-lg border border-blue-100">
-            <Lock className="h-4 w-4 text-blue-600 shrink-0" />
-            <p>
+          <div className="flex items-start md:items-center gap-3 text-xs md:text-sm text-muted-foreground bg-blue-50 p-3 md:p-4 rounded-lg border border-blue-100">
+            <Lock className="h-4 w-4 md:h-5 md:w-5 text-blue-600 shrink-0 mt-0.5 md:mt-0" />
+            <p className="leading-relaxed break-words">
               Pagamento processado com segurança via Stripe. Seus dados estão
               criptografados de ponta a ponta.
             </p>
           </div>
         </div>
 
-        <div>
-          <Card className="sticky top-6">
-            <CardHeader>
-              <CardTitle>Resumo da Compra</CardTitle>
+        <div className="lg:pl-2">
+          <Card className="sticky top-6 overflow-hidden">
+            <CardHeader className="p-4 md:p-6 pb-4">
+              <CardTitle className="text-lg md:text-xl break-words">
+                Resumo da Compra
+              </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="p-4 md:p-6 pt-0 space-y-4">
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground break-words">
                   Plano Selecionado
                 </p>
-                <p className="font-semibold text-lg">{plan.name}</p>
+                <p className="font-semibold text-sm md:text-base break-words">
+                  {plan.name}
+                </p>
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">
+                <p className="text-xs md:text-sm font-medium text-muted-foreground break-words">
                   Cobrança
                 </p>
-                <p className="font-medium">
+                <p className="font-medium text-sm md:text-base break-words">
                   {plan.billingCycle === 'monthly' ? 'Mensal' : 'Anual'}{' '}
                   Recorrente
                 </p>
               </div>
-              <div className="border-t pt-4 flex justify-between items-center">
-                <span className="font-bold">Total a Pagar</span>
-                <span className="text-2xl font-bold text-primary">
+              <div className="border-t pt-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                <span className="font-bold text-sm md:text-base">
+                  Total a Pagar
+                </span>
+                <span className="text-xl md:text-2xl font-bold text-primary break-all">
                   {formatCurrency(plan.price)}
                 </span>
               </div>
             </CardContent>
-            <CardFooter>
+            <CardFooter className="p-4 md:p-6 pt-0">
               <Button
                 form="checkout-form"
                 type="submit"
-                className="w-full h-12 text-lg"
+                className="w-full h-10 md:h-12 text-sm md:text-base"
                 disabled={isProcessing}
               >
                 {isProcessing ? (
                   <>
-                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />{' '}
+                    <Loader2 className="mr-2 h-4 w-4 md:h-5 md:w-5 animate-spin" />{' '}
                     Processando...
                   </>
                 ) : (
                   <>
-                    <ShieldCheck className="mr-2 h-5 w-5" /> Confirmar Pagamento
+                    <ShieldCheck className="mr-2 h-4 w-4 md:h-5 md:w-5" />{' '}
+                    Confirmar Pagamento
                   </>
                 )}
               </Button>
