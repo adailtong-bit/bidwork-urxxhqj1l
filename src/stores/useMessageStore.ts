@@ -25,6 +25,7 @@ export interface Conversation {
   messages: Message[]
   updatedAt: Date
   context?: ConversationContext
+  negotiationStatus?: 'analysis' | 'proposal' | 'contracted'
 }
 
 export interface Interest {
@@ -57,11 +58,95 @@ interface MessageState {
     userA: ConversationParticipant,
     userB: ConversationParticipant,
     context?: ConversationContext,
+    negotiationStatus?: 'analysis' | 'proposal' | 'contracted',
   ) => string
 }
 
 export const useMessageStore = create<MessageState>((set, get) => ({
-  conversations: [],
+  conversations: [
+    {
+      id: 'mock-conv-1',
+      participants: [
+        {
+          id: 'owner-1',
+          name: 'Admin Tech Corp',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=owner-1',
+        },
+        {
+          id: 'exec-1',
+          name: 'João Freelancer',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=exec-1',
+        },
+      ],
+      messages: [
+        {
+          id: 'm1',
+          senderId: 'exec-1',
+          content:
+            'Olá, vi sua vaga para Desenvolvedor Backend. Tenho interesse!',
+          timestamp: new Date(Date.now() - 3600000),
+        },
+      ],
+      updatedAt: new Date(Date.now() - 3600000),
+      negotiationStatus: 'analysis',
+    },
+    {
+      id: 'mock-conv-2',
+      participants: [
+        {
+          id: 'owner-1',
+          name: 'Admin Tech Corp',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=owner-1',
+        },
+        {
+          id: 'exec-pj-1',
+          name: 'Soluções Rápidas Ltda',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=exec-pj-1',
+        },
+      ],
+      messages: [
+        {
+          id: 'm2',
+          senderId: 'exec-pj-1',
+          content: 'Segue a proposta comercial para o projeto.',
+          timestamp: new Date(Date.now() - 86400000),
+        },
+      ],
+      updatedAt: new Date(Date.now() - 86400000),
+      negotiationStatus: 'proposal',
+    },
+    {
+      id: 'mock-conv-3',
+      participants: [
+        {
+          id: 'owner-1',
+          name: 'Admin Tech Corp',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=owner-1',
+        },
+        {
+          id: 'admin-1',
+          name: 'Administrador do Sistema',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=admin',
+        },
+      ],
+      messages: [
+        {
+          id: 'm3',
+          senderId: 'admin-1',
+          content: 'Bem-vindo à plataforma Bidwork!',
+          timestamp: new Date(Date.now() - 86400000 * 5),
+        },
+        {
+          id: 'm4',
+          senderId: 'owner-1',
+          content: 'Obrigado!',
+          timestamp: new Date(Date.now() - 86400000 * 4),
+        },
+      ],
+      updatedAt: new Date(Date.now() - 86400000 * 4),
+      negotiationStatus: 'contracted',
+    },
+  ],
   interests: [
     {
       id: 'mock-int-1',
@@ -112,6 +197,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
         messages: [],
         updatedAt: new Date(),
         context: interest.context,
+        negotiationStatus: 'analysis',
       }
 
       return {
@@ -147,7 +233,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           : c,
       ),
     })),
-  getOrCreateConversation: (userA, userB, context) => {
+  getOrCreateConversation: (userA, userB, context, negotiationStatus) => {
     const state = get()
     const existing = state.conversations.find(
       (c) =>
@@ -166,6 +252,7 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           messages: [],
           updatedAt: new Date(),
           context,
+          negotiationStatus: negotiationStatus || 'analysis',
         },
         ...s.conversations,
       ],
