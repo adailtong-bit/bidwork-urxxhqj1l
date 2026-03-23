@@ -49,6 +49,9 @@ import { ProjectExecution } from '@/components/construction/ProjectExecution'
 import { ProjectFinance } from '@/components/construction/ProjectFinance'
 import { ProjectQuotes } from '@/components/construction/ProjectQuotes'
 import { ProjectChat } from '@/components/construction/ProjectChat'
+import { ProjectCompliance } from '@/components/construction/ProjectCompliance'
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import { ShieldAlert } from 'lucide-react'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -81,8 +84,30 @@ export default function ProjectDetail() {
     setIsImportOpen(false)
   }
 
+  // Check for critical expired documents
+  const today = new Date()
+  const criticalExpiredDocs = (project.complianceDocuments || []).filter(
+    (doc) => doc.isCritical && new Date(doc.expirationDate) < today,
+  )
+
   return (
     <div className="space-y-8 max-w-6xl mx-auto pb-10 px-4">
+      {/* Visual Safeguard Warning */}
+      {criticalExpiredDocs.length > 0 && (
+        <Alert
+          variant="destructive"
+          className="mt-4 bg-red-50 text-red-900 border-red-200"
+        >
+          <ShieldAlert className="h-4 w-4" />
+          <AlertTitle>Alerta de Risco Operacional!</AlertTitle>
+          <AlertDescription>
+            Existem <strong>{criticalExpiredDocs.length}</strong> documento(s)
+            crítico(s) vencido(s). Risco iminente de paralisação da obra. Acesse
+            a aba de Compliance para regularizar.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Centered Header */}
       <div className="flex flex-col items-center text-center gap-4 py-4 relative">
         <div className="flex items-center gap-2">
@@ -151,9 +176,9 @@ export default function ProjectDetail() {
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-5xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
+          <TabsList className="w-full max-w-6xl flex-nowrap justify-start md:justify-center min-w-[900px] mb-8 h-auto p-1">
             <TabsTrigger value="financial" className="flex-1">
-              Financeiro Integrado
+              Financeiro
             </TabsTrigger>
             <TabsTrigger value="stages" className="flex-1">
               {t('proj.detail.schedule')}
@@ -167,11 +192,14 @@ export default function ProjectDetail() {
             <TabsTrigger value="execution" className="flex-1">
               {t('proj.detail.financial_execution') || 'Execução'}
             </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex-1">
+              Compliance
+            </TabsTrigger>
             <TabsTrigger value="partners" className="flex-1">
               {t('proj.detail.partners')}
             </TabsTrigger>
             <TabsTrigger value="quotes" className="flex-1">
-              Orçamentos & Faturas
+              Faturas
             </TabsTrigger>
             <TabsTrigger value="approvals" className="flex-1">
               {t('proj.approvals.title')}
@@ -185,6 +213,11 @@ export default function ProjectDetail() {
         {/* Financial Tab (Integrated View) */}
         <TabsContent value="financial" className="w-full animate-fade-in">
           <ProjectFinance projectId={project.id} />
+        </TabsContent>
+
+        {/* Compliance Tab */}
+        <TabsContent value="compliance" className="w-full animate-fade-in">
+          <ProjectCompliance projectId={project.id} />
         </TabsContent>
 
         <TabsContent

@@ -249,6 +249,17 @@ export interface ProjectMessage {
   type: 'internal' | 'external'
 }
 
+export interface ComplianceDocument {
+  id: string
+  name: string
+  type: 'insurance' | 'license' | 'permission' | 'other'
+  provider?: string
+  partnerId?: string // 'general' or specific partner ID
+  expirationDate: Date
+  url?: string
+  isCritical: boolean
+}
+
 export interface Project {
   id: string
   ownerId: string
@@ -279,6 +290,8 @@ export interface Project {
   invoices: ProjectInvoice[]
   messages: ProjectMessage[]
   measurements?: Measurement[]
+  complianceDocuments?: ComplianceDocument[]
+  alertLeadTimeDays?: number
 }
 
 interface ProjectState {
@@ -301,6 +314,8 @@ interface ProjectState {
       | 'invoices'
       | 'messages'
       | 'measurements'
+      | 'complianceDocuments'
+      | 'alertLeadTimeDays'
     >,
   ) => void
   updateProject: (id: string, data: Partial<Project>) => void
@@ -474,6 +489,17 @@ interface ProjectState {
     data: Omit<Measurement, 'id' | 'status' | 'date'>,
   ) => void
   approveMeasurement: (projectId: string, measurementId: string) => void
+  addComplianceDocument: (
+    projectId: string,
+    doc: Omit<ComplianceDocument, 'id'>,
+  ) => void
+  updateComplianceDocument: (
+    projectId: string,
+    docId: string,
+    data: Partial<ComplianceDocument>,
+  ) => void
+  deleteComplianceDocument: (projectId: string, docId: string) => void
+  updateAlertLeadTime: (projectId: string, days: number) => void
 }
 
 export const DEFAULT_STAGES_TEMPLATE = [
@@ -568,6 +594,34 @@ const mockProjects: Project[] = [
     totalSpent: 350000,
     sqFt: 2500,
     measurements: [],
+    alertLeadTimeDays: 30,
+    complianceDocuments: [
+      {
+        id: 'cd-1',
+        name: 'Seguro de Responsabilidade Civil',
+        type: 'insurance',
+        provider: 'Porto Seguro',
+        partnerId: 'partner-1',
+        expirationDate: new Date(Date.now() + 86400000 * 15), // Expiring soon (15 days)
+        isCritical: true,
+      },
+      {
+        id: 'cd-2',
+        name: 'Alvará de Construção',
+        type: 'license',
+        partnerId: 'general',
+        expirationDate: new Date(Date.now() - 86400000 * 2), // Expired 2 days ago
+        isCritical: true,
+      },
+      {
+        id: 'cd-3',
+        name: 'Licença Ambiental',
+        type: 'permission',
+        partnerId: 'general',
+        expirationDate: new Date(Date.now() + 86400000 * 180), // Valid
+        isCritical: false,
+      },
+    ],
     partners: [
       {
         id: 'partner-1',
@@ -815,6 +869,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           invoices: [],
           messages: [],
           measurements: [],
+          complianceDocuments: [],
+          alertLeadTimeDays: 30,
         },
       ],
     })),
@@ -1701,5 +1757,51 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         }
         return p
       }),
+    })),
+  addComplianceDocument: (projectId, doc) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              complianceDocuments: [
+                ...(p.complianceDocuments || []),
+                { ...doc, id: Math.random().toString(36).substr(2, 9) },
+              ],
+            }
+          : p,
+      ),
+    })),
+  updateComplianceDocument: (projectId, docId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              complianceDocuments: (p.complianceDocuments || []).map((d) =>
+                d.id === docId ? { ...d, ...data } : d,
+              ),
+            }
+          : p,
+      ),
+    })),
+  deleteComplianceDocument: (projectId, docId) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              complianceDocuments: (p.complianceDocuments || []).filter(
+                (d) => d.id !== docId,
+              ),
+            }
+          : p,
+      ),
+    })),
+  updateAlertLeadTime: (projectId, days) =>
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId ? { ...p, alertLeadTimeDays: days } : p,
+      ),
     })),
 }))

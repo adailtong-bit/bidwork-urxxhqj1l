@@ -25,8 +25,9 @@ import {
 } from '@/components/ui/chart'
 import { useProjectStore } from '@/stores/useProjectStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
-import { Download, FileText } from 'lucide-react'
+import { Download, FileText, AlertTriangle, ShieldAlert } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { Badge } from '@/components/ui/badge'
 
 interface ProjectReportsProps {
   projectId: string
@@ -34,7 +35,7 @@ interface ProjectReportsProps {
 
 export function ProjectReports({ projectId }: ProjectReportsProps) {
   const { getProject } = useProjectStore()
-  const { t, formatCurrency } = useLanguageStore()
+  const { t, formatCurrency, formatDate } = useLanguageStore()
   const { toast } = useToast()
   const project = getProject(projectId)
 
@@ -82,6 +83,24 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
     })
   }
 
+  // Compliance Expirations logic
+  const leadTimeDays = project.alertLeadTimeDays || 30
+  const today = new Date()
+
+  const complianceAlerts = (project.complianceDocuments || [])
+    .filter((doc) => {
+      const exp = new Date(doc.expirationDate)
+      const diffDays = Math.ceil(
+        (exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      )
+      return diffDays <= leadTimeDays
+    })
+    .sort(
+      (a, b) =>
+        new Date(a.expirationDate).getTime() -
+        new Date(b.expirationDate).getTime(),
+    )
+
   return (
     <div className="space-y-6 w-full">
       <div className="flex justify-between items-center">
@@ -100,6 +119,68 @@ export function ProjectReports({ projectId }: ProjectReportsProps) {
           </Button>
         </div>
       </div>
+
+      {complianceAlerts.length > 0 && (
+        <Card className="border-orange-200">
+          <CardHeader className="bg-orange-50/50 pb-4">
+            <CardTitle className="flex items-center gap-2 text-orange-800 text-lg">
+              <ShieldAlert className="h-5 w-5" /> Resumo de Compliance (Atenção
+              Necessária)
+            </CardTitle>
+            <CardDescription>
+              Existem {complianceAlerts.length} documento(s) vencido(s) ou
+              próximos do vencimento.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="grid gap-3">
+              {complianceAlerts.map((doc) => {
+                const exp = new Date(doc.expirationDate)
+                const isExpired = exp.getTime() < today.getTime()
+                return (
+                  <div
+                    key={doc.id}
+                    className="flex justify-between items-center bg-card border p-3 rounded-lg"
+                  >
+                    <div className="flex items-center gap-3">
+                      {isExpired ? (
+                        <AlertTriangle className="h-5 w-5 text-red-500" />
+                      ) : (
+                        <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                      )}
+                      <div>
+                        <p className="font-medium text-sm">{doc.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {doc.partnerId === 'general'
+                            ? 'Projeto (Geral)'
+                            : project.partners.find(
+                                (p) => p.id === doc.partnerId,
+                              )?.companyName}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge
+                        variant={isExpired ? 'destructive' : 'secondary'}
+                        className={
+                          !isExpired
+                            ? 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                            : ''
+                        }
+                      >
+                        {isExpired ? 'Vencido' : 'Vence em Breve'}
+                      </Badge>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatDate(doc.expirationDate, 'dd/MM/yyyy')}
+                      </p>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
