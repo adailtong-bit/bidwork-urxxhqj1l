@@ -1,15 +1,13 @@
 import { useState } from 'react'
-import { useCategoryStore, Category } from '@/stores/useCategoryStore'
+import {
+  useCategoryStore,
+  Category,
+  SubCategory,
+} from '@/stores/useCategoryStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table'
+import { Label } from '@/components/ui/label'
+import { Table, TableBody, TableCell, TableRow } from '@/components/ui/table'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import {
   Trash2,
@@ -37,6 +35,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 
 function CategoryRow({ category }: { category: Category }) {
   const {
@@ -51,29 +58,52 @@ function CategoryRow({ category }: { category: Category }) {
   const [isOpen, setIsOpen] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(category.name)
+
+  const [isAddSubOpen, setIsAddSubOpen] = useState(false)
   const [newSubName, setNewSubName] = useState('')
-  const [editingSubId, setEditingSubId] = useState<string | null>(null)
+
+  const [editingSub, setEditingSub] = useState<SubCategory | null>(null)
   const [editSubName, setEditSubName] = useState('')
+
   const [subToDelete, setSubToDelete] = useState<string | null>(null)
 
   const handleUpdateCat = () => {
-    if (!editName.trim()) return
+    if (!editName.trim()) {
+      toast({
+        title: 'O nome da categoria não pode ser vazio',
+        variant: 'destructive',
+      })
+      return
+    }
     updateCategory(category.id, editName.trim())
     setIsEditing(false)
     toast({ title: 'Categoria atualizada' })
   }
 
   const handleAddSub = () => {
-    if (!newSubName.trim()) return
+    if (!newSubName.trim()) {
+      toast({
+        title: 'O nome da subcategoria não pode ser vazio',
+        variant: 'destructive',
+      })
+      return
+    }
     addSubCategory(category.id, newSubName.trim())
     setNewSubName('')
+    setIsAddSubOpen(false)
     toast({ title: 'Subcategoria adicionada' })
   }
 
   const handleUpdateSub = () => {
-    if (!editingSubId || !editSubName.trim()) return
-    updateSubCategory(category.id, editingSubId, editSubName.trim())
-    setEditingSubId(null)
+    if (!editingSub || !editSubName.trim()) {
+      toast({
+        title: 'O nome da subcategoria não pode ser vazio',
+        variant: 'destructive',
+      })
+      return
+    }
+    updateSubCategory(category.id, editingSub.id, editSubName.trim())
+    setEditingSub(null)
     toast({ title: 'Subcategoria atualizada' })
   }
 
@@ -180,7 +210,45 @@ function CategoryRow({ category }: { category: Category }) {
       </div>
       <CollapsibleContent>
         <div className="p-4 border-t bg-background space-y-4">
-          <h4 className="text-sm font-semibold">Subcategorias</h4>
+          <div className="flex items-center justify-between">
+            <h4 className="text-sm font-semibold">Subcategorias</h4>
+            <Dialog open={isAddSubOpen} onOpenChange={setIsAddSubOpen}>
+              <DialogTrigger asChild>
+                <Button variant="secondary" size="sm">
+                  <Plus className="mr-2 h-4 w-4" /> Adicionar Subcategoria
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Nova Subcategoria</DialogTitle>
+                  <DialogDescription>
+                    Adicione uma nova subcategoria para {category.name}.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label htmlFor="sub-name">Nome da Subcategoria</Label>
+                    <Input
+                      id="sub-name"
+                      value={newSubName}
+                      onChange={(e) => setNewSubName(e.target.value)}
+                      placeholder="Ex: Pintura"
+                      onKeyDown={(e) => e.key === 'Enter' && handleAddSub()}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => setIsAddSubOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleAddSub}>Salvar</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+          </div>
           {category.subCategories.length === 0 ? (
             <p className="text-sm text-muted-foreground italic">
               Nenhuma subcategoria cadastrada.
@@ -191,105 +259,99 @@ function CategoryRow({ category }: { category: Category }) {
                 {category.subCategories.map((sub) => (
                   <TableRow key={sub.id}>
                     <TableCell className="w-full">
-                      {editingSubId === sub.id ? (
-                        <Input
-                          value={editSubName}
-                          onChange={(e) => setEditSubName(e.target.value)}
-                          className="h-8 max-w-sm"
-                          autoFocus
-                        />
-                      ) : (
+                      <div className="flex flex-col">
                         <span className="font-medium text-sm">{sub.name}</span>
-                      )}
+                        <span className="text-xs text-muted-foreground">
+                          {sub.slug}
+                        </span>
+                      </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      {editingSubId === sub.id ? (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8 text-green-600"
-                            onClick={handleUpdateSub}
-                          >
-                            <Save className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => setEditingSubId(null)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="flex justify-end gap-1">
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            className="h-8 w-8"
-                            onClick={() => {
-                              setEditingSubId(sub.id)
-                              setEditSubName(sub.name)
-                            }}
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                size="icon"
-                                variant="ghost"
-                                className="h-8 w-8 text-destructive"
-                                onClick={() => setSubToDelete(sub.id)}
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8"
+                          onClick={() => {
+                            setEditingSub(sub)
+                            setEditSubName(sub.name)
+                          }}
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-destructive"
+                              onClick={() => setSubToDelete(sub.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                Excluir subcategoria?
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Tem certeza que deseja excluir "{sub.name}"?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel
+                                onClick={() => setSubToDelete(null)}
                               >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>
-                                  Excluir subcategoria?
-                                </AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Tem certeza que deseja excluir "{sub.name}"?
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel
-                                  onClick={() => setSubToDelete(null)}
-                                >
-                                  Cancelar
-                                </AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={confirmDeleteSub}
-                                  className="bg-destructive text-destructive-foreground"
-                                >
-                                  Excluir
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      )}
+                                Cancelar
+                              </AlertDialogCancel>
+                              <AlertDialogAction
+                                onClick={confirmDeleteSub}
+                                className="bg-destructive text-destructive-foreground"
+                              >
+                                Excluir
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
           )}
-          <div className="flex gap-2 pt-2">
-            <Input
-              placeholder="Nova subcategoria..."
-              value={newSubName}
-              onChange={(e) => setNewSubName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddSub()}
-              className="max-w-sm h-9"
-            />
-            <Button onClick={handleAddSub} variant="secondary" className="h-9">
-              <Plus className="mr-2 h-4 w-4" /> Adicionar
-            </Button>
-          </div>
+
+          <Dialog
+            open={!!editingSub}
+            onOpenChange={(open) => !open && setEditingSub(null)}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Editar Subcategoria</DialogTitle>
+                <DialogDescription>
+                  Altere o nome da subcategoria.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="grid gap-4 py-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="edit-sub-name">Nome da Subcategoria</Label>
+                  <Input
+                    id="edit-sub-name"
+                    value={editSubName}
+                    onChange={(e) => setEditSubName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleUpdateSub()}
+                  />
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setEditingSub(null)}>
+                  Cancelar
+                </Button>
+                <Button onClick={handleUpdateSub}>Salvar</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
         </div>
       </CollapsibleContent>
     </Collapsible>
@@ -302,7 +364,13 @@ export default function ManageCategories() {
   const [newCategory, setNewCategory] = useState('')
 
   const handleAdd = () => {
-    if (!newCategory.trim()) return
+    if (!newCategory.trim()) {
+      toast({
+        title: 'O nome da categoria não pode ser vazio',
+        variant: 'destructive',
+      })
+      return
+    }
     addCategory(newCategory.trim())
     setNewCategory('')
     toast({ title: 'Categoria adicionada com sucesso' })
