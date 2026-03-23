@@ -1,9 +1,8 @@
-import { Search, Bell } from 'lucide-react'
-import { Input } from '@/components/ui/input'
+import { Bell } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { LanguageSelector } from '@/components/LanguageSelector'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { SidebarTrigger } from '@/components/ui/sidebar'
 import {
@@ -15,28 +14,15 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useNotificationStore } from '@/stores/useNotificationStore'
+import { HeaderSearch } from '@/components/HeaderSearch'
 
 export function SearchHeader() {
   const { t } = useLanguageStore()
   const { user, isAuthenticated } = useAuthStore()
   const { notifications, getUnreadCount, markAsRead } = useNotificationStore()
-  const location = useLocation()
-  const navigate = useNavigate()
 
   const unreadCount = user ? getUnreadCount(user.id) : 0
   const userNotifications = notifications.filter((n) => n.userId === user?.id)
-
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const query = formData.get('search')
-    if (query && typeof query === 'string') {
-      navigate(`/find-jobs?q=${encodeURIComponent(query)}`)
-    }
-  }
-
-  const searchParams = new URLSearchParams(location.search)
-  const currentQuery = searchParams.get('q') || ''
 
   return (
     <header className="sticky top-0 z-40 w-full bg-background/80 backdrop-blur-md border-b">
@@ -54,22 +40,7 @@ export function SearchHeader() {
 
         {/* Search Bar - Global */}
         <div className="flex-1 max-w-md ml-auto">
-          <form className="relative" onSubmit={handleSearch}>
-            <button
-              type="submit"
-              className="absolute left-2.5 top-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-              aria-label="Search"
-            >
-              <Search className="h-4 w-4" />
-            </button>
-            <Input
-              name="search"
-              type="search"
-              defaultValue={currentQuery}
-              placeholder={t('search.placeholder')}
-              className="w-full bg-muted pl-9 rounded-full h-9"
-            />
-          </form>
+          <HeaderSearch inputClassName="bg-muted rounded-full h-9" />
         </div>
 
         {/* Right Actions */}

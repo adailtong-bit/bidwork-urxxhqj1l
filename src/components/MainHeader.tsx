@@ -1,8 +1,7 @@
-import { Bell, Search, CheckCircle2 } from 'lucide-react'
+import { Bell, CheckCircle2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { SidebarTrigger } from '@/components/ui/sidebar'
-import { useLocation, Link, useNavigate } from 'react-router-dom'
+import { useLocation, Link } from 'react-router-dom'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,10 +14,10 @@ import { useAuthStore } from '@/stores/useAuthStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { LanguageSelector } from '@/components/LanguageSelector'
+import { HeaderSearch } from '@/components/HeaderSearch'
 
 export function MainHeader() {
   const location = useLocation()
-  const navigate = useNavigate()
   const { user } = useAuthStore()
   const { notifications, getUnreadCount, markAsRead } = useNotificationStore()
   const { t } = useLanguageStore()
@@ -38,18 +37,6 @@ export function MainHeader() {
     return t('app.title')
   }
 
-  const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    const formData = new FormData(e.currentTarget)
-    const query = formData.get('search')
-    if (query && typeof query === 'string') {
-      navigate(`/find-jobs?q=${encodeURIComponent(query)}`)
-    }
-  }
-
-  const searchParams = new URLSearchParams(location.search)
-  const currentQuery = searchParams.get('q') || ''
-
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-md transition-all">
       <div className="flex items-center gap-2 md:hidden">
@@ -68,22 +55,9 @@ export function MainHeader() {
       </div>
 
       <div className="flex items-center gap-4">
-        <form className="relative hidden md:block w-64" onSubmit={handleSearch}>
-          <button
-            type="submit"
-            className="absolute left-2.5 top-2.5 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            aria-label="Search"
-          >
-            <Search className="h-4 w-4" />
-          </button>
-          <Input
-            name="search"
-            type="search"
-            defaultValue={currentQuery}
-            placeholder={t('search.placeholder')}
-            className="w-full bg-background pl-8 md:w-[200px] lg:w-[300px]"
-          />
-        </form>
+        <div className="hidden md:block w-64 lg:w-[300px]">
+          <HeaderSearch inputClassName="bg-background h-10" />
+        </div>
 
         <LanguageSelector />
 

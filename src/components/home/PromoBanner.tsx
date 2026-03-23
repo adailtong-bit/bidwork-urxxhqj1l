@@ -5,7 +5,9 @@ import { SafeImage } from '@/components/SafeImage'
 
 export function PromoBanner() {
   const { t, formatCurrency } = useLanguageStore()
-  const imgSrc = 'https://img.usecurling.com/p/300/300?q=dog'
+  // Replaced the placeholder image with a high-quality application dashboard representation
+  const imgSrc =
+    'https://img.usecurling.com/p/600/400?q=dashboard%20app&color=blue'
 
   const serviceName = t('home.service.dog_training')
   const promoPrice = 150
@@ -21,7 +23,7 @@ export function PromoBanner() {
             })}
           </h2>
           <Button
-            className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-full font-semibold px-6"
+            className="bg-primary hover:bg-primary/90 text-white rounded-full font-semibold px-6"
             asChild
           >
             <Link to="/services">{t('home.promo.btn')}</Link>
@@ -30,13 +32,12 @@ export function PromoBanner() {
         <div className="w-full md:w-1/3 flex justify-center">
           <SafeImage
             src={imgSrc}
-            alt="Service Pro Illustration"
-            fallbackSrc="https://img.usecurling.com/p/300/300?q=service"
-            className="h-32 object-contain"
+            alt="Application Dashboard"
+            className="h-36 md:h-40 object-cover rounded-md shadow-md border"
           />
         </div>
       </div>
-      <div className="absolute right-0 top-0 w-32 h-32 bg-emerald-50 rounded-bl-full -z-0 opacity-50" />
+      <div className="absolute right-0 top-0 w-48 h-48 bg-primary/10 rounded-bl-full -z-0 opacity-50" />
     </div>
   )
 }
