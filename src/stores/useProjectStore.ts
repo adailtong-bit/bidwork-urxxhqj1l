@@ -6,7 +6,7 @@ export interface Measurement {
   subStageId: string
   requestedPercentage: number
   amount: number
-  status: 'pending' | 'approved' | 'rejected'
+  status: 'pending' | 'approved' | 'rejected' | 'in_review'
   date: Date
   partnerId?: string
 }
@@ -290,7 +290,7 @@ export interface ProjectLedgerEntry {
   estimatedCost: number
   finalCost: number
   paymentStatus: 'pending' | 'paid' | 'partially_paid' | 'overdue'
-  executionStatus: 'pending' | 'approved' | 'rejected'
+  executionStatus: 'pending' | 'approved' | 'rejected' | 'in_review'
 }
 
 export interface Project {
@@ -524,6 +524,11 @@ interface ProjectState {
     data: Omit<Measurement, 'id' | 'status' | 'date'>,
   ) => void
   approveMeasurement: (projectId: string, measurementId: string) => void
+  updateMeasurementStatus: (
+    projectId: string,
+    measurementId: string,
+    status: Measurement['status'],
+  ) => void
   addComplianceDocument: (
     projectId: string,
     doc: Omit<ComplianceDocument, 'id' | 'history'>,
@@ -646,7 +651,18 @@ const mockProjects: Project[] = [
     totalBudget: 1500000,
     totalSpent: 350000,
     sqFt: 2500,
-    measurements: [],
+    measurements: [
+      {
+        id: 'meas-1',
+        stageId: 'st-2',
+        subStageId: 'sub-3',
+        requestedPercentage: 50,
+        amount: 7500,
+        status: 'pending',
+        date: new Date(),
+        partnerId: 'partner-1',
+      },
+    ],
     alertLeadTimeDays: 30,
     ledgerEntries: [
       {
@@ -1860,6 +1876,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             totalSpent,
             invoices: [...(p.invoices || []), invoice],
           }
+        }
+        return p
+      }),
+    })),
+  updateMeasurementStatus: (projectId, measurementId, status) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          const newMeasurements = p.measurements?.map((m) =>
+            m.id === measurementId ? { ...m, status } : m,
+          )
+          return { ...p, measurements: newMeasurements }
         }
         return p
       }),

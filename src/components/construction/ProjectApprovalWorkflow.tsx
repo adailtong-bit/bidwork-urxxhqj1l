@@ -50,7 +50,9 @@ export function ProjectApprovalWorkflow({
     getProject,
     updateApprovalStatus,
     approveMeasurement,
+    updateMeasurementStatus,
     approveLedgerEntry,
+    updateLedgerEntry,
   } = useProjectStore()
   const { t, formatDate, formatCurrency } = useLanguageStore()
   const { toast } = useToast()
@@ -66,27 +68,57 @@ export function ProjectApprovalWorkflow({
     })
   }
 
-  const handleApproveMeasurement = (id: string) => {
-    approveMeasurement(projectId, id)
-    toast({
-      title: 'Medição Aprovada',
-      description: 'Fatura gerada e progresso atualizado.',
-    })
+  const handleMeasurementAction = (
+    id: string,
+    action: 'approve' | 'reject' | 'in_review',
+  ) => {
+    if (action === 'approve') {
+      approveMeasurement(projectId, id)
+      toast({
+        title: 'Medição Aprovada',
+        description: 'Fatura gerada e progresso atualizado.',
+      })
+    } else {
+      updateMeasurementStatus(
+        projectId,
+        id,
+        action === 'reject' ? 'rejected' : 'in_review',
+      )
+      toast({
+        title: 'Status Atualizado',
+        description: `Medição movida para ${action === 'reject' ? 'Rejeitado' : 'Em Revisão'}.`,
+      })
+    }
   }
 
-  const handleApproveLedger = (id: string) => {
-    approveLedgerEntry(projectId, id)
-    toast({
-      title: 'Serviço Aprovado',
-      description: 'Execução do serviço confirmada com sucesso.',
-    })
+  const handleLedgerAction = (
+    id: string,
+    action: 'approve' | 'reject' | 'in_review',
+  ) => {
+    if (action === 'approve') {
+      approveLedgerEntry(projectId, id)
+      toast({
+        title: 'Serviço Aprovado',
+        description: 'Execução do serviço confirmada com sucesso.',
+      })
+    } else {
+      updateLedgerEntry(projectId, id, {
+        executionStatus: action === 'reject' ? 'rejected' : 'in_review',
+      })
+      toast({
+        title: 'Status Atualizado',
+        description: `Serviço movido para ${action === 'reject' ? 'Rejeitado' : 'Em Revisão'}.`,
+      })
+    }
   }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'approved':
         return (
-          <Badge className="bg-green-500">{t('proj.approvals.approved')}</Badge>
+          <Badge className="bg-green-500 hover:bg-green-600">
+            {t('proj.approvals.approved')}
+          </Badge>
         )
       case 'rejected':
         return (
@@ -94,7 +126,7 @@ export function ProjectApprovalWorkflow({
         )
       case 'in_review':
         return (
-          <Badge className="bg-yellow-500">
+          <Badge className="bg-yellow-500 hover:bg-yellow-600 text-white">
             {t('proj.approvals.in_review')}
           </Badge>
         )
@@ -116,15 +148,20 @@ export function ProjectApprovalWorkflow({
   }
 
   const pendingMeasurements =
-    project.measurements?.filter((m) => m.status === 'pending') || []
+    project.measurements?.filter(
+      (m) => m.status === 'pending' || m.status === 'in_review',
+    ) || []
 
   const pendingLedgers =
-    project.ledgerEntries?.filter((l) => l.executionStatus === 'pending') || []
+    project.ledgerEntries?.filter(
+      (l) =>
+        l.executionStatus === 'pending' || l.executionStatus === 'in_review',
+    ) || []
 
   return (
     <div className="space-y-6">
       {pendingLedgers.length > 0 && (
-        <Card className="w-full border-purple-200">
+        <Card className="w-full border-purple-200 shadow-sm">
           <CardHeader className="bg-purple-50/50 pb-4">
             <CardTitle className="flex items-center gap-2 text-purple-800">
               <CheckCircle2 className="h-5 w-5" /> Aprovação de Serviços e
@@ -136,14 +173,15 @@ export function ProjectApprovalWorkflow({
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[800px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Serviço / Origem</TableHead>
                     <TableHead>Fornecedor</TableHead>
                     <TableHead className="text-right">Custo Final</TableHead>
                     <TableHead className="text-center">Compliance</TableHead>
+                    <TableHead className="text-center">Status</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -173,39 +211,69 @@ export function ProjectApprovalWorkflow({
                               Bloqueado ({expiredDocs.length})
                             </Badge>
                           ) : (
-                            <Badge className="bg-green-500">Regular</Badge>
+                            <Badge className="bg-green-500 hover:bg-green-600">
+                              Regular
+                            </Badge>
                           )}
                         </TableCell>
+                        <TableCell className="text-center">
+                          {getStatusBadge(l.executionStatus)}
+                        </TableCell>
                         <TableCell className="text-right">
-                          {isBlocked ? (
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="inline-block cursor-not-allowed">
-                                    <Button
-                                      size="sm"
-                                      disabled
-                                      className="pointer-events-none"
-                                    >
-                                      <XCircle className="mr-1 h-4 w-4" />{' '}
-                                      Bloqueado
-                                    </Button>
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-red-50 text-red-900 border-red-200">
-                                  Docs Vencidos:{' '}
-                                  {expiredDocs.map((d) => d.name).join(', ')}
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ) : (
+                          <div className="flex justify-end items-center gap-2">
+                            {isBlocked ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-block cursor-not-allowed">
+                                      <Button
+                                        size="sm"
+                                        disabled
+                                        className="pointer-events-none opacity-50"
+                                      >
+                                        <CheckCircle2 className="mr-1 h-4 w-4" />{' '}
+                                        Aprovar
+                                      </Button>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-red-50 text-red-900 border-red-200">
+                                    Docs Vencidos:{' '}
+                                    {expiredDocs.map((d) => d.name).join(', ')}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleLedgerAction(l.id, 'approve')
+                                }
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <CheckCircle2 className="mr-1 h-4 w-4" />{' '}
+                                Aprovar
+                              </Button>
+                            )}
                             <Button
                               size="sm"
-                              onClick={() => handleApproveLedger(l.id)}
+                              variant="outline"
+                              onClick={() =>
+                                handleLedgerAction(l.id, 'in_review')
+                              }
+                              title="Em Revisão"
                             >
-                              <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
+                              <Clock className="h-4 w-4 text-yellow-600" />
                             </Button>
-                          )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleLedgerAction(l.id, 'reject')}
+                              title="Rejeitar"
+                              className="hover:bg-red-50 hover:text-red-600 border-red-200 text-red-500"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -218,7 +286,7 @@ export function ProjectApprovalWorkflow({
       )}
 
       {pendingMeasurements.length > 0 && (
-        <Card className="w-full border-blue-200">
+        <Card className="w-full border-blue-200 shadow-sm">
           <CardHeader className="bg-blue-50/50 pb-4">
             <CardTitle className="flex items-center gap-2 text-blue-800">
               <Ruler className="h-5 w-5" /> Aprovação de Medições (Parceiros)
@@ -228,8 +296,8 @@ export function ProjectApprovalWorkflow({
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-4">
-            <div className="rounded-md border">
-              <Table>
+            <div className="rounded-md border overflow-x-auto">
+              <Table className="min-w-[900px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>Data Solicitação</TableHead>
@@ -241,6 +309,7 @@ export function ProjectApprovalWorkflow({
                     <TableHead className="text-right">
                       Valor a Liberar
                     </TableHead>
+                    <TableHead className="text-center">Compliance</TableHead>
                     <TableHead className="text-center">Status</TableHead>
                     <TableHead className="text-right">Ação</TableHead>
                   </TableRow>
@@ -257,6 +326,10 @@ export function ProjectApprovalWorkflow({
                         .find((s) => s.id === m.stageId)
                         ?.subStages.find((sub) => sub.id === m.subStageId)
                         ?.name || ''
+                    const expiredDocs = getPartnerCompliance(
+                      m.partnerId || 'general',
+                    )
+                    const isBlocked = expiredDocs.length > 0
 
                     return (
                       <TableRow key={m.id}>
@@ -277,15 +350,75 @@ export function ProjectApprovalWorkflow({
                           {formatCurrency(m.amount)}
                         </TableCell>
                         <TableCell className="text-center">
-                          <Badge variant="secondary">Pendente</Badge>
+                          {isBlocked ? (
+                            <Badge variant="destructive">
+                              Bloqueado ({expiredDocs.length})
+                            </Badge>
+                          ) : (
+                            <Badge className="bg-green-500 hover:bg-green-600">
+                              Regular
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {getStatusBadge(m.status)}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button
-                            size="sm"
-                            onClick={() => handleApproveMeasurement(m.id)}
-                          >
-                            <CheckCircle2 className="mr-1 h-4 w-4" /> Aprovar
-                          </Button>
+                          <div className="flex justify-end items-center gap-2">
+                            {isBlocked ? (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="inline-block cursor-not-allowed">
+                                      <Button
+                                        size="sm"
+                                        disabled
+                                        className="pointer-events-none opacity-50"
+                                      >
+                                        <CheckCircle2 className="mr-1 h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-red-50 text-red-900 border-red-200">
+                                    Docs Vencidos:{' '}
+                                    {expiredDocs.map((d) => d.name).join(', ')}
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            ) : (
+                              <Button
+                                size="sm"
+                                onClick={() =>
+                                  handleMeasurementAction(m.id, 'approve')
+                                }
+                                className="bg-green-600 hover:bg-green-700"
+                                title="Aprovar Medição"
+                              >
+                                <CheckCircle2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleMeasurementAction(m.id, 'in_review')
+                              }
+                              title="Em Revisão"
+                            >
+                              <Clock className="h-4 w-4 text-yellow-600" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                handleMeasurementAction(m.id, 'reject')
+                              }
+                              title="Rejeitar"
+                              className="hover:bg-red-50 hover:text-red-600 border-red-200 text-red-500"
+                            >
+                              <XCircle className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     )
@@ -303,14 +436,16 @@ export function ProjectApprovalWorkflow({
           <CardDescription>{t('proj.approvals.desc')}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border">
-            <Table>
+          <div className="rounded-md border overflow-x-auto">
+            <Table className="min-w-[800px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>{t('proj.approvals.type')}</TableHead>
                   <TableHead>{t('proj.approvals.description')}</TableHead>
                   <TableHead>{t('proj.approvals.date')}</TableHead>
-                  <TableHead>{t('proj.approvals.status')}</TableHead>
+                  <TableHead className="text-center">
+                    {t('proj.approvals.status')}
+                  </TableHead>
                   <TableHead>{t('proj.approvals.history')}</TableHead>
                   <TableHead className="w-[50px]"></TableHead>
                 </TableRow>
@@ -331,7 +466,9 @@ export function ProjectApprovalWorkflow({
                       <TableCell>
                         {formatDate(log.date, 'dd/MM/yyyy')}
                       </TableCell>
-                      <TableCell>{getStatusBadge(log.status)}</TableCell>
+                      <TableCell className="text-center">
+                        {getStatusBadge(log.status)}
+                      </TableCell>
                       <TableCell>
                         <span className="text-xs text-muted-foreground">
                           {log.history.length} {t('proj.approvals.changes')}

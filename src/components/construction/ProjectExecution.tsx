@@ -48,7 +48,6 @@ import {
   TrendingUp,
   Plus,
   CalendarDays,
-  FileText,
   Edit2,
   Trash2,
 } from 'lucide-react'
@@ -96,9 +95,6 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
   })
 
   if (!project) return null
-
-  const receiptLabel =
-    project.region === 'US' ? 'Invoices / Receipts' : 'Notas Fiscais / Recibos'
 
   // Ledger Check
   const getPartnerCompliance = (partnerId: string) => {
@@ -213,17 +209,6 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
 
   const isDelayed = projectedEnd > end
 
-  const handleAddAdjustment = () => {
-    if (!desc || amount <= 0) return
-    addLaborAdjustment(projectId, {
-      description: desc,
-      amount,
-      date: new Date(),
-    })
-    setDesc('')
-    setAmount(0)
-  }
-
   const handleOpenLedger = (entry?: ProjectLedgerEntry) => {
     if (entry) {
       setEditingLedger(entry)
@@ -320,16 +305,22 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
+          <div className="rounded-md border overflow-x-auto w-full">
+            <Table className="min-w-[1200px]">
               <TableHeader className="bg-muted/30">
                 <TableRow>
-                  <TableHead>Serviço / Origem</TableHead>
-                  <TableHead>Fornecedor</TableHead>
-                  <TableHead>Datas (Compra / Entrega)</TableHead>
-                  <TableHead>Execução (Início / Fim)</TableHead>
-                  <TableHead className="text-right">Custos</TableHead>
-                  <TableHead className="text-center">Status Pag.</TableHead>
+                  <TableHead>Serviço</TableHead>
+                  <TableHead>Origem</TableHead>
+                  <TableHead>Empresa (Fornecedor)</TableHead>
+                  <TableHead>Data Compra</TableHead>
+                  <TableHead>Data Entrega</TableHead>
+                  <TableHead>Início Execução</TableHead>
+                  <TableHead>Fim Execução</TableHead>
+                  <TableHead className="text-right">Custo Previsto</TableHead>
+                  <TableHead className="text-right">Custo Final</TableHead>
+                  <TableHead className="text-center">
+                    Status Pagamento
+                  </TableHead>
                   <TableHead className="text-right">Ações</TableHead>
                 </TableRow>
               </TableHeader>
@@ -344,9 +335,9 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                       <TableRow key={l.id}>
                         <TableCell>
                           <p className="font-medium">{l.description}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {l.origin}
-                          </p>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-sm">{l.origin || '-'}</span>
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2 font-medium">
@@ -366,40 +357,44 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <p className="text-xs">
-                            Cmp:{' '}
+                          <span className="text-xs">
                             {l.purchaseDate
-                              ? formatDate(l.purchaseDate, 'dd/MM/yy')
+                              ? formatDate(
+                                  new Date(l.purchaseDate),
+                                  'dd/MM/yyyy',
+                                )
                               : '-'}
-                          </p>
-                          <p className="text-xs">
-                            Ent:{' '}
-                            {l.deliveryDate
-                              ? formatDate(l.deliveryDate, 'dd/MM/yy')
-                              : '-'}
-                          </p>
+                          </span>
                         </TableCell>
                         <TableCell>
-                          <p className="text-xs text-muted-foreground">
-                            Início:{' '}
-                            {l.startDate
-                              ? formatDate(l.startDate, 'dd/MM/yy')
+                          <span className="text-xs">
+                            {l.deliveryDate
+                              ? formatDate(
+                                  new Date(l.deliveryDate),
+                                  'dd/MM/yyyy',
+                                )
                               : '-'}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Fim:{' '}
-                            {l.endDate
-                              ? formatDate(l.endDate, 'dd/MM/yy')
-                              : '-'}
-                          </p>
+                          </span>
                         </TableCell>
-                        <TableCell className="text-right">
-                          <p className="text-xs text-muted-foreground line-through">
-                            {formatCurrency(l.estimatedCost)}
-                          </p>
-                          <p className="font-medium text-primary">
-                            {formatCurrency(l.finalCost)}
-                          </p>
+                        <TableCell>
+                          <span className="text-xs text-muted-foreground">
+                            {l.startDate
+                              ? formatDate(new Date(l.startDate), 'dd/MM/yyyy')
+                              : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-xs text-muted-foreground">
+                            {l.endDate
+                              ? formatDate(new Date(l.endDate), 'dd/MM/yyyy')
+                              : '-'}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right text-muted-foreground line-through text-xs">
+                          {formatCurrency(l.estimatedCost)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium text-primary">
+                          {formatCurrency(l.finalCost)}
                         </TableCell>
                         <TableCell className="text-center">
                           <Select
@@ -459,7 +454,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
                 ) : (
                   <TableRow>
                     <TableCell
-                      colSpan={7}
+                      colSpan={11}
                       className="text-center py-6 text-muted-foreground"
                     >
                       Nenhum registro financeiro / serviço adicionado ao Ledger.
@@ -711,7 +706,7 @@ export function ProjectExecution({ projectId }: ProjectExecutionProps) {
 
       {/* Ledger Modal Form */}
       <Dialog open={isLedgerOpen} onOpenChange={setIsLedgerOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingLedger
