@@ -92,6 +92,10 @@ export interface User {
   teamMembers?: TeamMember[]
   badges: Badge[]
   openChat: boolean
+  notificationPreferences?: {
+    emailInterests: boolean
+    pushInterests: boolean
+  }
 }
 
 export interface RegisterData {
@@ -284,6 +288,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         teamMembers,
         badges,
         openChat: false,
+        notificationPreferences: {
+          emailInterests: true,
+          pushInterests: false,
+        },
       },
     })
   },
@@ -319,6 +327,10 @@ export const useAuthStore = create<AuthState>((set) => ({
         loyaltyHistory: [],
         badges: [],
         openChat: false,
+        notificationPreferences: {
+          emailInterests: true,
+          pushInterests: false,
+        },
       },
     })
   },

@@ -28,8 +28,9 @@ import {
   Activity,
   FileText,
   MessageSquare,
+  Sparkles,
 } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, LineChart, Line } from 'recharts'
 import { ChartContainer, ChartTooltipContent } from '@/components/ui/chart'
 import { AINotifications } from '@/components/AINotifications'
@@ -45,10 +46,24 @@ export default function Dashboard() {
   const { jobs } = useJobStore()
   const { projects } = useProjectStore()
   const { documents } = useConstructionDocumentStore()
-  const { interests, acceptInterest, declineInterest } = useMessageStore()
+  const { interests, acceptInterest, declineInterest, sendInterest } =
+    useMessageStore()
   const { t, formatCurrency, formatDate } = useLanguageStore()
   const { toast } = useToast()
   const navigate = useNavigate()
+  const [searchParams, setSearchParams] = useSearchParams()
+
+  const activeTab = searchParams.get('tab') || 'overview'
+
+  const handleTabChange = (val: string) => {
+    setSearchParams(
+      (prev) => {
+        prev.set('tab', val)
+        return prev
+      },
+      { replace: true },
+    )
+  }
 
   const isAdmin = user?.role === 'admin'
   const isContractor = user?.role === 'contractor'
@@ -146,17 +161,13 @@ export default function Dashboard() {
     let totalAC = 0 // Actual Cost
 
     activeProjects.forEach((p) => {
-      // EV = Total Budget * (Overall Progress / 100)
       const progress =
         p.stages.length > 0
           ? p.stages.reduce((acc, s) => acc + s.progress, 0) / p.stages.length
           : 0
       const ev = p.totalBudget * (progress / 100)
-
-      // AC = Total Spent
       const ac = p.totalSpent
 
-      // PV = Total Budget * (Time Elapsed / Total Time)
       const start = new Date(p.startDate).getTime()
       const end = new Date(p.endDate).getTime()
       const now = new Date().getTime()
@@ -233,7 +244,11 @@ export default function Dashboard() {
   }
 
   return (
-    <Tabs defaultValue="overview" className="space-y-6 pb-10">
+    <Tabs
+      value={activeTab}
+      onValueChange={handleTabChange}
+      className="space-y-6 pb-10"
+    >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">
@@ -295,7 +310,6 @@ export default function Dashboard() {
 
         <AdSection segment="dashboard" />
 
-        {/* Corporate / Construction Executive KPIs */}
         {isPJWithConstruction && activeProjects.length > 0 && (
           <div className="grid gap-4 md:grid-cols-2 mb-6">
             <Card className="border-t-4 border-t-primary shadow-sm bg-gradient-to-br from-card to-muted/20">
@@ -354,7 +368,6 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* Smart Alerts for Construction */}
         {isPJWithConstruction &&
           (docsExpiringSoon.length > 0 || pendingInspections.length > 0) && (
             <Card className="border-orange-200 bg-orange-50/30">
@@ -425,7 +438,6 @@ export default function Dashboard() {
             </Card>
           )}
 
-        {/* General Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -499,7 +511,6 @@ export default function Dashboard() {
           )}
         </div>
 
-        {/* General Charts */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
           <Card className="col-span-4">
             <CardHeader>
@@ -590,12 +601,36 @@ export default function Dashboard() {
 
       <TabsContent value="interests" className="space-y-6 mt-0">
         <Card>
-          <CardHeader>
-            <CardTitle>Interesses de Comunicação</CardTitle>
-            <CardDescription>
-              Pessoas que desejam iniciar uma conversa com você. Ao aceitar, o
-              chat será liberado na aba de Mensagens.
-            </CardDescription>
+          <CardHeader className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+            <div>
+              <CardTitle>Interesses de Comunicação</CardTitle>
+              <CardDescription>
+                Pessoas que desejam iniciar uma conversa com você. Ao aceitar, o
+                chat será liberado na aba de Mensagens.
+              </CardDescription>
+            </div>
+            {user && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => {
+                  const mockSender = {
+                    id: 'mock-' + Math.random().toString(36).substr(2, 5),
+                    name: 'Investidor Anjo ' + Math.floor(Math.random() * 100),
+                    avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${Math.random()}`,
+                  }
+                  sendInterest(mockSender, user.id, {
+                    type: 'profile',
+                    id: user.id,
+                    title: 'Seu Perfil Profissional',
+                  })
+                }}
+              >
+                <Sparkles className="h-4 w-4 mr-2 text-yellow-500" /> Simular
+                Recebimento
+              </Button>
+            )}
           </CardHeader>
           <CardContent>
             {myPendingInterests.length === 0 ? (

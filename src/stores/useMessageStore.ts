@@ -1,4 +1,6 @@
 import { create } from 'zustand'
+import { useAuthStore } from './useAuthStore'
+import React from 'react'
 
 export interface ConversationContext {
   type: 'job' | 'profile' | 'general'
@@ -187,10 +189,9 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       },
     },
   ],
-  sendInterest: (sender, targetId, context) =>
+  sendInterest: (sender, targetId, context) => {
     set((state) => ({
       interests: [
-        ...state.interests,
         {
           id: Math.random().toString(36).substr(2, 9),
           senderId: sender.id,
@@ -201,8 +202,87 @@ export const useMessageStore = create<MessageState>((set, get) => ({
           createdAt: new Date(),
           context,
         },
+        ...state.interests,
       ],
-    })),
+    }))
+
+    // Real-time Notification System Hook
+    const authUser = useAuthStore.getState().user
+    if (!authUser) return
+
+    const isTargetCurrentUser = authUser.id === targetId
+
+    // Only alert if the target is the current active user (e.g. simulated or multi-tab usage)
+    if (isTargetCurrentUser) {
+      const prefs = authUser.notificationPreferences || {
+        emailInterests: true,
+        pushInterests: false,
+      }
+
+      // Mock Email Notification
+      if (prefs.emailInterests !== false) {
+        import('@/hooks/use-toast').then(({ toast }) => {
+          toast({
+            title: `📧 E-mail Automático -> ${authUser.email}`,
+            description: React.createElement(
+              'div',
+              {
+                className:
+                  'mt-2 space-y-2 p-3 bg-muted/50 rounded-md border border-border w-full',
+              },
+              React.createElement(
+                'h4',
+                { className: 'font-bold text-primary text-base' },
+                'BIDWORK',
+              ),
+              React.createElement(
+                'p',
+                { className: 'text-sm text-foreground leading-snug' },
+                'Novo Interesse: ',
+                React.createElement('strong', null, sender.name),
+                ' tem interesse em ',
+                React.createElement(
+                  'strong',
+                  null,
+                  context?.title || 'seu perfil',
+                ),
+                '.',
+              ),
+              React.createElement(
+                'a',
+                {
+                  href: '/dashboard?tab=interests',
+                  className:
+                    'inline-flex h-8 items-center justify-center rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground hover:bg-primary/90 mt-2',
+                },
+                'Ver no BIDWORK',
+              ),
+            ),
+            duration: 10000,
+          })
+        })
+      }
+
+      // Web Push Notification
+      if (
+        prefs.pushInterests &&
+        typeof window !== 'undefined' &&
+        'Notification' in window &&
+        Notification.permission === 'granted'
+      ) {
+        const title = `Novo Interesse: ${sender.name}`
+        const options = {
+          body: `${sender.name} tem interesse em ${context?.title || 'seu perfil'}.`,
+          icon: '/favicon.ico',
+        }
+        const notif = new Notification(title, options)
+        notif.onclick = () => {
+          window.focus()
+          window.location.href = '/dashboard?tab=interests'
+        }
+      }
+    }
+  },
   acceptInterest: (id) => {
     let newConvId: string | undefined
 

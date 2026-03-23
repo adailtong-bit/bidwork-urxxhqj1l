@@ -43,6 +43,7 @@ import {
   CreditCard,
   Globe,
   Lock,
+  Bell,
 } from 'lucide-react'
 import { AdSection } from '@/components/AdSection'
 import {
@@ -59,7 +60,6 @@ export default function Settings() {
   const { t, currentLanguage, setLanguage, currentCurrency, setCurrency } =
     useLanguageStore()
 
-  // Derive initial country from address or default to BR, but allow changing it
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
     (user?.address?.country as CountryCode) || 'BR',
   )
@@ -80,7 +80,6 @@ export default function Settings() {
           : z.string().optional(),
       phone: phone,
       taxId: taxId,
-      // Address
       street: z.string().min(3, t('val.required')),
       number: z.string().min(1, t('val.required')),
       complement: z.string().optional(),
@@ -117,7 +116,11 @@ export default function Settings() {
   const [radius, setRadius] = useState([user?.serviceRadius || 10])
   const [isUploadingKYC, setIsUploadingKYC] = useState(false)
 
-  // Sync form and local state when user data becomes available or updates
+  const currentPrefs = user?.notificationPreferences || {
+    emailInterests: true,
+    pushInterests: false,
+  }
+
   useEffect(() => {
     if (user) {
       form.reset({
@@ -219,8 +222,51 @@ export default function Settings() {
     })
   }
 
+  const handlePushToggle = async (val: boolean) => {
+    if (val && typeof window !== 'undefined' && 'Notification' in window) {
+      let perm = Notification.permission
+      if (perm !== 'granted' && perm !== 'denied') {
+        perm = await Notification.requestPermission()
+      }
+      if (perm === 'granted') {
+        updateSettings({
+          notificationPreferences: {
+            ...currentPrefs,
+            pushInterests: true,
+          },
+        })
+        toast({
+          title: t('success'),
+          description: 'Notificações push ativadas.',
+        })
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Permissão Negada',
+          description: 'Ative as notificações nas configurações do navegador.',
+        })
+      }
+    } else {
+      updateSettings({
+        notificationPreferences: {
+          ...currentPrefs,
+          pushInterests: false,
+        },
+      })
+    }
+  }
+
+  const handleEmailToggle = (val: boolean) => {
+    updateSettings({
+      notificationPreferences: {
+        ...currentPrefs,
+        emailInterests: val,
+      },
+    })
+  }
+
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl pb-10">
       <AdSection segment="profile" />
 
       <h1 className="text-3xl font-bold tracking-tight">
@@ -228,7 +274,6 @@ export default function Settings() {
       </h1>
 
       <div className="grid gap-6">
-        {/* Profile Info Form */}
         <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -538,6 +583,51 @@ export default function Settings() {
                 )}
               </form>
             </Form>
+          </CardContent>
+        </Card>
+
+        {/* Notifications Settings */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bell className="h-5 w-5" /> Preferências de Notificação
+            </CardTitle>
+            <CardDescription>
+              Gerencie como deseja ser avisado sobre novas oportunidades de
+              negócios e interesses.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border p-4 bg-background gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-base font-medium">
+                  Alertas por E-mail
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Receba um e-mail com detalhes quando alguém demonstrar
+                  interesse nas suas ofertas.
+                </p>
+              </div>
+              <Switch
+                checked={currentPrefs.emailInterests}
+                onCheckedChange={handleEmailToggle}
+              />
+            </div>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between rounded-lg border p-4 bg-background gap-4">
+              <div className="space-y-0.5">
+                <Label className="text-base font-medium">
+                  Notificações Push (Navegador)
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Receba alertas instantâneos diretamente na sua tela, mesmo em
+                  segundo plano.
+                </p>
+              </div>
+              <Switch
+                checked={currentPrefs.pushInterests}
+                onCheckedChange={handlePushToggle}
+              />
+            </div>
           </CardContent>
         </Card>
 
