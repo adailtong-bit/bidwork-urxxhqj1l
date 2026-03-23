@@ -26,11 +26,16 @@ export default function MyJobs() {
 
   if (!user) return null
 
+  // The "Meus Anúncios" tab must exclusively display jobs authored by the user
   const myContractedJobs = jobs.filter((j) => j.ownerId === user.id)
 
+  // The "Meus Interesses" tab correctly groups all jobs where the user expressed interest,
+  // preventing these jobs from leaking into the "Meus Anúncios" tab.
   const myInterests = jobs
     .filter((job) => {
+      // Data Integrity: the user's authored jobs don't count as 'interests' here
       if (job.ownerId === user.id) return false
+
       const hasBidded = job.bids.some((b) => b.executorId === user.id)
       const hasChat = conversations.some(
         (c) =>
@@ -94,6 +99,12 @@ export default function MyJobs() {
         new Date(a.manifestationDate).getTime(),
     )
 
+  // Smart default tab to improve UX for users (e.g. executors) without posted ads
+  const defaultTab =
+    myContractedJobs.length === 0 && myInterests.length > 0
+      ? 'my-interests'
+      : 'my-ads'
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'open':
@@ -149,7 +160,7 @@ export default function MyJobs() {
         </Button>
       </div>
 
-      <Tabs defaultValue="my-ads" className="w-full">
+      <Tabs defaultValue={defaultTab} className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
           <TabsTrigger value="my-ads">Meus Anúncios</TabsTrigger>
           <TabsTrigger value="my-interests">Meus Interesses</TabsTrigger>
@@ -242,7 +253,7 @@ export default function MyJobs() {
                 e muito mais.
               </p>
               <Button asChild size="lg">
-                <Link to="/">Explorar</Link>
+                <Link to="/find-jobs">Explorar</Link>
               </Button>
             </div>
           ) : (

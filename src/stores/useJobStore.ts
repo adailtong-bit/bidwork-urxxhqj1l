@@ -93,7 +93,19 @@ export const useJobStore = create<JobState>((set, get) => ({
       publicationDate: new Date(),
       premiumType: 'category',
       regionCode: 'SP',
-      bids: [],
+      bids: [
+        {
+          id: 'bid-1',
+          jobId: 'job-1',
+          executorId: 'exec-1',
+          executorName: 'João Freelancer',
+          amount: 8200,
+          description:
+            'Possuo ampla experiência com reformas e posso iniciar de imediato.',
+          executorReputation: 4.8,
+          createdAt: new Date(Date.now() - 3600000),
+        },
+      ],
       listingType: 'job',
     },
     {
@@ -113,7 +125,19 @@ export const useJobStore = create<JobState>((set, get) => ({
       publicationDate: new Date(Date.now() - 86400000 * 5),
       premiumType: 'none',
       regionCode: 'BR',
-      bids: [],
+      bids: [
+        {
+          id: 'bid-2',
+          jobId: 'job-2',
+          executorId: 'exec-pj-1',
+          executorName: 'Soluções Rápidas Ltda',
+          amount: 14000,
+          description:
+            'Temos um time focado em desenvolvimento mobile nativo com prazos ágeis.',
+          executorReputation: 4.9,
+          createdAt: new Date(Date.now() - 86400000),
+        },
+      ],
       listingType: 'job',
     },
     {
@@ -129,7 +153,7 @@ export const useJobStore = create<JobState>((set, get) => ({
       ownerName: 'Agência Criativa',
       creatorPlan: 'Ouro',
       status: 'open',
-      createdAt: new Date(Date.now() - 86400000 * 2), // Older than 24h
+      createdAt: new Date(Date.now() - 86400000 * 2),
       publicationDate: new Date(Date.now() - 86400000 * 2),
       premiumType: 'region',
       regionCode: 'RJ',

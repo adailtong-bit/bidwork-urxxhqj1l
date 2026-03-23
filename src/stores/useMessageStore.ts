@@ -89,14 +89,19 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       ],
       updatedAt: new Date(Date.now() - 3600000),
       negotiationStatus: 'analysis',
+      context: {
+        type: 'job',
+        id: 'job-1',
+        title: 'Reforma Completa de Fachada (Novo & Premium)',
+      },
     },
     {
       id: 'mock-conv-2',
       participants: [
         {
-          id: 'owner-1',
-          name: 'Admin Tech Corp',
-          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=owner-1',
+          id: 'owner-2',
+          name: 'Startup Alpha',
+          avatar: 'https://img.usecurling.com/ppl/thumbnail?seed=owner-2',
         },
         {
           id: 'exec-pj-1',
@@ -114,6 +119,11 @@ export const useMessageStore = create<MessageState>((set, get) => ({
       ],
       updatedAt: new Date(Date.now() - 86400000),
       negotiationStatus: 'proposal',
+      context: {
+        type: 'job',
+        id: 'job-2',
+        title: 'Desenvolvimento de Aplicativo',
+      },
     },
     {
       id: 'mock-conv-3',
