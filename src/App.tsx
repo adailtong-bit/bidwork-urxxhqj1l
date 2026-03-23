@@ -39,6 +39,7 @@ import TestingHub from '@/pages/testing/TestingHub'
 import FinanceDashboard from '@/pages/finance/FinanceDashboard'
 import AccountingExport from '@/pages/finance/AccountingExport'
 import ManageCategories from '@/pages/admin/ManageCategories'
+import ManageCategoryDetail from '@/pages/admin/ManageCategoryDetail'
 import ManageAds from '@/pages/admin/ManageAds'
 import ManagePlans from '@/pages/admin/ManagePlans'
 import ManageConstructionPlans from '@/pages/admin/ManageConstructionPlans'
@@ -152,6 +153,14 @@ const App = () => {
                 element={
                   <AdminRoute>
                     <ManageCategories />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="/admin/categories/:id"
+                element={
+                  <AdminRoute>
+                    <ManageCategoryDetail />
                   </AdminRoute>
                 }
               />
