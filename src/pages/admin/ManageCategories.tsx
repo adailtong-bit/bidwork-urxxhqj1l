@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useCategoryStore } from '@/stores/useCategoryStore'
+import { useCategoryStore, CategoryType } from '@/stores/useCategoryStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -29,6 +29,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Badge } from '@/components/ui/badge'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 
@@ -36,6 +44,7 @@ export default function ManageCategories() {
   const { categories, addCategory, removeCategory } = useCategoryStore()
   const { toast } = useToast()
   const [newCategory, setNewCategory] = useState('')
+  const [newType, setNewType] = useState<CategoryType>('job')
 
   const handleAdd = () => {
     if (!newCategory.trim()) {
@@ -45,14 +54,30 @@ export default function ManageCategories() {
       })
       return
     }
-    addCategory(newCategory.trim())
+    addCategory(newCategory.trim(), newType)
     setNewCategory('')
+    setNewType('job')
     toast({ title: 'Categoria adicionada com sucesso' })
   }
 
   const handleDelete = (id: string) => {
     removeCategory(id)
     toast({ title: 'Categoria removida com sucesso' })
+  }
+
+  const getTypeLabel = (type: CategoryType) => {
+    switch (type) {
+      case 'job':
+        return 'Serviços/Vagas'
+      case 'marketplace':
+        return 'Vendas'
+      case 'rental':
+        return 'Locações'
+      case 'donation':
+        return 'Doação'
+      default:
+        return 'Outros'
+    }
   }
 
   return (
@@ -81,6 +106,21 @@ export default function ManageCategories() {
               onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
               className="max-w-sm"
             />
+            <Select
+              value={newType}
+              onValueChange={(val: CategoryType) => setNewType(val)}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Tipo" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="job">Serviços/Vagas</SelectItem>
+                <SelectItem value="marketplace">Vendas</SelectItem>
+                <SelectItem value="rental">Locações</SelectItem>
+                <SelectItem value="donation">Doação</SelectItem>
+                <SelectItem value="other">Outros</SelectItem>
+              </SelectContent>
+            </Select>
             <Button onClick={handleAdd}>
               <Plus className="mr-2 h-4 w-4" /> Adicionar
             </Button>
@@ -94,6 +134,7 @@ export default function ManageCategories() {
             <TableHeader>
               <TableRow>
                 <TableHead>Categoria</TableHead>
+                <TableHead>Tipo</TableHead>
                 <TableHead>Slug</TableHead>
                 <TableHead>Qtd. Subcategorias</TableHead>
                 <TableHead className="text-right">Ações</TableHead>
@@ -103,6 +144,11 @@ export default function ManageCategories() {
               {categories.map((category) => (
                 <TableRow key={category.id}>
                   <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className="whitespace-nowrap">
+                      {getTypeLabel(category.type)}
+                    </Badge>
+                  </TableCell>
                   <TableCell>
                     <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-0.5 rounded border">
                       {category.slug}
@@ -157,7 +203,7 @@ export default function ManageCategories() {
               {categories.length === 0 && (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
+                    colSpan={5}
                     className="text-center py-8 text-muted-foreground"
                   >
                     Nenhuma categoria encontrada.

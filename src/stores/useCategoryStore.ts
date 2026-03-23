@@ -6,18 +6,26 @@ export interface SubCategory {
   slug: string
 }
 
+export type CategoryType =
+  | 'job'
+  | 'marketplace'
+  | 'rental'
+  | 'donation'
+  | 'other'
+
 export interface Category {
   id: string
   name: string
   slug: string
+  type: CategoryType
   subCategories: SubCategory[]
 }
 
 interface CategoryState {
   categories: Category[]
-  addCategory: (name: string) => void
+  addCategory: (name: string, type?: CategoryType) => void
   removeCategory: (id: string) => void
-  updateCategory: (id: string, name: string) => void
+  updateCategory: (id: string, name: string, type?: CategoryType) => void
   addSubCategory: (categoryId: string, name: string) => void
   removeSubCategory: (categoryId: string, subId: string) => void
   updateSubCategory: (categoryId: string, subId: string, name: string) => void
@@ -43,6 +51,7 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       id: '1',
       name: 'Reformas',
       slug: 'reformas',
+      type: 'job',
       subCategories: [
         createSubCat('Pintura'),
         createSubCat('Instalação de Drywall'),
@@ -55,6 +64,7 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       id: '2',
       name: 'Construção',
       slug: 'construcao',
+      type: 'job',
       subCategories: [
         createSubCat('Alvenaria'),
         createSubCat('Telhados'),
@@ -64,8 +74,9 @@ export const useCategoryStore = create<CategoryState>((set) => ({
     },
     {
       id: '3',
-      name: 'Tecnologia',
-      slug: 'tecnologia',
+      name: 'TI e Programação',
+      slug: 'ti-e-programacao',
+      type: 'job',
       subCategories: [
         createSubCat('Desenvolvimento Web'),
         createSubCat('Aplicativos Mobile'),
@@ -75,26 +86,60 @@ export const useCategoryStore = create<CategoryState>((set) => ({
     },
     {
       id: '4',
-      name: 'Serviços Domésticos',
-      slug: 'servicos-domesticos',
+      name: 'Design',
+      slug: 'design',
+      type: 'job',
       subCategories: [
-        createSubCat('Limpeza Residencial'),
-        createSubCat('Jardinagem'),
-        createSubCat('Manutenção de Ar-condicionado'),
+        createSubCat('Identidade Visual'),
+        createSubCat('Web Design'),
+        createSubCat('Ilustração'),
       ],
     },
     {
       id: '5',
-      name: 'Serviços Profissionais',
-      slug: 'servicos-profissionais',
+      name: 'Marketing',
+      slug: 'marketing',
+      type: 'job',
       subCategories: [
-        createSubCat('Contabilidade'),
-        createSubCat('Consultoria Jurídica'),
-        createSubCat('Tradução'),
+        createSubCat('SEO'),
+        createSubCat('Gestão de Tráfego'),
+        createSubCat('Social Media'),
+      ],
+    },
+    {
+      id: '6',
+      name: 'Vendas e Produtos',
+      slug: 'vendas',
+      type: 'marketplace',
+      subCategories: [
+        createSubCat('Eletrônicos'),
+        createSubCat('Móveis'),
+        createSubCat('Ferramentas'),
+      ],
+    },
+    {
+      id: '7',
+      name: 'Locações',
+      slug: 'locacoes',
+      type: 'rental',
+      subCategories: [
+        createSubCat('Equipamentos'),
+        createSubCat('Veículos'),
+        createSubCat('Espaços'),
+      ],
+    },
+    {
+      id: '8',
+      name: 'Doação',
+      slug: 'doacao',
+      type: 'donation',
+      subCategories: [
+        createSubCat('Materiais Sobrantes'),
+        createSubCat('Roupas e EPIs'),
       ],
     },
   ],
-  addCategory: (name) =>
+  addCategory: (name, type = 'job') =>
     set((state) => ({
       categories: [
         ...state.categories,
@@ -102,6 +147,7 @@ export const useCategoryStore = create<CategoryState>((set) => ({
           id: Math.random().toString(36).substr(2, 9),
           name,
           slug: createSlug(name),
+          type,
           subCategories: [],
         },
       ],
@@ -110,10 +156,12 @@ export const useCategoryStore = create<CategoryState>((set) => ({
     set((state) => ({
       categories: state.categories.filter((c) => c.id !== id),
     })),
-  updateCategory: (id, name) =>
+  updateCategory: (id, name, type) =>
     set((state) => ({
       categories: state.categories.map((c) =>
-        c.id === id ? { ...c, name, slug: createSlug(name) } : c,
+        c.id === id
+          ? { ...c, name, slug: createSlug(name), type: type || c.type }
+          : c,
       ),
     })),
   addSubCategory: (categoryId, name) =>

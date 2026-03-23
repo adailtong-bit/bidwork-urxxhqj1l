@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useJobStore } from '@/stores/useJobStore'
+import { useCategoryStore } from '@/stores/useCategoryStore'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -45,6 +46,7 @@ const hashString = (str: string) => {
 
 export default function FindJobs() {
   const { jobs } = useJobStore()
+  const { categories } = useCategoryStore()
   const { user } = useAuthStore()
   const { t, formatCurrency, getDateLocale } = useLanguageStore()
   const [searchParams, setSearchParams] = useSearchParams()
@@ -64,6 +66,10 @@ export default function FindJobs() {
   const regions = Array.from(new Set(jobs.map((j) => j.regionCode))).filter(
     Boolean,
   )
+
+  const jobCategories = useMemo(() => {
+    return categories.filter((c) => c.type === 'job')
+  }, [categories])
 
   useEffect(() => {
     const tParam = searchParams.get('type') || 'all'
@@ -194,7 +200,7 @@ export default function FindJobs() {
           Buscar Oportunidades
         </h1>
         <p className="text-muted-foreground">
-          Encontre vagas, produtos, aluguéis e mais.
+          Encontre vagas, serviços e tarefas profissionais.
         </p>
 
         {isBasicUser && (
@@ -268,14 +274,11 @@ export default function FindJobs() {
               <SelectItem value="all">
                 {t('find.filter.category.all')}
               </SelectItem>
-              <SelectItem value="TI e Programação">
-                {t('category.ti')}
-              </SelectItem>
-              <SelectItem value="Reformas">{t('category.reform')}</SelectItem>
-              <SelectItem value="Design">{t('category.design')}</SelectItem>
-              <SelectItem value="Marketing">
-                {t('category.marketing')}
-              </SelectItem>
+              {jobCategories.map((cat) => (
+                <SelectItem key={cat.id} value={cat.name}>
+                  {cat.name}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
 
