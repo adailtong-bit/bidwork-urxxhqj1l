@@ -41,7 +41,6 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Plus,
-  Edit2,
   Trash2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -81,12 +80,10 @@ export function ProjectFinanceAccounts({ projectId }: { projectId: string }) {
 
   const [filterAcc, setFilterAcc] = useState('all')
 
-  if (!project) return null
-
-  const accounts = project.checkingAccounts || []
-  const movements = project.financialMovements || []
-  const stages = project.stages || []
-  const budgetItemsList = project.budgetItems || []
+  const accounts = project?.checkingAccounts || []
+  const movements = project?.financialMovements || []
+  const stages = project?.stages || []
+  const budgetItemsList = project?.budgetItems || []
 
   const accountBalances = useMemo(() => {
     return accounts.map((acc) => {
@@ -115,6 +112,8 @@ export function ProjectFinanceAccounts({ projectId }: { projectId: string }) {
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
     )
   }, [movements, filterAcc])
+
+  if (!project) return null
 
   const handleAddAccount = () => {
     addCheckingAccount(projectId, accData)
