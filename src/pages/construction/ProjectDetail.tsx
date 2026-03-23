@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useProjectStore, ProjectPartner } from '@/stores/useProjectStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -45,12 +45,16 @@ import {
 import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
 import { ProjectFinance } from '@/components/construction/ProjectFinance'
+import { ProjectCompliance } from '@/components/construction/ProjectCompliance'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { getProject, setProjectSqFt } = useProjectStore()
   const { toast } = useToast()
   const { t, formatDate, currentLanguage } = useLanguageStore()
+
+  const currentTab = searchParams.get('tab') || 'estimation'
 
   const csvInputRef = useRef<HTMLInputElement>(null)
   const project = getProject(id!)
@@ -74,6 +78,10 @@ export default function ProjectDetail() {
       description: 'Arquivo processado com sucesso.',
     })
     setIsImportOpen(false)
+  }
+
+  const handleTabChange = (val: string) => {
+    setSearchParams({ tab: val })
   }
 
   return (
@@ -133,12 +141,13 @@ export default function ProjectDetail() {
       </div>
 
       <Tabs
-        defaultValue="estimation"
+        value={currentTab}
+        onValueChange={handleTabChange}
         className="w-full flex flex-col items-center"
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-4xl flex-nowrap justify-start md:justify-center min-w-[700px] mb-8 h-auto p-1">
+          <TabsList className="w-full max-w-4xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
             <TabsTrigger value="estimation" className="flex-1">
               {t('est.tab.title')}
             </TabsTrigger>
@@ -156,6 +165,9 @@ export default function ProjectDetail() {
             </TabsTrigger>
             <TabsTrigger value="approvals" className="flex-1">
               {t('proj.approvals.title')}
+            </TabsTrigger>
+            <TabsTrigger value="compliance" className="flex-1">
+              Compliance
             </TabsTrigger>
             <TabsTrigger value="reports" className="flex-1">
               {t('proj.reports.title')}
@@ -473,14 +485,19 @@ export default function ProjectDetail() {
           </Card>
         </TabsContent>
 
-        {/* Reports Tab */}
-        <TabsContent value="reports" className="w-full animate-fade-in">
-          <ProjectReports projectId={project.id} />
-        </TabsContent>
-
         {/* Approvals Tab */}
         <TabsContent value="approvals" className="w-full animate-fade-in">
           <ProjectApprovalWorkflow projectId={project.id} />
+        </TabsContent>
+
+        {/* Compliance Tab */}
+        <TabsContent value="compliance" className="w-full animate-fade-in">
+          <ProjectCompliance projectId={project.id} />
+        </TabsContent>
+
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="w-full animate-fade-in">
+          <ProjectReports projectId={project.id} />
         </TabsContent>
       </Tabs>
 
@@ -542,3 +559,4 @@ export default function ProjectDetail() {
     </div>
   )
 }
+

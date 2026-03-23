@@ -249,15 +249,25 @@ export interface ProjectMessage {
   type: 'internal' | 'external'
 }
 
+export interface ComplianceDocumentHistory {
+  id: string
+  url?: string
+  expirationDate: Date
+  issueDate?: Date
+  uploadedAt: Date
+}
+
 export interface ComplianceDocument {
   id: string
   name: string
-  type: 'insurance' | 'license' | 'permission' | 'other'
+  type: 'permit' | 'city_hall' | 'contractor_contract' | 'constructor_insurance' | 'owner_insurance' | 'other'
   provider?: string
   partnerId?: string // 'general' or specific partner ID
   expirationDate: Date
+  issueDate?: Date
   url?: string
   isCritical: boolean
+  history?: ComplianceDocumentHistory[]
 }
 
 export interface Project {
@@ -491,9 +501,14 @@ interface ProjectState {
   approveMeasurement: (projectId: string, measurementId: string) => void
   addComplianceDocument: (
     projectId: string,
-    doc: Omit<ComplianceDocument, 'id'>,
+    doc: Omit<ComplianceDocument, 'id' | 'history'>,
   ) => void
   updateComplianceDocument: (
+    projectId: string,
+    docId: string,
+    data: Partial<ComplianceDocument>,
+  ) => void
+  renewComplianceDocument: (
     projectId: string,
     docId: string,
     data: Partial<ComplianceDocument>,
@@ -599,27 +614,30 @@ const mockProjects: Project[] = [
       {
         id: 'cd-1',
         name: 'Seguro de Responsabilidade Civil',
-        type: 'insurance',
+        type: 'constructor_insurance',
         provider: 'Porto Seguro',
         partnerId: 'partner-1',
         expirationDate: new Date(Date.now() + 86400000 * 15), // Expiring soon (15 days)
         isCritical: true,
+        history: [],
       },
       {
         id: 'cd-2',
         name: 'Alvará de Construção',
-        type: 'license',
+        type: 'permit',
         partnerId: 'general',
         expirationDate: new Date(Date.now() - 86400000 * 2), // Expired 2 days ago
         isCritical: true,
+        history: [],
       },
       {
         id: 'cd-3',
         name: 'Licença Ambiental',
-        type: 'permission',
+        type: 'city_hall',
         partnerId: 'general',
         expirationDate: new Date(Date.now() + 86400000 * 180), // Valid
         isCritical: false,
+        history: [],
       },
     ],
     partners: [
@@ -1766,7 +1784,11 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
               ...p,
               complianceDocuments: [
                 ...(p.complianceDocuments || []),
-                { ...doc, id: Math.random().toString(36).substr(2, 9) },
+                {
+                  ...doc,
+                  id: Math.random().toString(36).substr(2, 9),
+                  history: [],
+                },
               ],
             }
           : p,
@@ -1784,6 +1806,33 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
             }
           : p,
       ),
+    })),
+  renewComplianceDocument: (projectId, docId, data) =>
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id === projectId) {
+          return {
+            ...p,
+            complianceDocuments: (p.complianceDocuments || []).map((d) => {
+              if (d.id === docId) {
+                const newHistory = [
+                  {
+                    id: Math.random().toString(36).substr(2, 9),
+                    url: d.url,
+                    expirationDate: d.expirationDate,
+                    issueDate: d.issueDate,
+                    uploadedAt: new Date(),
+                  },
+                  ...(d.history || []),
+                ]
+                return { ...d, ...data, history: newHistory }
+              }
+              return d
+            }),
+          }
+        }
+        return p
+      }),
     })),
   deleteComplianceDocument: (projectId, docId) =>
     set((state) => ({
@@ -1805,3 +1854,4 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       ),
     })),
 }))
+
