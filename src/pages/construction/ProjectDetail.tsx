@@ -1,6 +1,8 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useProjectStore, ProjectPartner } from '@/stores/useProjectStore'
+import { useAuthStore } from '@/stores/useAuthStore'
+import { useNotificationStore } from '@/stores/useNotificationStore'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -26,6 +28,8 @@ import {
   HardHat,
   Link2,
   MessageSquare,
+  Smartphone,
+  ShieldAlert,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -51,12 +55,13 @@ import { ProjectQuotes } from '@/components/construction/ProjectQuotes'
 import { ProjectChat } from '@/components/construction/ProjectChat'
 import { ProjectCompliance } from '@/components/construction/ProjectCompliance'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
-import { ShieldAlert } from 'lucide-react'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
   const { getProject, setProjectSqFt } = useProjectStore()
+  const { user } = useAuthStore()
+  const { upsertNotification } = useNotificationStore()
   const { toast } = useToast()
   const { t, formatDate, currentLanguage } = useLanguageStore()
 
@@ -77,6 +82,46 @@ export default function ProjectDetail() {
   // Estimation State
   const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false)
 
+  // Trigger Notifications for Expirations and Budget Overflow
+  useEffect(() => {
+    if (!project || !user) return
+
+    // Compliance alerts
+    const today = new Date()
+    project.complianceDocuments?.forEach((doc) => {
+      if (!doc.isCritical) return
+      const exp = new Date(doc.expirationDate)
+      const diffDays = Math.ceil(
+        (exp.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+      )
+
+      if (diffDays <= (project.alertLeadTimeDays || 30)) {
+        upsertNotification({
+          userId: user.id,
+          title: `Documento Vencendo/Vencido: ${doc.name}`,
+          message: `O documento crítico requer atenção (Projeto: ${project.name}).`,
+          type: diffDays < 0 ? 'error' : 'warning',
+          link: `/construction/projects/${project.id}?tab=compliance`,
+          referenceId: `doc-${doc.id}-${project.id}`,
+        })
+      }
+    })
+
+    // Budget overflow alerts
+    project.ledgerEntries?.forEach((entry) => {
+      if (entry.finalCost > entry.estimatedCost) {
+        upsertNotification({
+          userId: user.id,
+          title: `Alerta de Orçamento: ${entry.description}`,
+          message: `O custo final excedeu o previsto no painel financeiro (Projeto: ${project.name}).`,
+          type: 'error',
+          link: `/construction/projects/${project.id}?tab=financial`,
+          referenceId: `budget-overrun-${entry.id}-${project.id}`,
+        })
+      }
+    })
+  }, [project, user, upsertNotification])
+
   if (!project) return <div className="p-8 text-center">{t('error')}</div>
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -93,9 +138,9 @@ export default function ProjectDetail() {
   }
 
   // Check for critical expired documents
-  const today = new Date()
+  const todayDate = new Date()
   const criticalExpiredDocs = (project.complianceDocuments || []).filter(
-    (doc) => doc.isCritical && new Date(doc.expirationDate) < today,
+    (doc) => doc.isCritical && new Date(doc.expirationDate) < todayDate,
   )
 
   return (
@@ -159,6 +204,16 @@ export default function ProjectDetail() {
           <Button
             variant="outline"
             size="icon"
+            asChild
+            title="Apontamento (Mobile)"
+          >
+            <Link to="/construction/field-entry">
+              <Smartphone className="h-4 w-4 text-primary" />
+            </Link>
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
             onClick={() => setIsSyncOpen(true)}
             title={t('proj.sync.btn')}
           >
@@ -172,7 +227,11 @@ export default function ProjectDetail() {
           >
             <MessageSquare className="h-4 w-4" />
           </Button>
-          <Button variant="outline" onClick={() => setIsTeamManagerOpen(true)}>
+          <Button
+            variant="outline"
+            className="hidden sm:flex"
+            onClick={() => setIsTeamManagerOpen(true)}
+          >
             <HardHat className="mr-2 h-4 w-4" /> {t('proj.team.btn')}
           </Button>
         </div>

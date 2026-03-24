@@ -9,11 +9,15 @@ export interface Notification {
   read: boolean
   createdAt: Date
   link?: string
+  referenceId?: string
 }
 
 interface NotificationState {
   notifications: Notification[]
   addNotification: (
+    notification: Omit<Notification, 'id' | 'createdAt' | 'read'>,
+  ) => void
+  upsertNotification: (
     notification: Omit<Notification, 'id' | 'createdAt' | 'read'>,
   ) => void
   markAsRead: (id: string) => void
@@ -46,6 +50,30 @@ export const useNotificationStore = create<NotificationState>((set, get) => ({
         ...state.notifications,
       ],
     })),
+  upsertNotification: (notification) =>
+    set((state) => {
+      const exists = notification.referenceId
+        ? state.notifications.find(
+            (n) => n.referenceId === notification.referenceId,
+          )
+        : false
+
+      if (exists) {
+        return state // Do not duplicate if it already exists
+      }
+
+      return {
+        notifications: [
+          {
+            ...notification,
+            id: Math.random().toString(36).substr(2, 9),
+            createdAt: new Date(),
+            read: false,
+          },
+          ...state.notifications,
+        ],
+      }
+    }),
   markAsRead: (id) =>
     set((state) => ({
       notifications: state.notifications.map((n) =>

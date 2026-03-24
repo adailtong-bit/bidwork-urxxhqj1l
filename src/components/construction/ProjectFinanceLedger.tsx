@@ -35,7 +35,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { CurrencyInput } from '@/components/CurrencyInput'
-import { AlertTriangle, Trash2, Plus } from 'lucide-react'
+import { AlertTriangle, Trash2, Plus, Download, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
@@ -81,6 +81,69 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
         d.isCritical &&
         new Date(d.expirationDate) < today,
     )
+  }
+
+  const handleExportCSV = () => {
+    const headers = [
+      'Serviço',
+      'Origem',
+      'Fornecedor',
+      'Data Compra',
+      'Data Entrega',
+      'Início Execução',
+      'Término Execução',
+      'Custo Previsto',
+      'Custo Final',
+      'Status Pagamento',
+      'Status Risco',
+    ]
+
+    const csvRows = ledgerEntries.map((l) => {
+      const partnerName =
+        project.partners.find((p) => p.id === l.partnerId)?.companyName || 'N/A'
+      const expiredDocs = getPartnerCompliance(l.partnerId)
+      const isBlocked = expiredDocs.length > 0
+
+      return [
+        `"${l.description}"`,
+        `"${l.origin || ''}"`,
+        `"${partnerName}"`,
+        l.purchaseDate
+          ? formatDate(new Date(l.purchaseDate), 'dd/MM/yyyy')
+          : '',
+        l.deliveryDate
+          ? formatDate(new Date(l.deliveryDate), 'dd/MM/yyyy')
+          : '',
+        l.startDate ? formatDate(new Date(l.startDate), 'dd/MM/yyyy') : '',
+        l.endDate ? formatDate(new Date(l.endDate), 'dd/MM/yyyy') : '',
+        l.estimatedCost,
+        l.finalCost,
+        l.paymentStatus,
+        isBlocked ? 'Bloqueado' : 'Regular',
+      ].join(',')
+    })
+
+    const csvContent = [headers.join(','), ...csvRows].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.setAttribute('href', url)
+    link.setAttribute('download', `ledger_export_${projectId}.csv`)
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+
+    toast({ title: 'Exportação CSV concluída!' })
+  }
+
+  const handleExportPDF = () => {
+    toast({
+      title: 'Preparando PDF...',
+      description: 'A janela de impressão será aberta.',
+    })
+    setTimeout(() => {
+      window.print()
+    }, 500)
   }
 
   const handleOpenLedger = (entry?: ProjectLedgerEntry) => {
@@ -158,21 +221,34 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
             Gerencie todos os custos e cronograma de fornecedores.
           </p>
         </div>
-        <div className="flex flex-wrap items-center gap-4 bg-muted/20 p-2 rounded-lg border">
-          <div className="text-right">
-            <p className="text-xs text-muted-foreground">Total Previsto</p>
-            <p className="font-bold">{formatCurrency(estLedger)}</p>
+        <div className="flex flex-wrap items-center gap-4 bg-muted/20 p-2 rounded-lg border w-full md:w-auto justify-between md:justify-start">
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <p className="text-xs text-muted-foreground">Total Previsto</p>
+              <p className="font-bold">{formatCurrency(estLedger)}</p>
+            </div>
+            <div className="h-8 w-px bg-border mx-2 hidden sm:block" />
+            <div className="text-right mr-4">
+              <p className="text-xs text-muted-foreground">Total Final</p>
+              <p className="font-bold text-primary">
+                {formatCurrency(actLedger)}
+              </p>
+            </div>
           </div>
-          <div className="h-8 w-px bg-border mx-2 hidden sm:block" />
-          <div className="text-right mr-4">
-            <p className="text-xs text-muted-foreground">Total Final</p>
-            <p className="font-bold text-primary">
-              {formatCurrency(actLedger)}
-            </p>
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+            <Button variant="outline" size="sm" onClick={handleExportCSV}>
+              <Download className="h-4 w-4 sm:mr-2" />{' '}
+              <span className="hidden sm:inline">CSV</span>
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleExportPDF}>
+              <FileText className="h-4 w-4 sm:mr-2" />{' '}
+              <span className="hidden sm:inline">PDF</span>
+            </Button>
+            <Button onClick={() => handleOpenLedger()} size="sm">
+              <Plus className="h-4 w-4 sm:mr-2" />{' '}
+              <span className="hidden sm:inline">Novo Registro</span>
+            </Button>
           </div>
-          <Button onClick={() => handleOpenLedger()} size="sm">
-            <Plus className="h-4 w-4 mr-2" /> Novo Registro
-          </Button>
         </div>
       </div>
 

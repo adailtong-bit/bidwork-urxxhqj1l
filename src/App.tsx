@@ -59,6 +59,7 @@ import TeamInvoicing from '@/pages/construction/TeamInvoicing'
 import ConstructionDocuments from '@/pages/construction/ConstructionDocuments'
 import ConstructionPlans from '@/pages/construction/ConstructionPlans'
 import ConstructionCheckout from '@/pages/construction/ConstructionCheckout'
+import FieldEntry from '@/pages/construction/FieldEntry'
 import Messages from '@/pages/messages/Messages'
 import UserProfile from '@/pages/UserProfile'
 import { useAuthStore } from '@/stores/useAuthStore'
@@ -208,6 +209,10 @@ const App = () => {
               <Route
                 path="/construction/projects/:id"
                 element={<ProjectDetail />}
+              />
+              <Route
+                path="/construction/field-entry"
+                element={<FieldEntry />}
               />
               <Route
                 path="/construction/materials"
