@@ -178,7 +178,7 @@ export function ProjectFinanceAccounts({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="flex flex-col h-[75vh] min-h-[600px] w-full min-w-0 space-y-6 animate-fade-in">
+    <div className="flex flex-col space-y-6 w-full animate-fade-in">
       <div className="shrink-0 space-y-4">
         <div className="flex justify-between items-center bg-card p-4 rounded-xl border shadow-sm">
           <div>
@@ -304,7 +304,7 @@ export function ProjectFinanceAccounts({ projectId }: { projectId: string }) {
         )}
       </div>
 
-      <div className="flex-1 flex flex-col min-h-0 space-y-4">
+      <div className="flex flex-col space-y-4 w-full">
         <div className="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
           <div>
             <h3 className="text-lg font-semibold tracking-tight">
@@ -337,7 +337,7 @@ export function ProjectFinanceAccounts({ projectId }: { projectId: string }) {
               }}
             >
               <DialogTrigger asChild>
-                <Button size="sm" onClick={() => handleOpenMovDialog()}>
+                <Button size="sm">
                   <Plus className="h-4 w-4 mr-2" /> Movimentação
                 </Button>
               </DialogTrigger>
@@ -493,96 +493,99 @@ export function ProjectFinanceAccounts({ projectId }: { projectId: string }) {
           </div>
         </div>
 
-        <div className="flex-1 overflow-auto border rounded-xl bg-card shadow-sm relative">
-          <Table className="min-w-[800px] w-full">
-            <TableHeader className="bg-muted/50 sticky top-0 z-10 backdrop-blur-sm">
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Descrição</TableHead>
-                <TableHead>Etapa Relacionada</TableHead>
-                <TableHead>Conta</TableHead>
-                <TableHead>Tipo</TableHead>
-                <TableHead className="text-right">Valor</TableHead>
-                <TableHead className="text-right">Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredMovements.length > 0 ? (
-                filteredMovements.map((mov) => (
-                  <TableRow
-                    key={mov.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    onClick={() => handleOpenMovDialog(mov)}
-                  >
-                    <TableCell className="text-muted-foreground text-sm">
-                      {formatDate(new Date(mov.date), 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="font-medium">{mov.description}</div>
-                      {mov.category && (
-                        <div className="text-[10px] text-muted-foreground">
-                          {mov.category}
-                        </div>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">
-                      {mov.stageId
-                        ? stages.find((s) => s.id === mov.stageId)?.name || '-'
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-sm">
-                      {accounts.find((a) => a.id === mov.accountId)?.name ||
-                        '-'}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={
-                          mov.type === 'in'
-                            ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                            : 'bg-red-100 text-red-800 hover:bg-red-100'
-                        }
-                      >
-                        {mov.type === 'in' ? 'Entrada' : 'Saída'}
-                      </Badge>
-                    </TableCell>
-                    <TableCell
-                      className={`text-right font-semibold ${
-                        mov.type === 'in' ? 'text-green-600' : 'text-red-600'
-                      }`}
+        <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col relative">
+          <div className="overflow-auto w-full max-h-[600px]">
+            <Table className="min-w-[800px] w-full relative">
+              <TableHeader className="bg-muted/50 sticky top-0 z-10 backdrop-blur-sm">
+                <TableRow>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Descrição</TableHead>
+                  <TableHead>Etapa Relacionada</TableHead>
+                  <TableHead>Conta</TableHead>
+                  <TableHead>Tipo</TableHead>
+                  <TableHead className="text-right">Valor</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredMovements.length > 0 ? (
+                  filteredMovements.map((mov) => (
+                    <TableRow
+                      key={mov.id}
+                      className="cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => handleOpenMovDialog(mov)}
                     >
-                      {mov.type === 'in' ? '+' : '-'}
-                      {formatCurrency(mov.amount)}
-                    </TableCell>
-                    <TableCell
-                      className="text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() =>
-                          deleteFinancialMovement(projectId, mov.id)
-                        }
-                        className="text-destructive hover:bg-destructive/10"
+                      <TableCell className="text-muted-foreground text-sm">
+                        {formatDate(new Date(mov.date), 'dd/MM/yyyy')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="font-medium">{mov.description}</div>
+                        {mov.category && (
+                          <div className="text-[10px] text-muted-foreground">
+                            {mov.category}
+                          </div>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {mov.stageId
+                          ? stages.find((s) => s.id === mov.stageId)?.name ||
+                            '-'
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-sm">
+                        {accounts.find((a) => a.id === mov.accountId)?.name ||
+                          '-'}
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className={
+                            mov.type === 'in'
+                              ? 'bg-green-100 text-green-800 hover:bg-green-100'
+                              : 'bg-red-100 text-red-800 hover:bg-red-100'
+                          }
+                        >
+                          {mov.type === 'in' ? 'Entrada' : 'Saída'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell
+                        className={`text-right font-semibold ${
+                          mov.type === 'in' ? 'text-green-600' : 'text-red-600'
+                        }`}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                        {mov.type === 'in' ? '+' : '-'}
+                        {formatCurrency(mov.amount)}
+                      </TableCell>
+                      <TableCell
+                        className="text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            deleteFinancialMovement(projectId, mov.id)
+                          }
+                          className="text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={7}
+                      className="text-center py-12 text-muted-foreground italic"
+                    >
+                      Nenhuma movimentação financeira encontrada.
                     </TableCell>
                   </TableRow>
-                ))
-              ) : (
-                <TableRow>
-                  <TableCell
-                    colSpan={7}
-                    className="text-center py-12 text-muted-foreground italic"
-                  >
-                    Nenhuma movimentação financeira encontrada.
-                  </TableCell>
-                </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                )}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>

@@ -104,7 +104,7 @@ export function ProjectFinanceCosts({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="flex flex-col h-[75vh] min-h-[600px] w-full min-w-0 space-y-4 animate-fade-in">
+    <div className="flex flex-col space-y-4 w-full animate-fade-in">
       <div className="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div>
           <h3 className="text-lg font-semibold tracking-tight">
@@ -245,87 +245,92 @@ export function ProjectFinanceCosts({ projectId }: { projectId: string }) {
         </Dialog>
       </div>
 
-      <div className="flex-1 overflow-auto border rounded-xl bg-card shadow-sm relative">
-        <Table className="min-w-[800px] w-full">
-          <TableHeader className="bg-muted/50 sticky top-0 z-10 backdrop-blur-sm">
-            <TableRow>
-              <TableHead>Data</TableHead>
-              <TableHead>Descrição</TableHead>
-              <TableHead>Categoria</TableHead>
-              <TableHead>Etapa Relacionada</TableHead>
-              <TableHead>Item do Orçamento</TableHead>
-              <TableHead className="text-right">Valor</TableHead>
-              <TableHead className="text-right">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {allocated.length > 0 ? (
-              allocated
-                .sort(
-                  (a, b) =>
-                    new Date(b.date).getTime() - new Date(a.date).getTime(),
-                )
-                .map((cost) => (
-                  <TableRow
-                    key={cost.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    onClick={() => handleOpenCostDialog(cost)}
-                  >
-                    <TableCell className="text-muted-foreground text-sm">
-                      {cost.date
-                        ? formatDate(new Date(cost.date), 'dd/MM/yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {cost.description}
-                    </TableCell>
-                    <TableCell className="capitalize">
-                      <Badge variant="secondary" className="font-normal">
-                        {t(`proj.budget.${cost.category}`) || cost.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">
-                      {cost.stageId
-                        ? stages.find((s) => s.id === cost.stageId)?.name || '-'
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-muted-foreground text-xs">
-                      {cost.budgetItemId
-                        ? budgetItemsList.find(
-                            (b) => b.id === cost.budgetItemId,
-                          )?.description || '-'
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(cost.amount)}
-                    </TableCell>
-                    <TableCell
-                      className="text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => deleteAllocatedCost(projectId, cost.id)}
-                        className="text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-            ) : (
+      <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col relative">
+        <div className="overflow-auto w-full max-h-[600px]">
+          <Table className="min-w-[800px] w-full relative">
+            <TableHeader className="bg-muted/50 sticky top-0 z-10 backdrop-blur-sm">
               <TableRow>
-                <TableCell
-                  colSpan={7}
-                  className="text-center py-12 text-muted-foreground italic"
-                >
-                  Nenhum custo alocado registrado ainda.
-                </TableCell>
+                <TableHead>Data</TableHead>
+                <TableHead>Descrição</TableHead>
+                <TableHead>Categoria</TableHead>
+                <TableHead>Etapa Relacionada</TableHead>
+                <TableHead>Item do Orçamento</TableHead>
+                <TableHead className="text-right">Valor</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
-            )}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {allocated.length > 0 ? (
+                allocated
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime(),
+                  )
+                  .map((cost) => (
+                    <TableRow
+                      key={cost.id}
+                      className="cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => handleOpenCostDialog(cost)}
+                    >
+                      <TableCell className="text-muted-foreground text-sm">
+                        {cost.date
+                          ? formatDate(new Date(cost.date), 'dd/MM/yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        {cost.description}
+                      </TableCell>
+                      <TableCell className="capitalize">
+                        <Badge variant="secondary" className="font-normal">
+                          {t(`proj.budget.${cost.category}`) || cost.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {cost.stageId
+                          ? stages.find((s) => s.id === cost.stageId)?.name ||
+                            '-'
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground text-xs">
+                        {cost.budgetItemId
+                          ? budgetItemsList.find(
+                              (b) => b.id === cost.budgetItemId,
+                            )?.description || '-'
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {formatCurrency(cost.amount)}
+                      </TableCell>
+                      <TableCell
+                        className="text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() =>
+                            deleteAllocatedCost(projectId, cost.id)
+                          }
+                          className="text-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-12 text-muted-foreground italic"
+                  >
+                    Nenhum custo alocado registrado ainda.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
     </div>
   )

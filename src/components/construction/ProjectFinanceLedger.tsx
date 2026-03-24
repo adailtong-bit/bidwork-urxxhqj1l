@@ -150,7 +150,7 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
   }
 
   return (
-    <div className="flex flex-col h-[75vh] min-h-[600px] w-full min-w-0 space-y-4 animate-fade-in">
+    <div className="flex flex-col space-y-4 w-full animate-fade-in">
       <div className="shrink-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-card p-4 rounded-xl border shadow-sm">
         <div>
           <h3 className="text-lg font-semibold">Diário de Execução (Ledger)</h3>
@@ -158,12 +158,12 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
             Gerencie todos os custos e cronograma de fornecedores.
           </p>
         </div>
-        <div className="flex items-center gap-4 bg-muted/20 p-2 rounded-lg border">
+        <div className="flex flex-wrap items-center gap-4 bg-muted/20 p-2 rounded-lg border">
           <div className="text-right">
             <p className="text-xs text-muted-foreground">Total Previsto</p>
             <p className="font-bold">{formatCurrency(estLedger)}</p>
           </div>
-          <div className="h-8 w-px bg-border mx-2" />
+          <div className="h-8 w-px bg-border mx-2 hidden sm:block" />
           <div className="text-right mr-4">
             <p className="text-xs text-muted-foreground">Total Final</p>
             <p className="font-bold text-primary">
@@ -176,166 +176,194 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto border rounded-xl bg-card shadow-sm relative">
-        <Table className="min-w-[1200px] w-full relative">
-          <TableHeader className="bg-muted/50 sticky top-0 z-10 backdrop-blur-sm">
-            <TableRow>
-              <TableHead>Descrição do Serviço</TableHead>
-              <TableHead>Origem</TableHead>
-              <TableHead>Empresa Fornecedora</TableHead>
-              <TableHead>Compra</TableHead>
-              <TableHead>Entrega</TableHead>
-              <TableHead>Início</TableHead>
-              <TableHead>Término</TableHead>
-              <TableHead className="text-right">Custo Previsto</TableHead>
-              <TableHead className="text-right">Custo Final</TableHead>
-              <TableHead className="text-center">Status de Pagamento</TableHead>
-              <TableHead className="text-right">Ação</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {ledgerEntries.length > 0 ? (
-              ledgerEntries.map((l) => {
-                const expiredDocs = getPartnerCompliance(l.partnerId)
-                const isBlocked = expiredDocs.length > 0
-                const partnerName =
-                  project.partners.find((p) => p.id === l.partnerId)
-                    ?.companyName || 'N/A'
+      <div className="border rounded-xl bg-card shadow-sm overflow-hidden flex flex-col relative">
+        <div className="overflow-auto w-full max-h-[600px]">
+          <Table className="min-w-[1200px] w-full relative">
+            <TableHeader className="bg-muted/50 sticky top-0 z-10 backdrop-blur-sm">
+              <TableRow>
+                <TableHead>Descrição do Serviço</TableHead>
+                <TableHead>Origin / Fornecedor</TableHead>
+                <TableHead>Data Compra</TableHead>
+                <TableHead>Data Entrega</TableHead>
+                <TableHead>Início Execução</TableHead>
+                <TableHead>Término Execução</TableHead>
+                <TableHead className="text-right">Custo Previsto</TableHead>
+                <TableHead className="text-right">Custo Final</TableHead>
+                <TableHead className="text-center">Status Risco</TableHead>
+                <TableHead className="text-center">Pagamento</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {ledgerEntries.length > 0 ? (
+                ledgerEntries.map((l) => {
+                  const expiredDocs = getPartnerCompliance(l.partnerId)
+                  const isBlocked = expiredDocs.length > 0
+                  const partnerName =
+                    project.partners.find((p) => p.id === l.partnerId)
+                      ?.companyName || 'N/A'
 
-                return (
-                  <TableRow
-                    key={l.id}
-                    className="cursor-pointer hover:bg-muted/30 transition-colors"
-                    onClick={() => handleOpenLedger(l)}
-                  >
-                    <TableCell className="font-medium">
-                      {l.description}
-                    </TableCell>
-                    <TableCell className="text-sm">{l.origin || '-'}</TableCell>
-                    <TableCell>
-                      <div className="flex flex-col gap-1 font-medium">
-                        <span>{partnerName}</span>
-                        {isBlocked && (
+                  return (
+                    <TableRow
+                      key={l.id}
+                      className="cursor-pointer hover:bg-muted/30 transition-colors"
+                      onClick={() => handleOpenLedger(l)}
+                    >
+                      <TableCell className="font-medium">
+                        {l.description}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm">{l.origin || '-'}</span>
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {partnerName}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {l.purchaseDate
+                          ? formatDate(new Date(l.purchaseDate), 'dd/MM/yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-xs">
+                        {l.deliveryDate
+                          ? formatDate(new Date(l.deliveryDate), 'dd/MM/yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {l.startDate
+                          ? formatDate(new Date(l.startDate), 'dd/MM/yyyy')
+                          : '-'}
+                      </TableCell>
+                      <TableCell className="text-xs text-muted-foreground">
+                        {l.endDate ? (
+                          formatDate(new Date(l.endDate), 'dd/MM/yyyy')
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-6 text-[10px] whitespace-nowrap bg-muted/50 hover:bg-muted"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              updateLedgerEntry(projectId, l.id, {
+                                endDate: new Date(),
+                              })
+                              toast({
+                                title:
+                                  'Data de término registrada (Site Entry)!',
+                              })
+                            }}
+                          >
+                            Marcar Término
+                          </Button>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right text-muted-foreground text-xs line-through">
+                        {formatCurrency(l.estimatedCost)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-primary">
+                        {formatCurrency(l.finalCost)}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        {isBlocked ? (
                           <Badge
                             variant="destructive"
-                            className="text-[10px] w-fit whitespace-nowrap"
+                            title={expiredDocs.map((d) => d.name).join(', ')}
+                            className="whitespace-nowrap"
                           >
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Bloqueio Compliance
+                            <AlertTriangle className="h-3 w-3 mr-1" /> Bloqueado
+                          </Badge>
+                        ) : (
+                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200">
+                            Regular
                           </Badge>
                         )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {l.purchaseDate
-                        ? formatDate(new Date(l.purchaseDate), 'dd/MM/yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {l.deliveryDate
-                        ? formatDate(new Date(l.deliveryDate), 'dd/MM/yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {l.startDate
-                        ? formatDate(new Date(l.startDate), 'dd/MM/yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {l.endDate
-                        ? formatDate(new Date(l.endDate), 'dd/MM/yyyy')
-                        : '-'}
-                    </TableCell>
-                    <TableCell className="text-right text-muted-foreground text-xs line-through">
-                      {formatCurrency(l.estimatedCost)}
-                    </TableCell>
-                    <TableCell className="text-right font-medium text-primary">
-                      {formatCurrency(l.finalCost)}
-                    </TableCell>
-                    <TableCell
-                      className="text-center"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      {isBlocked ? (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="inline-flex w-[130px] mx-auto">
-                                <Select disabled value={l.paymentStatus}>
-                                  <SelectTrigger className="h-8 border-red-200 bg-red-50 text-red-800 text-[11px] w-full cursor-not-allowed">
-                                    <SelectValue placeholder="Bloqueado" />
-                                  </SelectTrigger>
-                                </Select>
-                              </div>
-                            </TooltipTrigger>
-                            <TooltipContent className="bg-red-50 text-red-900 border-red-200">
-                              Docs vencidos:{' '}
-                              {expiredDocs.map((d) => d.name).join(', ')}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      ) : (
-                        <Select
-                          value={l.paymentStatus}
-                          onValueChange={(val) =>
-                            updateLedgerEntry(projectId, l.id, {
-                              paymentStatus: val as any,
-                            })
-                          }
-                        >
-                          <SelectTrigger
-                            className={cn(
-                              'h-8 border text-[11px] w-[130px] mx-auto',
-                              l.paymentStatus === 'paid'
-                                ? 'bg-green-100 text-green-800 border-green-200'
-                                : l.paymentStatus === 'overdue'
-                                  ? 'bg-red-100 text-red-800 border-red-200'
-                                  : l.paymentStatus === 'partially_paid'
-                                    ? 'bg-blue-100 text-blue-800 border-blue-200'
-                                    : 'bg-secondary',
-                            )}
-                          >
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="pending">Pendente</SelectItem>
-                            <SelectItem value="partially_paid">
-                              Parcialmente Pago
-                            </SelectItem>
-                            <SelectItem value="paid">Pago</SelectItem>
-                            <SelectItem value="overdue">Atrasado</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      )}
-                    </TableCell>
-                    <TableCell
-                      className="text-right"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="text-destructive hover:bg-destructive/10"
-                        onClick={() => deleteLedgerEntry(projectId, l.id)}
+                      </TableCell>
+                      <TableCell
+                        className="text-center"
+                        onClick={(e) => e.stopPropagation()}
                       >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                )
-              })
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={11}
-                  className="text-center py-12 text-muted-foreground italic"
-                >
-                  Nenhum registro no Ledger.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+                        {isBlocked ? (
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="inline-flex w-[120px] mx-auto">
+                                  <Select disabled value={l.paymentStatus}>
+                                    <SelectTrigger className="h-8 border-red-200 bg-red-50 text-red-800 text-[11px] w-full cursor-not-allowed">
+                                      <SelectValue placeholder="Bloqueado" />
+                                    </SelectTrigger>
+                                  </Select>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-red-50 text-red-900 border-red-200">
+                                Docs vencidos:{' '}
+                                {expiredDocs.map((d) => d.name).join(', ')}
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        ) : (
+                          <Select
+                            value={l.paymentStatus}
+                            onValueChange={(val) =>
+                              updateLedgerEntry(projectId, l.id, {
+                                paymentStatus: val as any,
+                              })
+                            }
+                          >
+                            <SelectTrigger
+                              className={cn(
+                                'h-8 border text-[11px] w-[120px] mx-auto',
+                                l.paymentStatus === 'paid'
+                                  ? 'bg-green-100 text-green-800 border-green-200'
+                                  : l.paymentStatus === 'overdue'
+                                    ? 'bg-red-100 text-red-800 border-red-200'
+                                    : l.paymentStatus === 'partially_paid'
+                                      ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                      : 'bg-secondary',
+                              )}
+                            >
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">Pendente</SelectItem>
+                              <SelectItem value="partially_paid">
+                                Parcialmente Pago
+                              </SelectItem>
+                              <SelectItem value="paid">Pago</SelectItem>
+                              <SelectItem value="overdue">Atrasado</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        )}
+                      </TableCell>
+                      <TableCell
+                        className="text-right"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteLedgerEntry(projectId, l.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={11}
+                    className="text-center py-12 text-muted-foreground italic"
+                  >
+                    Nenhum registro no Ledger.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </div>
 
       <Dialog
@@ -388,7 +416,7 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Origem</Label>
+                <Label>Origem do Pedido</Label>
                 <Input
                   value={ledgerForm.origin}
                   placeholder="Ex: Contrato X, Pedido Y"
@@ -400,7 +428,7 @@ export function ProjectFinanceLedger({ projectId }: { projectId: string }) {
             </div>
             <div className="space-y-2">
               <Label>
-                Fornecedor <span className="text-red-500">*</span>
+                Empresa Fornecedora <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={ledgerForm.partnerId}
