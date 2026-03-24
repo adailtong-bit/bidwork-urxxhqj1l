@@ -95,7 +95,7 @@ export function ProjectEquipment({ projectId }: { projectId: string }) {
                       >
                         {eq.status === 'maintenance'
                           ? 'Em Manutenção'
-                          : 'Em Uso (Aluguel)'}
+                          : 'Em Obra (Allocated)'}
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
@@ -106,11 +106,12 @@ export function ProjectEquipment({ projectId }: { projectId: string }) {
                           onClick={() => {
                             returnEquipment(eq.id)
                             toast({
-                              title: 'Máquina devolvida ao pátio global.',
+                              title: 'Check-in realizado com sucesso.',
+                              description: 'Máquina devolvida ao pátio global.',
                             })
                           }}
                         >
-                          Devolver
+                          Check-in (Devolver)
                         </Button>
                       )}
                     </TableCell>

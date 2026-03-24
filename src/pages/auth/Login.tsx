@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useToast } from '@/hooks/use-toast'
-import { Loader2, Github } from 'lucide-react'
+import { Loader2, ArrowRight, Building2 } from 'lucide-react'
 import {
   Form,
   FormControl,
@@ -22,8 +22,8 @@ import { useLanguageStore } from '@/stores/useLanguageStore'
 
 const createLoginSchema = (t: any) =>
   z.object({
-    email: z.string().email(t('val.email')),
-    password: z.string().min(6, t('val.required')),
+    email: z.string().email(t('val.email') || 'Email inválido'),
+    password: z.string().min(6, t('val.required') || 'Campo obrigatório'),
   })
 
 export default function Login() {
@@ -44,38 +44,47 @@ export default function Login() {
     try {
       await login(data.email, data.password)
       toast({
-        title: t('success'),
-        description: t('dashboard.welcome', { name: 'User' }),
+        title: t('success') || 'Sucesso',
+        description: 'Login realizado com sucesso.',
       })
       navigate('/dashboard')
     } catch (error) {
       toast({
         variant: 'destructive',
-        title: t('error'),
-        description: 'Login failed',
+        title: t('error') || 'Erro',
+        description: 'Credenciais inválidas.',
       })
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">{t('nav.login')}</h1>
-        <p className="text-muted-foreground">
-          {t('nav.start')} - {t('app.title')}
+    <div className="space-y-6 w-full max-w-[380px] mx-auto px-4">
+      <div className="flex flex-col items-center space-y-2 text-center mb-8">
+        <div className="h-12 w-12 bg-primary/10 text-primary flex items-center justify-center rounded-xl mb-2">
+          <Building2 className="h-6 w-6" />
+        </div>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Acesso Seguro
+        </h1>
+        <p className="text-muted-foreground text-sm">
+          Acesse o painel integrado de Gestão de Obras, Máquinas e Compras.
         </p>
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
           <FormField
             control={form.control}
             name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>{t('settings.form.email')}</FormLabel>
+                <FormLabel>E-mail Corporativo</FormLabel>
                 <FormControl>
-                  <Input placeholder="seu@email.com" {...field} />
+                  <Input
+                    placeholder="seu@email.com"
+                    {...field}
+                    className="bg-background h-11"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -87,67 +96,59 @@ export default function Login() {
             render={({ field }) => (
               <FormItem>
                 <div className="flex items-center justify-between">
-                  <FormLabel>Password</FormLabel>
+                  <FormLabel>Senha</FormLabel>
                   <Link
                     to="/forgot-password"
-                    className="text-sm font-medium text-primary hover:underline"
+                    className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline"
                   >
-                    {t('auth.forgot.title')}
+                    Forgot Password? (Esqueci a Senha)
                   </Link>
                 </div>
                 <FormControl>
-                  <Input type="password" placeholder="••••••••" {...field} />
+                  <Input
+                    type="password"
+                    placeholder="••••••••"
+                    {...field}
+                    className="bg-background h-11"
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
 
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 pt-1">
             <Checkbox id="remember" />
             <Label
               htmlFor="remember"
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
             >
-              Remember me
+              Lembrar de mim
             </Label>
           </div>
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {t('nav.login')}
+          <Button
+            type="submit"
+            className="w-full h-11 text-base font-semibold"
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            ) : (
+              <ArrowRight className="mr-2 h-5 w-5" />
+            )}
+            Entrar
           </Button>
         </form>
       </Form>
 
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Or continue with
-          </span>
-        </div>
-      </div>
-
-      <Button
-        variant="outline"
-        type="button"
-        className="w-full"
-        disabled={isLoading}
-      >
-        <Github className="mr-2 h-4 w-4" />
-        Github
-      </Button>
-
-      <div className="text-center text-sm">
-        {t('auth.no_account')}{' '}
+      <div className="text-center text-sm pt-4 border-t border-border/50">
+        <span className="text-muted-foreground">Ainda não possui acesso?</span>{' '}
         <Link
           to="/register"
-          className="font-semibold text-primary hover:underline"
+          className="font-bold text-primary hover:text-primary/80 transition-colors underline-offset-4 hover:underline"
         >
-          {t('nav.start')}
+          Create Account (Criar Conta)
         </Link>
       </div>
 

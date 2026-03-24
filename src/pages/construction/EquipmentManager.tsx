@@ -140,7 +140,7 @@ export default function EquipmentManager() {
 
       toast({
         title: t('success'),
-        description: 'Máquina alugada/alocada com sucesso para o projeto.',
+        description: 'Check-out finalizado. Máquina alocada para o projeto.',
       })
       setIsAssignOpen(false)
     }
@@ -188,7 +188,8 @@ export default function EquipmentManager() {
             Gestão de Máquinas
           </h1>
           <p className="text-muted-foreground">
-            Controle de Aluguel e Manutenção de equipamentos.
+            Controle de Aluguel, Manutenção e Check-in/Check-out de
+            equipamentos.
           </p>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
@@ -376,7 +377,7 @@ export default function EquipmentManager() {
           <SelectContent>
             <SelectItem value="all">Todas as Máquinas</SelectItem>
             <SelectItem value="available">Disponível</SelectItem>
-            <SelectItem value="in_use">Aluguel (Em Uso)</SelectItem>
+            <SelectItem value="in_use">Alugado / Em Obra</SelectItem>
             <SelectItem value="maintenance">Manutenção</SelectItem>
           </SelectContent>
         </Select>
@@ -398,10 +399,10 @@ export default function EquipmentManager() {
                   }
                 >
                   {eq.status === 'available'
-                    ? 'Disponível'
+                    ? 'Disponível (Pátio)'
                     : eq.status === 'in_use'
-                      ? 'Aluguel (Em Uso)'
-                      : 'Manutenção'}
+                      ? 'Em Obra (Allocated)'
+                      : 'Em Manutenção'}
                 </Badge>
               </div>
               <CardTitle className="mt-2 flex items-center gap-2">
@@ -453,7 +454,7 @@ export default function EquipmentManager() {
                     setIsAssignOpen(true)
                   }}
                 >
-                  Locar / Alugar
+                  Check-out (Alocar Obra)
                 </Button>
               ) : eq.status === 'in_use' ? (
                 <Button
@@ -461,10 +462,13 @@ export default function EquipmentManager() {
                   variant="secondary"
                   onClick={() => {
                     returnEquipment(eq.id)
-                    toast({ title: 'Máquina devolvida com sucesso.' })
+                    toast({
+                      title: 'Check-in realizado com sucesso.',
+                      description: 'Máquina devolvida ao pátio global.',
+                    })
                   }}
                 >
-                  Devolver Máquina
+                  Check-in (Devolver Pátio)
                 </Button>
               ) : (
                 <Button
@@ -511,9 +515,10 @@ export default function EquipmentManager() {
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Locar Máquina para Projeto</DialogTitle>
+            <DialogTitle>Check-out: Alocar Máquina</DialogTitle>
             <DialogDescription>
-              Selecione a obra que receberá este equipamento.
+              Selecione a obra que receberá este equipamento. Os custos de
+              aluguel serão alocados automaticamente.
             </DialogDescription>
           </DialogHeader>
           <div className="py-4">
@@ -534,7 +539,7 @@ export default function EquipmentManager() {
             </Select>
           </div>
           <DialogFooter>
-            <Button onClick={handleAssign}>Confirmar Aluguel</Button>
+            <Button onClick={handleAssign}>Confirmar Check-out</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
