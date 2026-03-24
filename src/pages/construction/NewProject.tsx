@@ -31,8 +31,7 @@ import {
   MapPin,
   Globe,
 } from 'lucide-react'
-import { format, addDays } from 'date-fns'
-import { ptBR } from 'date-fns/locale'
+import { addDays } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { Calendar } from '@/components/ui/calendar'
 import {
@@ -57,6 +56,7 @@ export default function NewProject() {
     startDate: new Date(),
     endDate: addDays(new Date(), 180),
     totalBudget: 0,
+    purchaseApprovalThreshold: 1000,
     address: {
       zipCode: '',
       street: '',
@@ -149,6 +149,7 @@ export default function NewProject() {
       startDate: formData.startDate,
       endDate: formData.endDate,
       totalBudget: formData.totalBudget,
+      purchaseApprovalThreshold: formData.purchaseApprovalThreshold,
       ownerId: 'current-user-id', // Mock ID
       status: 'planning',
       stages,
@@ -387,16 +388,37 @@ export default function NewProject() {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="budget">Orçamento Estimado Total</Label>
-              <CurrencyInput
-                id="budget"
-                value={formData.totalBudget}
-                onChange={(value) =>
-                  setFormData({ ...formData, totalBudget: value })
-                }
-                placeholder="R$ 0,00"
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="budget">Orçamento Estimado Total</Label>
+                <CurrencyInput
+                  id="budget"
+                  value={formData.totalBudget}
+                  onChange={(value) =>
+                    setFormData({ ...formData, totalBudget: value })
+                  }
+                  placeholder="R$ 0,00"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="threshold">
+                  Limite de Aprovação de Compras
+                </Label>
+                <CurrencyInput
+                  id="threshold"
+                  value={formData.purchaseApprovalThreshold}
+                  onChange={(value) =>
+                    setFormData({
+                      ...formData,
+                      purchaseApprovalThreshold: value,
+                    })
+                  }
+                  placeholder="R$ 1.000,00"
+                />
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  Compras no app acima deste valor exigirão aprovação gerencial.
+                </p>
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -438,3 +460,4 @@ export default function NewProject() {
     </div>
   )
 }
+

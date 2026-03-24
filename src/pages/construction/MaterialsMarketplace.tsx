@@ -203,6 +203,9 @@ export default function MaterialsMarketplace() {
       total: item.quantity * item.unitPrice,
     }))
 
+    const threshold = selectedProject?.purchaseApprovalThreshold || 1000
+    const isPendingApproval = cartTotal > threshold
+
     addOrder({
       projectId: checkoutProjectId,
       stageId: checkoutStageId !== 'none' ? checkoutStageId : undefined,
@@ -210,32 +213,39 @@ export default function MaterialsMarketplace() {
       vendorName: selectedVendor?.name,
       items: orderItems,
       total: cartTotal,
-      status: 'pending',
+      status: isPendingApproval ? 'pending_approval' : 'approved',
     })
 
-    if (checkoutStageId !== 'none') {
-      updateStageActuals(
-        checkoutProjectId,
-        checkoutStageId,
-        'material',
-        cartTotal,
-      )
+    if (!isPendingApproval) {
+      if (checkoutStageId !== 'none') {
+        updateStageActuals(
+          checkoutProjectId,
+          checkoutStageId,
+          'material',
+          cartTotal,
+        )
+      }
+
+      addAllocatedCost(checkoutProjectId, {
+        description: `Compra de Materiais - ${selectedVendor?.name || 'Diversos'} (${cart.length} itens)`,
+        amount: cartTotal,
+        type: 'actual',
+        category: 'material',
+        costClass: 'capex',
+        date: new Date(),
+        stageId: checkoutStageId !== 'none' ? checkoutStageId : undefined,
+      })
+
+      toast({
+        title: 'Pedido Confirmado!',
+        description: `A compra foi registrada e alocada na obra ${selectedProject?.name || ''}.`,
+      })
+    } else {
+      toast({
+        title: 'Aprovação Necessária',
+        description: `O pedido de ${formatCurrency(cartTotal)} excedeu o limite do projeto (${formatCurrency(threshold)}) e foi enviado para aprovação do gerente.`,
+      })
     }
-
-    addAllocatedCost(checkoutProjectId, {
-      description: `Compra de Materiais - ${selectedVendor?.name || 'Diversos'} (${cart.length} itens)`,
-      amount: cartTotal,
-      type: 'actual',
-      category: 'material',
-      costClass: 'capex',
-      date: new Date(),
-      stageId: checkoutStageId !== 'none' ? checkoutStageId : undefined,
-    })
-
-    toast({
-      title: 'Pedido Confirmado!',
-      description: `A compra foi registrada e alocada na obra ${selectedProject?.name || ''}.`,
-    })
 
     setCart([])
     setIsCheckoutOpen(false)
@@ -294,7 +304,7 @@ export default function MaterialsMarketplace() {
                 {cart.length}
               </span>
             )}
-          </Button>
+          Button>
         </div>
       </div>
 
@@ -678,3 +688,4 @@ export default function MaterialsMarketplace() {
     </div>
   )
 }
+

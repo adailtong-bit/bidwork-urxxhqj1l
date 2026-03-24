@@ -22,13 +22,16 @@ export interface Equipment {
   purchaseDate: Date
   nextMaintenance: Date
   maintenanceHistory: MaintenanceRecord[]
-  // New Fields
+  // Rental Fields
   rentalCondition?: string
   rentalValue?: number
   rentalStartDate?: Date
   rentalEndDate?: Date
   annualDepreciation?: number
   rentalDocumentUrl?: string
+  // Preventive Maintenance Fields
+  maintenanceThresholdHours?: number
+  currentUsageHours?: number
 }
 
 interface EquipmentState {
@@ -65,6 +68,8 @@ const mockEquipment: Equipment[] = [
     rentalCondition: 'Nova',
     rentalValue: 2500,
     annualDepreciation: 15000,
+    maintenanceThresholdHours: 500,
+    currentUsageHours: 480, // Alert condition for testing
   },
   {
     id: 'eq-2',
@@ -74,9 +79,11 @@ const mockEquipment: Equipment[] = [
     status: 'available',
     location: 'Depósito Central',
     purchaseDate: new Date('2022-05-20'),
-    nextMaintenance: new Date(Date.now() - 86400000 * 2),
+    nextMaintenance: new Date(Date.now() - 86400000 * 2), // Late maintenance alert
     maintenanceHistory: [],
     annualDepreciation: 500,
+    maintenanceThresholdHours: 1000,
+    currentUsageHours: 600,
   },
   {
     id: 'eq-3',
@@ -148,6 +155,7 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
             nextMaintenance: new Date(
               new Date().getTime() + 90 * 24 * 60 * 60 * 1000,
             ),
+            currentUsageHours: 0, // Reset usage
           }
         }
         return eq
@@ -160,3 +168,4 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
       ),
     })),
 }))
+

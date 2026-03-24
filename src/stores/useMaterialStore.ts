@@ -36,7 +36,13 @@ export interface Order {
   items: OrderItem[]
   total: number
   freightCost?: number
-  status: 'pending' | 'delivered' | 'cancelled'
+  status:
+    | 'pending'
+    | 'delivered'
+    | 'cancelled'
+    | 'pending_approval'
+    | 'approved'
+    | 'rejected'
   date: Date
   arrivalDate?: Date
 }
@@ -49,6 +55,7 @@ interface MaterialState {
   getMaterials: () => Material[]
   getOrdersByProject: (projectId: string) => Order[]
   updateMaterial: (id: string, data: Partial<Material>) => void
+  updateOrderStatus: (id: string, status: Order['status']) => void
   importMaterialList: (
     file: File,
   ) => Promise<{ success: boolean; count: number }>
@@ -145,6 +152,10 @@ export const useMaterialStore = create<MaterialState>((set, get) => ({
         m.id === id ? { ...m, ...data } : m,
       ),
     })),
+  updateOrderStatus: (id, status) =>
+    set((state) => ({
+      orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+    })),
   importMaterialList: async (file) => {
     await new Promise((resolve) => setTimeout(resolve, 1000))
     return { success: true, count: 5 }
@@ -155,3 +166,4 @@ export const useMaterialStore = create<MaterialState>((set, get) => ({
     return newVendor
   },
 }))
+

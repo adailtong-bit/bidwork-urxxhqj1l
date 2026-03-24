@@ -307,6 +307,7 @@ export interface Project {
   stages: Stage[]
   partners: ProjectPartner[]
   totalBudget: number
+  purchaseApprovalThreshold?: number
   totalSpent: number
   budgetItems: BudgetItem[]
   approvalLogs: ApprovalLog[]
@@ -667,6 +668,7 @@ const mockProjects: Project[] = [
     endDate: new Date(Date.now() + 86400000 * 180),
     status: 'in_progress',
     totalBudget: 1500000,
+    purchaseApprovalThreshold: 1000,
     totalSpent: 350000,
     sqFt: 2500,
     measurements: [
@@ -2112,3 +2114,4 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       ),
     })),
 }))
+
