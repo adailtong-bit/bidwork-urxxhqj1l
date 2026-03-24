@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { useProjectStore, ProjectPartner } from '@/stores/useProjectStore'
+import { useEquipmentStore } from '@/stores/useEquipmentStore'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useNotificationStore } from '@/stores/useNotificationStore'
 import { Button } from '@/components/ui/button'
@@ -33,6 +34,7 @@ import {
   Bell,
   AlertTriangle,
   TrendingUp,
+  ChevronDown,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -50,6 +52,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
 import { ProjectFinance } from '@/components/construction/ProjectFinance'
@@ -68,7 +76,8 @@ import {
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { getProject, setProjectSqFt } = useProjectStore()
+  const { getProject, setProjectSqFt, updateProject } = useProjectStore()
+  const { equipment, returnEquipment } = useEquipmentStore()
   const { user } = useAuthStore()
   const { upsertNotification } = useNotificationStore()
   const { toast } = useToast()
@@ -146,6 +155,16 @@ export default function ProjectDetail() {
     setSearchParams({ tab: val })
   }
 
+  const handleCompleteProject = () => {
+    updateProject(project.id, { status: 'completed' })
+    const projectEqs = equipment.filter((e) => e.projectId === project.id)
+    projectEqs.forEach((eq) => returnEquipment(eq.id))
+    toast({
+      title: 'Projeto Concluído',
+      description: 'As máquinas alocadas foram devolvidas ao pátio.',
+    })
+  }
+
   // Check for critical expired documents
   const todayDate = new Date()
   todayDate.setHours(0, 0, 0, 0)
@@ -199,11 +218,46 @@ export default function ProjectDetail() {
               <ArrowLeft className="h-4 w-4" />
             </Link>
           </Button>
-          <Badge
-            variant={project.status === 'in_progress' ? 'default' : 'secondary'}
-          >
-            {t(`status.${project.status}`)}
-          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Badge
+                variant={
+                  project.status === 'in_progress' ? 'default' : 'secondary'
+                }
+                className="cursor-pointer hover:opacity-80 flex items-center gap-1"
+              >
+                {t(`status.${project.status}`)}{' '}
+                <ChevronDown className="h-3 w-3" />
+              </Badge>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem
+                onClick={() =>
+                  updateProject(project.id, { status: 'planning' })
+                }
+              >
+                Planejamento
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() =>
+                  updateProject(project.id, { status: 'in_progress' })
+                }
+              >
+                Em Progresso
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => updateProject(project.id, { status: 'paused' })}
+              >
+                Pausado
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={handleCompleteProject}
+                className="text-green-600 font-medium"
+              >
+                Concluir Projeto
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         <h1 className="text-4xl font-bold tracking-tight text-foreground truncate max-w-full px-8">

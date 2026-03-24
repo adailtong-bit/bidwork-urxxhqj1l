@@ -139,8 +139,8 @@ export const useEquipmentStore = create<EquipmentState>((set) => ({
         if (eq.id === equipmentId) {
           return {
             ...eq,
-            status: 'available',
-            location: 'Depósito Central',
+            status: eq.projectId ? 'in_use' : 'available',
+            location: eq.projectId ? eq.location : 'Depósito Central',
             maintenanceHistory: [
               ...eq.maintenanceHistory,
               { ...record, id: Math.random().toString(36).substr(2, 9) },

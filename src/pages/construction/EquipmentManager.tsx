@@ -43,6 +43,7 @@ import {
 import { isBefore, addDays } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { CurrencyInput } from '@/components/CurrencyInput'
 
 export default function EquipmentManager() {
   const {
@@ -50,9 +51,9 @@ export default function EquipmentManager() {
     addEquipment,
     assignToProject,
     returnEquipment,
-    scheduleMaintenance,
+    performMaintenance,
   } = useEquipmentStore()
-  const { projects } = useProjectStore()
+  const { projects, addAllocatedCost } = useProjectStore()
   const { toast } = useToast()
   const { t, formatCurrency, formatDate } = useLanguageStore()
 
@@ -61,6 +62,14 @@ export default function EquipmentManager() {
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isAssignOpen, setIsAssignOpen] = useState(false)
   const [selectedEq, setSelectedEq] = useState<string | null>(null)
+
+  const [isMaintenanceOpen, setIsMaintenanceOpen] = useState(false)
+  const [maintenanceData, setMaintenanceData] = useState({
+    eqId: '',
+    description: '',
+    cost: 0,
+    technician: '',
+  })
 
   const [newItem, setNewItem] = useState({
     name: '',
@@ -114,14 +123,51 @@ export default function EquipmentManager() {
   const handleAssign = () => {
     if (!selectedEq || !assignData.projectId) return
     const project = projects.find((p) => p.id === assignData.projectId)
-    if (project) {
+    const eq = equipment.find((e) => e.id === selectedEq)
+    if (project && eq) {
       assignToProject(selectedEq, project.id, project.name, project.location)
+
+      if (eq.rentalValue && eq.rentalValue > 0) {
+        addAllocatedCost(project.id, {
+          description: `Locação: ${eq.name} (${eq.serialNumber})`,
+          amount: eq.rentalValue,
+          type: 'estimated',
+          category: 'equipment',
+          costClass: 'capex',
+          date: new Date(),
+        })
+      }
+
       toast({
         title: t('success'),
         description: 'Máquina alugada/alocada com sucesso para o projeto.',
       })
       setIsAssignOpen(false)
     }
+  }
+
+  const handleCompleteMaintenance = () => {
+    performMaintenance(maintenanceData.eqId, {
+      date: new Date(),
+      description: maintenanceData.description,
+      cost: maintenanceData.cost,
+      technician: maintenanceData.technician,
+    })
+
+    const eq = equipment.find((e) => e.id === maintenanceData.eqId)
+    if (eq && eq.projectId && maintenanceData.cost > 0) {
+      addAllocatedCost(eq.projectId, {
+        description: `Manutenção: ${eq.name} (${maintenanceData.description})`,
+        amount: maintenanceData.cost,
+        type: 'actual',
+        category: 'equipment',
+        costClass: 'capex',
+        date: new Date(),
+      })
+    }
+
+    toast({ title: 'Manutenção concluída e custos registrados.' })
+    setIsMaintenanceOpen(false)
   }
 
   const getTypeLabel = (type: string) => {
@@ -425,9 +471,13 @@ export default function EquipmentManager() {
                   className="w-full"
                   variant="default"
                   onClick={() => {
-                    scheduleMaintenance(eq.id, addDays(new Date(), 90))
-                    returnEquipment(eq.id) // Sets to available
-                    toast({ title: 'Manutenção concluída.' })
+                    setMaintenanceData({
+                      eqId: eq.id,
+                      description: '',
+                      cost: 0,
+                      technician: '',
+                    })
+                    setIsMaintenanceOpen(true)
                   }}
                 >
                   <Wrench className="mr-2 h-4 w-4" /> Finalizar Manutenção
@@ -438,7 +488,6 @@ export default function EquipmentManager() {
                   size="icon"
                   variant="ghost"
                   onClick={() => {
-                    // Set status to maintenance manually
                     useEquipmentStore.setState((state) => ({
                       equipment: state.equipment.map((e) =>
                         e.id === eq.id
@@ -458,6 +507,7 @@ export default function EquipmentManager() {
         ))}
       </div>
 
+      {/* Assign Dialog */}
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent>
           <DialogHeader>
@@ -485,6 +535,65 @@ export default function EquipmentManager() {
           </div>
           <DialogFooter>
             <Button onClick={handleAssign}>Confirmar Aluguel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Maintenance Dialog */}
+      <Dialog open={isMaintenanceOpen} onOpenChange={setIsMaintenanceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Manutenção</DialogTitle>
+            <DialogDescription>
+              Insira os detalhes do serviço realizado e o custo associado.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Descrição do Serviço</Label>
+              <Input
+                value={maintenanceData.description}
+                onChange={(e) =>
+                  setMaintenanceData({
+                    ...maintenanceData,
+                    description: e.target.value,
+                  })
+                }
+                placeholder="Ex: Troca de óleo, Filtros..."
+              />
+            </div>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Técnico / Oficina</Label>
+                <Input
+                  value={maintenanceData.technician}
+                  onChange={(e) =>
+                    setMaintenanceData({
+                      ...maintenanceData,
+                      technician: e.target.value,
+                    })
+                  }
+                  placeholder="Nome do responsável"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Custo Total</Label>
+                <CurrencyInput
+                  value={maintenanceData.cost}
+                  onChange={(val) =>
+                    setMaintenanceData({ ...maintenanceData, cost: val })
+                  }
+                />
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              onClick={handleCompleteMaintenance}
+              disabled={!maintenanceData.description}
+            >
+              Salvar Registro
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

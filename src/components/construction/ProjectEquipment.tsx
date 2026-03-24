@@ -13,10 +13,12 @@ import { Badge } from '@/components/ui/badge'
 import { Link } from 'react-router-dom'
 import { Plus, Wrench, DollarSign, Truck } from 'lucide-react'
 import { useLanguageStore } from '@/stores/useLanguageStore'
+import { useToast } from '@/hooks/use-toast'
 
 export function ProjectEquipment({ projectId }: { projectId: string }) {
-  const { equipment } = useEquipmentStore()
+  const { equipment, returnEquipment } = useEquipmentStore()
   const { formatCurrency, formatDate } = useLanguageStore()
+  const { toast } = useToast()
 
   const projectEquipment = equipment.filter((eq) => eq.projectId === projectId)
 
@@ -49,6 +51,7 @@ export function ProjectEquipment({ projectId }: { projectId: string }) {
                 <TableHead>Aluguel</TableHead>
                 <TableHead>Manutenção</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead className="text-right">Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,12 +98,28 @@ export function ProjectEquipment({ projectId }: { projectId: string }) {
                           : 'Em Uso (Aluguel)'}
                       </Badge>
                     </TableCell>
+                    <TableCell className="text-right">
+                      {eq.status === 'in_use' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            returnEquipment(eq.id)
+                            toast({
+                              title: 'Máquina devolvida ao pátio global.',
+                            })
+                          }}
+                        >
+                          Devolver
+                        </Button>
+                      )}
+                    </TableCell>
                   </TableRow>
                 ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={5}
+                    colSpan={6}
                     className="text-center py-8 text-muted-foreground"
                   >
                     Nenhuma máquina alocada para este projeto.
