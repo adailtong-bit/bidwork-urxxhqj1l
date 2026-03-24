@@ -25,6 +25,8 @@ export interface OrderItem {
   quantity: number
   unitPrice: number
   total: number
+  brand?: string
+  color?: string
 }
 
 export interface Order {
@@ -166,4 +168,3 @@ export const useMaterialStore = create<MaterialState>((set, get) => ({
     return newVendor
   },
 }))
-

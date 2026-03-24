@@ -87,14 +87,26 @@ export function ProjectPurchasing({ projectId }: { projectId: string }) {
                                 <span className="font-medium">
                                   {item.material.name}
                                 </span>
-                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
-                                  <span>
-                                    {item.quantity} {item.material.unit} x{' '}
-                                    {formatCurrency(item.unitPrice)}
-                                  </span>
-                                  <span className="font-semibold text-foreground">
-                                    {formatCurrency(item.total)}
-                                  </span>
+                                <div className="text-xs text-muted-foreground flex flex-col gap-0.5 mt-0.5">
+                                  <div className="flex items-center gap-2">
+                                    <span>
+                                      {item.quantity} {item.material.unit} x{' '}
+                                      {formatCurrency(item.unitPrice)}
+                                    </span>
+                                    <span className="font-semibold text-foreground">
+                                      {formatCurrency(item.total)}
+                                    </span>
+                                  </div>
+                                  {(item.brand || item.color) && (
+                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground">
+                                      {item.brand && (
+                                        <span>Marca: {item.brand}</span>
+                                      )}
+                                      {item.color && (
+                                        <span>Cor: {item.color}</span>
+                                      )}
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             </li>

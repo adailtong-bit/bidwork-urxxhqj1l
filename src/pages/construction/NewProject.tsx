@@ -460,4 +460,3 @@ export default function NewProject() {
     </div>
   )
 }
-

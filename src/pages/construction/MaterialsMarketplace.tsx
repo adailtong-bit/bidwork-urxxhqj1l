@@ -40,8 +40,6 @@ import {
 import {
   ShoppingCart,
   Search,
-  Plus,
-  Minus,
   ArrowLeft,
   ExternalLink,
   Upload,
@@ -53,9 +51,12 @@ import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
 interface CartItem {
+  id: string
   material: Material
   quantity: number
   unitPrice: number
+  brand?: string
+  color?: string
 }
 
 export default function MaterialsMarketplace() {
@@ -76,6 +77,13 @@ export default function MaterialsMarketplace() {
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [vendorFilter, setVendorFilter] = useState('all')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Configure Item State
+  const [configuringMaterial, setConfiguringMaterial] =
+    useState<Material | null>(null)
+  const [configBrand, setConfigBrand] = useState('')
+  const [configColor, setConfigColor] = useState('')
+  const [configQuantity, setConfigQuantity] = useState(1)
 
   // Checkout State
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
@@ -113,7 +121,7 @@ export default function MaterialsMarketplace() {
     return material.purchasePermissions.includes(user.teamRole || '')
   }
 
-  const addToCart = (material: Material) => {
+  const openConfigModal = (material: Material) => {
     if (!canPurchase(material)) {
       toast({
         variant: 'destructive',
@@ -122,19 +130,28 @@ export default function MaterialsMarketplace() {
       })
       return
     }
+    setConfiguringMaterial(material)
+    setConfigBrand('')
+    setConfigColor('')
+    setConfigQuantity(1)
+  }
 
-    setCart((prev) => {
-      const existing = prev.find((i) => i.material.id === material.id)
-      if (existing) {
-        return prev.map((i) =>
-          i.material.id === material.id
-            ? { ...i, quantity: i.quantity + 1 }
-            : i,
-        )
-      }
-      return [...prev, { material, quantity: 1, unitPrice: material.price }]
-    })
+  const confirmAddToCart = () => {
+    if (!configuringMaterial || configQuantity <= 0) return
+
+    setCart((prev) => [
+      ...prev,
+      {
+        id: Math.random().toString(36).substring(2),
+        material: configuringMaterial,
+        quantity: configQuantity,
+        unitPrice: configuringMaterial.price,
+        brand: configBrand.trim(),
+        color: configColor.trim(),
+      },
+    ])
     toast({ title: 'Adicionado ao carrinho' })
+    setConfiguringMaterial(null)
   }
 
   const updateCartItem = (
@@ -145,7 +162,7 @@ export default function MaterialsMarketplace() {
     setCart((prev) =>
       prev
         .map((item) => {
-          if (item.material.id === id) {
+          if (item.id === id) {
             return {
               ...item,
               [field]: field === 'quantity' ? Math.max(0, value) : value,
@@ -158,7 +175,7 @@ export default function MaterialsMarketplace() {
   }
 
   const removeFromCart = (id: string) => {
-    setCart((prev) => prev.filter((i) => i.material.id !== id))
+    setCart((prev) => prev.filter((i) => i.id !== id))
   }
 
   const cartTotal = cart.reduce(
@@ -201,6 +218,8 @@ export default function MaterialsMarketplace() {
       quantity: item.quantity,
       unitPrice: item.unitPrice,
       total: item.quantity * item.unitPrice,
+      brand: item.brand,
+      color: item.color,
     }))
 
     const threshold = selectedProject?.purchaseApprovalThreshold || 1000
@@ -267,6 +286,9 @@ export default function MaterialsMarketplace() {
   const selectedProjectStages =
     projects.find((p) => p.id === checkoutProjectId)?.stages || []
 
+  const isCartValid = cart.length > 0 && cart.every((i) => i.quantity > 0)
+  const isAllocationValid = !!checkoutProjectId
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -281,7 +303,8 @@ export default function MaterialsMarketplace() {
               Marketplace e Compras
             </h1>
             <p className="text-muted-foreground">
-              Pesquise produtos, gerencie fornecedores e aloque custos.
+              Pesquise produtos, especifique variações e aloque os custos às
+              obras.
             </p>
           </div>
         </div>
@@ -304,7 +327,7 @@ export default function MaterialsMarketplace() {
                 {cart.length}
               </span>
             )}
-          Button>
+          </Button>
         </div>
       </div>
 
@@ -361,7 +384,9 @@ export default function MaterialsMarketplace() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {filteredMaterials.map((material) => {
           const allowed = canPurchase(material)
-          const cartItem = cart.find((i) => i.material.id === material.id)
+          const totalInCart = cart
+            .filter((i) => i.material.id === material.id)
+            .reduce((acc, item) => acc + item.quantity, 0)
 
           return (
             <Card
@@ -413,56 +438,87 @@ export default function MaterialsMarketplace() {
                   </span>
                 </div>
               </CardContent>
-              <CardFooter className="p-4 pt-0 bg-muted/20 border-t mt-2">
-                {cartItem ? (
-                  <div className="flex items-center justify-between w-full bg-background rounded-md border p-1 shadow-sm mt-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-destructive/10 hover:text-destructive"
-                      onClick={() =>
-                        updateCartItem(
-                          material.id,
-                          'quantity',
-                          cartItem.quantity - 1,
-                        )
-                      }
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="font-semibold px-2">
-                      {cartItem.quantity}
-                    </span>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 hover:bg-primary/10 hover:text-primary"
-                      onClick={() =>
-                        updateCartItem(
-                          material.id,
-                          'quantity',
-                          cartItem.quantity + 1,
-                        )
-                      }
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                ) : (
-                  <Button
-                    className="w-full mt-2"
-                    onClick={() => addToCart(material)}
-                    disabled={!allowed}
-                    variant="secondary"
-                  >
-                    Adicionar ao Carrinho
-                  </Button>
-                )}
+              <CardFooter className="p-4 pt-0 bg-muted/20 border-t mt-2 flex-col gap-2">
+                <Button
+                  className="w-full mt-2"
+                  onClick={() => openConfigModal(material)}
+                  disabled={!allowed}
+                  variant={totalInCart > 0 ? 'outline' : 'secondary'}
+                >
+                  {totalInCart > 0
+                    ? `Adicionar Mais (${totalInCart} no carrinho)`
+                    : 'Adicionar ao Carrinho'}
+                </Button>
               </CardFooter>
             </Card>
           )
         })}
       </div>
+
+      {/* Item Configuration Dialog */}
+      <Dialog
+        open={!!configuringMaterial}
+        onOpenChange={(open) => !open && setConfiguringMaterial(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Especificações do Produto</DialogTitle>
+            <DialogDescription>
+              Defina os detalhes e variações para {configuringMaterial?.name}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="grid gap-2">
+                <Label>Marca (Opcional)</Label>
+                <Input
+                  placeholder="Ex: Tigre, Votorantim..."
+                  value={configBrand}
+                  onChange={(e) => setConfigBrand(e.target.value)}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label>Cor (Opcional)</Label>
+                <Input
+                  placeholder="Ex: Branco, Cinza..."
+                  value={configColor}
+                  onChange={(e) => setConfigColor(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="grid gap-2">
+              <Label>Quantidade ({configuringMaterial?.unit})</Label>
+              <Input
+                type="number"
+                min="1"
+                value={configQuantity}
+                onChange={(e) =>
+                  setConfigQuantity(parseInt(e.target.value) || 0)
+                }
+              />
+            </div>
+            <div className="bg-muted p-3 rounded-md text-right mt-2 border">
+              <p className="text-sm text-muted-foreground">Subtotal</p>
+              <p className="text-2xl font-bold text-primary">
+                {formatCurrency(
+                  (configuringMaterial?.price || 0) * configQuantity,
+                )}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setConfiguringMaterial(null)}
+            >
+              Cancelar
+            </Button>
+            <Button onClick={confirmAddToCart} disabled={configQuantity <= 0}>
+              Adicionar ao Carrinho
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Checkout Dialog */}
       <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
@@ -487,7 +543,9 @@ export default function MaterialsMarketplace() {
                   value={checkoutProjectId}
                   onValueChange={setCheckoutProjectId}
                 >
-                  <SelectTrigger className="bg-background">
+                  <SelectTrigger
+                    className={`bg-background ${!checkoutProjectId ? 'border-red-300' : ''}`}
+                  >
                     <SelectValue placeholder="Selecione a obra de destino" />
                   </SelectTrigger>
                   <SelectContent>
@@ -498,6 +556,11 @@ export default function MaterialsMarketplace() {
                     ))}
                   </SelectContent>
                 </Select>
+                {!checkoutProjectId && (
+                  <p className="text-xs text-red-500">
+                    Seleção de obra obrigatória para faturamento.
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">
@@ -591,11 +654,19 @@ export default function MaterialsMarketplace() {
                 </TableHeader>
                 <TableBody>
                   {cart.map((item) => (
-                    <TableRow key={item.material.id}>
+                    <TableRow key={item.id}>
                       <TableCell className="font-medium">
                         {item.material.name}
-                        <div className="text-[10px] text-muted-foreground mt-0.5">
-                          Ref: {item.material.supplier}
+                        <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
+                          {(item.brand || item.color) && (
+                            <div className="flex gap-2">
+                              {item.brand && <span>Marca: {item.brand}</span>}
+                              {item.color && <span>Cor: {item.color}</span>}
+                            </div>
+                          )}
+                          <div className="block">
+                            Ref: {item.material.supplier}
+                          </div>
                         </div>
                       </TableCell>
                       <TableCell>
@@ -611,7 +682,7 @@ export default function MaterialsMarketplace() {
                             value={item.unitPrice}
                             onChange={(e) =>
                               updateCartItem(
-                                item.material.id,
+                                item.id,
                                 'unitPrice',
                                 parseFloat(e.target.value) || 0,
                               )
@@ -628,7 +699,7 @@ export default function MaterialsMarketplace() {
                             value={item.quantity}
                             onChange={(e) =>
                               updateCartItem(
-                                item.material.id,
+                                item.id,
                                 'quantity',
                                 parseInt(e.target.value) || 1,
                               )
@@ -646,7 +717,7 @@ export default function MaterialsMarketplace() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => removeFromCart(item.material.id)}
+                          onClick={() => removeFromCart(item.id)}
                           className="text-destructive hover:bg-destructive/10 h-8 w-8"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -676,7 +747,7 @@ export default function MaterialsMarketplace() {
               </Button>
               <Button
                 onClick={handleCheckoutSubmit}
-                disabled={cart.length === 0}
+                disabled={!isCartValid || !isAllocationValid}
                 className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
               >
                 Confirmar Compra
@@ -688,4 +759,3 @@ export default function MaterialsMarketplace() {
     </div>
   )
 }
-
