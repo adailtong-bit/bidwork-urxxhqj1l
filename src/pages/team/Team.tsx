@@ -36,6 +36,8 @@ import {
   Search,
   CheckCircle2,
   XCircle,
+  FileText,
+  Stamp,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { z } from 'zod'
@@ -55,6 +57,7 @@ export default function Team() {
   const [searchError, setSearchError] = useState('')
   const [isSearching, setIsSearching] = useState(false)
   const [role, setRole] = useState<TeamRole>('Collaborator')
+  const [status, setStatus] = useState<'active' | 'busy' | 'inactive'>('active')
 
   if (!user) return null
 
@@ -110,12 +113,14 @@ export default function Team() {
       name: searchResult.name,
       email: searchResult.email,
       role: role,
+      status: status,
     })
 
     setIsDialogOpen(false)
     setEmailToSearch('')
     setSearchResult(null)
     setRole('Collaborator')
+    setStatus('active')
     toast({
       title: t('team.added'),
       description: `${searchResult.name} agora faz parte da equipe corporativa.`,
@@ -127,17 +132,60 @@ export default function Team() {
       case 'Admin':
         return <ShieldCheck className="h-3 w-3" />
       case 'Accountant':
+      case 'Financial':
         return <Calculator className="h-3 w-3" />
       case 'Project Manager':
+      case 'Manager':
         return <LayoutDashboard className="h-3 w-3" />
+      case 'Document Management':
+        return <FileText className="h-3 w-3" />
+      case 'License Manager':
+        return <Stamp className="h-3 w-3" />
       default:
         return <Briefcase className="h-3 w-3" />
     }
   }
 
   const getTranslatedRole = (role: string) => {
-    const key = `role.${role.toLowerCase().replace(' ', '_')}`
-    return t(key)
+    const roles: Record<string, string> = {
+      Admin: 'Administrador',
+      'Project Manager': 'Gerente de Projetos',
+      Accountant: 'Contador',
+      Collaborator: 'Colaborador',
+      Financial: 'Financeiro',
+      Manager: 'Gestor de Obras',
+      'Document Management': 'Gestão de Documentos',
+      'License Manager': 'Gestor de Licenças',
+    }
+    return roles[role] || role
+  }
+
+  const getStatusIndicator = (status: string) => {
+    switch (status) {
+      case 'active':
+        return (
+          <div
+            className="h-3 w-3 rounded-full bg-green-500 border border-white shadow-sm"
+            title="Ativo"
+          />
+        )
+      case 'busy':
+        return (
+          <div
+            className="h-3 w-3 rounded-full bg-yellow-500 border border-white shadow-sm"
+            title="Ocupado"
+          />
+        )
+      case 'inactive':
+        return (
+          <div
+            className="h-3 w-3 rounded-full bg-gray-400 border border-white shadow-sm"
+            title="Inativo"
+          />
+        )
+      default:
+        return <div className="h-3 w-3 rounded-full bg-gray-400" />
+    }
   }
 
   return (
@@ -208,28 +256,50 @@ export default function Team() {
                 )}
 
                 {searchResult && (
-                  <div className="space-y-2">
-                    <Label>{t('team.access_level')}</Label>
-                    <Select
-                      value={role}
-                      onValueChange={(val: TeamRole) => setRole(val)}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Admin">{t('role.admin')}</SelectItem>
-                        <SelectItem value="Project Manager">
-                          {t('role.project_manager')}
-                        </SelectItem>
-                        <SelectItem value="Accountant">
-                          {t('role.accountant')}
-                        </SelectItem>
-                        <SelectItem value="Collaborator">
-                          {t('role.collaborator')}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>{t('team.access_level')}</Label>
+                      <Select
+                        value={role}
+                        onValueChange={(val: TeamRole) => setRole(val)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Admin">Administrador</SelectItem>
+                          <SelectItem value="Financial">Financeiro</SelectItem>
+                          <SelectItem value="Manager">
+                            Gestor de Obras
+                          </SelectItem>
+                          <SelectItem value="Document Management">
+                            Gestão de Documentos
+                          </SelectItem>
+                          <SelectItem value="License Manager">
+                            Gestor de Licenças
+                          </SelectItem>
+                          <SelectItem value="Collaborator">
+                            Colaborador Comum
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Status Inicial</Label>
+                      <Select
+                        value={status}
+                        onValueChange={(val: any) => setStatus(val)}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="active">Ativo</SelectItem>
+                          <SelectItem value="busy">Ocupado</SelectItem>
+                          <SelectItem value="inactive">Inativo</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 )}
               </div>
@@ -261,12 +331,17 @@ export default function Team() {
         <Card className="flex flex-col relative overflow-hidden group hover:border-primary/50 transition-colors">
           <div className="absolute top-0 left-0 w-full h-1 bg-green-500" />
           <CardContent className="pt-6 flex flex-col items-center text-center flex-1">
-            <Avatar className="h-20 w-20 mb-4 border-2 border-background shadow-sm">
-              <AvatarImage src={user.avatar} />
-              <AvatarFallback>
-                <UserIcon />
-              </AvatarFallback>
-            </Avatar>
+            <div className="relative mb-4">
+              <Avatar className="h-20 w-20 border-2 border-background shadow-sm">
+                <AvatarImage src={user.avatar} />
+                <AvatarFallback>
+                  <UserIcon />
+                </AvatarFallback>
+              </Avatar>
+              <div className="absolute bottom-1 right-1">
+                {getStatusIndicator('active')}
+              </div>
+            </div>
             <div className="space-y-1 mb-4">
               <h3 className="font-semibold text-lg">{user.name} (Você)</h3>
               <Badge variant="secondary">
@@ -287,15 +362,26 @@ export default function Team() {
             className="flex flex-col relative overflow-hidden group hover:border-primary/50 transition-colors"
           >
             <div
-              className={`absolute top-0 left-0 w-full h-1 ${member.status === 'busy' ? 'bg-yellow-500' : 'bg-green-500'}`}
+              className={`absolute top-0 left-0 w-full h-1 ${
+                member.status === 'active'
+                  ? 'bg-green-500'
+                  : member.status === 'busy'
+                    ? 'bg-yellow-500'
+                    : 'bg-gray-400'
+              }`}
             />
             <CardContent className="pt-6 flex flex-col items-center text-center flex-1">
-              <Avatar className="h-20 w-20 mb-4 border-2 border-background shadow-sm">
-                <AvatarImage src={member.avatar} />
-                <AvatarFallback>
-                  <UserIcon className="h-8 w-8 text-muted-foreground" />
-                </AvatarFallback>
-              </Avatar>
+              <div className="relative mb-4">
+                <Avatar className="h-20 w-20 border-2 border-background shadow-sm">
+                  <AvatarImage src={member.avatar} />
+                  <AvatarFallback>
+                    <UserIcon className="h-8 w-8 text-muted-foreground" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="absolute bottom-1 right-1">
+                  {getStatusIndicator(member.status)}
+                </div>
+              </div>
 
               <div className="space-y-1 mb-4">
                 <h3 className="font-semibold text-lg">{member.name}</h3>
@@ -317,15 +403,6 @@ export default function Team() {
 
                 {isPJ && (
                   <div className="pt-2 border-t w-full space-y-2">
-                    <div className="flex justify-between items-center text-xs text-muted-foreground px-2">
-                      <span className="flex items-center gap-1">
-                        <Activity className="h-3 w-3" /> {t('team.performance')}
-                      </span>
-                      <span className="font-bold text-primary">
-                        {member.performance?.toFixed(1) || '0.0'}
-                      </span>
-                    </div>
-
                     <div className="flex justify-between gap-2 pt-2">
                       <Button
                         variant="outline"

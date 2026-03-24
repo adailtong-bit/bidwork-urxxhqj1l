@@ -67,7 +67,7 @@ export default function MaterialsMarketplace() {
   const navigate = useNavigate()
   const { materials, vendors, addOrder, importMaterialList, addVendor } =
     useMaterialStore()
-  const { projects, updateStageActuals, addAllocatedCost } = useProjectStore()
+  const { projects } = useProjectStore()
   const { user } = useAuthStore()
   const { toast } = useToast()
   const { t, formatCurrency } = useLanguageStore()
@@ -222,9 +222,7 @@ export default function MaterialsMarketplace() {
       color: item.color,
     }))
 
-    const threshold = selectedProject?.purchaseApprovalThreshold || 1000
-    const isPendingApproval = cartTotal > threshold
-
+    // Always force pending_approval as per User Story
     addOrder({
       projectId: checkoutProjectId,
       stageId: checkoutStageId !== 'none' ? checkoutStageId : undefined,
@@ -232,39 +230,15 @@ export default function MaterialsMarketplace() {
       vendorName: selectedVendor?.name,
       items: orderItems,
       total: cartTotal,
-      status: isPendingApproval ? 'pending_approval' : 'approved',
+      status: 'pending_approval',
+      requesterId: user?.id,
+      requesterName: user?.name,
     })
 
-    if (!isPendingApproval) {
-      if (checkoutStageId !== 'none') {
-        updateStageActuals(
-          checkoutProjectId,
-          checkoutStageId,
-          'material',
-          cartTotal,
-        )
-      }
-
-      addAllocatedCost(checkoutProjectId, {
-        description: `Compra de Materiais - ${selectedVendor?.name || 'Diversos'} (${cart.length} itens)`,
-        amount: cartTotal,
-        type: 'actual',
-        category: 'material',
-        costClass: 'capex',
-        date: new Date(),
-        stageId: checkoutStageId !== 'none' ? checkoutStageId : undefined,
-      })
-
-      toast({
-        title: 'Pedido Confirmado!',
-        description: `A compra foi registrada e alocada na obra ${selectedProject?.name || ''}.`,
-      })
-    } else {
-      toast({
-        title: 'Aprovação Necessária',
-        description: `O pedido de ${formatCurrency(cartTotal)} excedeu o limite do projeto (${formatCurrency(threshold)}) e foi enviado para aprovação do gerente.`,
-      })
-    }
+    toast({
+      title: 'Aprovação Necessária',
+      description: `O pedido de ${formatCurrency(cartTotal)} foi enviado para aprovação do gestor.`,
+    })
 
     setCart([])
     setIsCheckoutOpen(false)
@@ -288,6 +262,8 @@ export default function MaterialsMarketplace() {
 
   const isCartValid = cart.length > 0 && cart.every((i) => i.quantity > 0)
   const isAllocationValid = !!checkoutProjectId
+
+  const activeProjects = projects.filter((p) => p.status === 'in_progress')
 
   return (
     <div className="space-y-6">
@@ -464,13 +440,14 @@ export default function MaterialsMarketplace() {
           <DialogHeader>
             <DialogTitle>Especificações do Produto</DialogTitle>
             <DialogDescription>
-              Defina os detalhes e variações para {configuringMaterial?.name}
+              Defina os detalhes, marca e variações para{' '}
+              {configuringMaterial?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Marca (Opcional)</Label>
+                <Label>Marca</Label>
                 <Input
                   placeholder="Ex: Tigre, Votorantim..."
                   value={configBrand}
@@ -478,7 +455,7 @@ export default function MaterialsMarketplace() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Cor (Opcional)</Label>
+                <Label>Cor/Variação</Label>
                 <Input
                   placeholder="Ex: Branco, Cinza..."
                   value={configColor}
@@ -498,7 +475,7 @@ export default function MaterialsMarketplace() {
               />
             </div>
             <div className="bg-muted p-3 rounded-md text-right mt-2 border">
-              <p className="text-sm text-muted-foreground">Subtotal</p>
+              <p className="text-sm text-muted-foreground">Subtotal Estimado</p>
               <p className="text-2xl font-bold text-primary">
                 {formatCurrency(
                   (configuringMaterial?.price || 0) * configQuantity,
@@ -526,8 +503,8 @@ export default function MaterialsMarketplace() {
           <DialogHeader>
             <DialogTitle className="text-2xl">Finalizar Pedido</DialogTitle>
             <DialogDescription>
-              Revise os valores, unidades e faça a alocação correta para o
-              Financeiro.
+              Revise os valores, unidades e faça a alocação para aprovação
+              financeira.
             </DialogDescription>
           </DialogHeader>
 
@@ -536,8 +513,7 @@ export default function MaterialsMarketplace() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border">
               <div className="space-y-2">
                 <Label className="text-sm font-semibold flex items-center gap-1">
-                  Alocação de Obra (Destino){' '}
-                  <span className="text-red-500">*</span>
+                  Obra de Destino <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={checkoutProjectId}
@@ -549,7 +525,7 @@ export default function MaterialsMarketplace() {
                     <SelectValue placeholder="Selecione a obra de destino" />
                   </SelectTrigger>
                   <SelectContent>
-                    {projects.map((p) => (
+                    {activeProjects.map((p) => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.name}
                       </SelectItem>
@@ -558,7 +534,7 @@ export default function MaterialsMarketplace() {
                 </Select>
                 {!checkoutProjectId && (
                   <p className="text-xs text-red-500">
-                    Seleção de obra obrigatória para faturamento.
+                    A seleção da obra é obrigatória para controle de orçamento.
                   </p>
                 )}
               </div>
@@ -589,7 +565,7 @@ export default function MaterialsMarketplace() {
             </div>
 
             {/* Vendor Section */}
-            <div className="bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-lg border border-blue-100 dark:border-blue-900/50 space-y-4">
+            <div className="bg-blue-50/50 p-4 rounded-lg border border-blue-100 space-y-4">
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div className="space-y-2 flex-1 w-full">
                   <Label className="text-sm font-semibold flex items-center gap-1">
@@ -622,7 +598,7 @@ export default function MaterialsMarketplace() {
 
               {/* Inline New Vendor Form */}
               {isNewVendorOpen && (
-                <div className="flex items-center gap-2 pt-2 border-t border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
                   <Input
                     placeholder="Nome do Novo Fornecedor..."
                     value={newVendorName}
@@ -645,7 +621,9 @@ export default function MaterialsMarketplace() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="w-[40%]">Produto</TableHead>
+                    <TableHead className="w-[40%]">
+                      Produto Especificado
+                    </TableHead>
                     <TableHead>Preço Unit.</TableHead>
                     <TableHead className="w-[120px]">Qtd / Unid.</TableHead>
                     <TableHead className="text-right">Total Item</TableHead>
@@ -657,16 +635,35 @@ export default function MaterialsMarketplace() {
                     <TableRow key={item.id}>
                       <TableCell className="font-medium">
                         {item.material.name}
-                        <div className="text-[10px] text-muted-foreground mt-0.5 space-y-0.5">
-                          {(item.brand || item.color) && (
-                            <div className="flex gap-2">
-                              {item.brand && <span>Marca: {item.brand}</span>}
-                              {item.color && <span>Cor: {item.color}</span>}
-                            </div>
+                        <div className="text-[10px] text-muted-foreground mt-0.5 flex flex-wrap gap-x-2 gap-y-1">
+                          {item.brand && (
+                            <Badge
+                              variant="secondary"
+                              className="text-[10px] h-4"
+                            >
+                              Marca: {item.brand}
+                            </Badge>
                           )}
-                          <div className="block">
-                            Ref: {item.material.supplier}
-                          </div>
+                          {item.color && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] h-4"
+                            >
+                              Cor: {item.color}
+                            </Badge>
+                          )}
+                          {checkoutProjectId && (
+                            <Badge
+                              variant="outline"
+                              className="text-[10px] h-4 text-primary border-primary/30"
+                            >
+                              Obra:{' '}
+                              {
+                                projects.find((p) => p.id === checkoutProjectId)
+                                  ?.name
+                              }
+                            </Badge>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -748,9 +745,9 @@ export default function MaterialsMarketplace() {
               <Button
                 onClick={handleCheckoutSubmit}
                 disabled={!isCartValid || !isAllocationValid}
-                className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+                className="w-full sm:w-auto"
               >
-                Confirmar Compra
+                Solicitar Aprovação
               </Button>
             </div>
           </DialogFooter>

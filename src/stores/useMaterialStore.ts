@@ -47,6 +47,12 @@ export interface Order {
     | 'rejected'
   date: Date
   arrivalDate?: Date
+  requesterId?: string
+  requesterName?: string
+  approvedBy?: string
+  approvedAt?: Date
+  rejectedBy?: string
+  rejectedAt?: Date
 }
 
 interface MaterialState {
@@ -57,7 +63,11 @@ interface MaterialState {
   getMaterials: () => Material[]
   getOrdersByProject: (projectId: string) => Order[]
   updateMaterial: (id: string, data: Partial<Material>) => void
-  updateOrderStatus: (id: string, status: Order['status']) => void
+  updateOrderStatus: (
+    id: string,
+    status: Order['status'],
+    actorName?: string,
+  ) => void
   importMaterialList: (
     file: File,
   ) => Promise<{ success: boolean; count: number }>
@@ -82,7 +92,7 @@ const mockMaterials: Material[] = [
     stock: 500,
     description: 'Cimento Portland composto, ideal para concreto e argamassa.',
     supplierWebsite: 'https://construmix.com.br',
-    purchasePermissions: ['Project Manager', 'Admin'],
+    purchasePermissions: ['Project Manager', 'Admin', 'Manager'],
   },
   {
     id: 'm-2',
@@ -132,7 +142,26 @@ const mockMaterials: Material[] = [
 
 export const useMaterialStore = create<MaterialState>((set, get) => ({
   materials: mockMaterials,
-  orders: [],
+  orders: [
+    {
+      id: 'mock-order-1',
+      projectId: 'proj-1',
+      vendorName: 'ConstruMix',
+      total: 1645.0,
+      status: 'pending_approval',
+      date: new Date(Date.now() - 86400000),
+      requesterName: 'Ana Gerente',
+      items: [
+        {
+          material: mockMaterials[0],
+          quantity: 50,
+          unitPrice: 32.9,
+          total: 1645.0,
+          brand: 'Votorantim',
+        },
+      ],
+    },
+  ],
   vendors: mockVendors,
   addOrder: (order) =>
     set((state) => ({
@@ -154,9 +183,23 @@ export const useMaterialStore = create<MaterialState>((set, get) => ({
         m.id === id ? { ...m, ...data } : m,
       ),
     })),
-  updateOrderStatus: (id, status) =>
+  updateOrderStatus: (id, status, actorName) =>
     set((state) => ({
-      orders: state.orders.map((o) => (o.id === id ? { ...o, status } : o)),
+      orders: state.orders.map((o) => {
+        if (o.id === id) {
+          const updates: Partial<Order> = { status }
+          if (status === 'approved') {
+            updates.approvedBy = actorName
+            updates.approvedAt = new Date()
+          }
+          if (status === 'rejected') {
+            updates.rejectedBy = actorName
+            updates.rejectedAt = new Date()
+          }
+          return { ...o, ...updates }
+        }
+        return o
+      }),
     })),
   importMaterialList: async (file) => {
     await new Promise((resolve) => setTimeout(resolve, 1000))

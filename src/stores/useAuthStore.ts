@@ -5,6 +5,10 @@ export type TeamRole =
   | 'Project Manager'
   | 'Accountant'
   | 'Collaborator'
+  | 'Financial'
+  | 'Manager'
+  | 'Document Management'
+  | 'License Manager'
 
 export interface TeamMember {
   id: string
@@ -136,7 +140,7 @@ interface AuthState {
   }) => void
   submitKYC: (file: File) => Promise<void>
   addTeamMember: (
-    member: Omit<TeamMember, 'id' | 'avatar' | 'status' | 'performance'>,
+    member: Omit<TeamMember, 'id' | 'avatar' | 'performance'>,
   ) => void
   removeTeamMember: (id: string) => void
 }
@@ -401,7 +405,6 @@ export const useAuthStore = create<AuthState>((set) => ({
         ...member,
         id: Math.random().toString(36).substr(2, 9),
         avatar: `https://img.usecurling.com/ppl/thumbnail?seed=${Math.random()}`,
-        status: 'active',
         performance: 0,
       }
       return {

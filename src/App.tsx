@@ -62,6 +62,7 @@ import ConstructionCheckout from '@/pages/construction/ConstructionCheckout'
 import FieldEntry from '@/pages/construction/FieldEntry'
 import Messages from '@/pages/messages/Messages'
 import UserProfile from '@/pages/UserProfile'
+import ApprovalDashboard from '@/pages/approvals/ApprovalDashboard'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
@@ -195,6 +196,9 @@ const App = () => {
 
               <Route path="/post-job" element={<PostJob />} />
               <Route path="/disputes/new/:id" element={<Dispute />} />
+
+              {/* Approvals Workflow */}
+              <Route path="/approvals" element={<ApprovalDashboard />} />
 
               {/* Construction Management Routes */}
               <Route
