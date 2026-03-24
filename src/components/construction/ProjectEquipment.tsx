@@ -1,0 +1,116 @@
+import { useEquipmentStore } from '@/stores/useEquipmentStore'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent } from '@/components/ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table'
+import { Badge } from '@/components/ui/badge'
+import { Link } from 'react-router-dom'
+import { Plus, Wrench, DollarSign, Truck } from 'lucide-react'
+import { useLanguageStore } from '@/stores/useLanguageStore'
+
+export function ProjectEquipment({ projectId }: { projectId: string }) {
+  const { equipment } = useEquipmentStore()
+  const { formatCurrency, formatDate } = useLanguageStore()
+
+  const projectEquipment = equipment.filter((eq) => eq.projectId === projectId)
+
+  return (
+    <div className="space-y-6 min-w-0 animate-fade-in">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card p-4 rounded-xl border shadow-sm gap-4">
+        <div>
+          <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
+            <Truck className="h-5 w-5 text-primary" /> Máquinas (Aluguel e
+            Manutenção)
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            Gerencie os equipamentos alocados para esta obra.
+          </p>
+        </div>
+        <Button asChild>
+          <Link to="/construction/equipment">
+            <Plus className="mr-2 h-4 w-4" /> Alocar Máquina
+          </Link>
+        </Button>
+      </div>
+
+      <Card>
+        <CardContent className="p-0 overflow-x-auto w-full">
+          <Table className="min-w-[700px] w-full">
+            <TableHeader className="bg-muted/50">
+              <TableRow>
+                <TableHead>Máquina</TableHead>
+                <TableHead>Tipo</TableHead>
+                <TableHead>Aluguel</TableHead>
+                <TableHead>Manutenção</TableHead>
+                <TableHead>Status</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {projectEquipment.length > 0 ? (
+                projectEquipment.map((eq) => (
+                  <TableRow key={eq.id}>
+                    <TableCell className="font-medium">{eq.name}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{eq.type}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {eq.rentalValue ? (
+                        <div className="flex items-center gap-1 font-medium text-emerald-600">
+                          <DollarSign className="h-3 w-3" />
+                          {formatCurrency(eq.rentalValue)}
+                        </div>
+                      ) : (
+                        <span className="text-muted-foreground text-sm">
+                          Próprio
+                        </span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1 text-muted-foreground text-sm">
+                        <Wrench className="h-3 w-3" />
+                        {formatDate(eq.nextMaintenance, 'dd/MM/yyyy')}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant={
+                          eq.status === 'maintenance'
+                            ? 'destructive'
+                            : 'default'
+                        }
+                        className={
+                          eq.status === 'in_use'
+                            ? 'bg-blue-500 hover:bg-blue-600 text-white'
+                            : ''
+                        }
+                      >
+                        {eq.status === 'maintenance'
+                          ? 'Em Manutenção'
+                          : 'Em Uso (Aluguel)'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={5}
+                    className="text-center py-8 text-muted-foreground"
+                  >
+                    Nenhuma máquina alocada para este projeto.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
+  )
+}

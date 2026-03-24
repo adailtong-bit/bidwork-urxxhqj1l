@@ -56,6 +56,8 @@ import { ProjectFinance } from '@/components/construction/ProjectFinance'
 import { ProjectQuotes } from '@/components/construction/ProjectQuotes'
 import { ProjectChat } from '@/components/construction/ProjectChat'
 import { ProjectCompliance } from '@/components/construction/ProjectCompliance'
+import { ProjectEquipment } from '@/components/construction/ProjectEquipment'
+import { ProjectPurchasing } from '@/components/construction/ProjectPurchasing'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import {
   Popover,
@@ -340,32 +342,47 @@ export default function ProjectDetail() {
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-6xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
-            <TabsTrigger value="financial" className="flex-1">
+          <TabsList className="w-full max-w-6xl flex-nowrap justify-start lg:justify-center min-w-[1100px] mb-8 h-auto p-1">
+            <TabsTrigger value="financial" className="flex-1 whitespace-nowrap">
               Painel Financeiro
             </TabsTrigger>
-            <TabsTrigger value="stages" className="flex-1">
+            <TabsTrigger value="equipment" className="flex-1 whitespace-nowrap">
+              Máquinas
+            </TabsTrigger>
+            <TabsTrigger
+              value="purchasing"
+              className="flex-1 whitespace-nowrap"
+            >
+              Compras
+            </TabsTrigger>
+            <TabsTrigger value="stages" className="flex-1 whitespace-nowrap">
               {t('proj.detail.schedule')}
             </TabsTrigger>
-            <TabsTrigger value="budget" className="flex-1">
+            <TabsTrigger value="budget" className="flex-1 whitespace-nowrap">
               {t('proj.budget.title')}
             </TabsTrigger>
-            <TabsTrigger value="estimation" className="flex-1">
+            <TabsTrigger
+              value="estimation"
+              className="flex-1 whitespace-nowrap"
+            >
               {t('est.tab.title')}
             </TabsTrigger>
-            <TabsTrigger value="compliance" className="flex-1">
+            <TabsTrigger
+              value="compliance"
+              className="flex-1 whitespace-nowrap"
+            >
               Compliance
             </TabsTrigger>
-            <TabsTrigger value="partners" className="flex-1">
+            <TabsTrigger value="partners" className="flex-1 whitespace-nowrap">
               {t('proj.detail.partners')}
             </TabsTrigger>
-            <TabsTrigger value="quotes" className="flex-1">
+            <TabsTrigger value="quotes" className="flex-1 whitespace-nowrap">
               Faturas
             </TabsTrigger>
-            <TabsTrigger value="approvals" className="flex-1">
+            <TabsTrigger value="approvals" className="flex-1 whitespace-nowrap">
               {t('proj.approvals.title')}
             </TabsTrigger>
-            <TabsTrigger value="reports" className="flex-1">
+            <TabsTrigger value="reports" className="flex-1 whitespace-nowrap">
               {t('proj.reports.title')}
             </TabsTrigger>
           </TabsList>
@@ -377,6 +394,22 @@ export default function ProjectDetail() {
           className="w-full min-w-0 animate-fade-in"
         >
           <ProjectFinance projectId={project.id} />
+        </TabsContent>
+
+        {/* Equipment Tab */}
+        <TabsContent
+          value="equipment"
+          className="w-full min-w-0 animate-fade-in"
+        >
+          <ProjectEquipment projectId={project.id} />
+        </TabsContent>
+
+        {/* Purchasing Tab */}
+        <TabsContent
+          value="purchasing"
+          className="w-full min-w-0 animate-fade-in"
+        >
+          <ProjectPurchasing projectId={project.id} />
         </TabsContent>
 
         {/* Compliance Tab */}

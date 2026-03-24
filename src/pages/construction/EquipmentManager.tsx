@@ -118,7 +118,7 @@ export default function EquipmentManager() {
       assignToProject(selectedEq, project.id, project.name, project.location)
       toast({
         title: t('success'),
-        description: t('eq.allocate.desc'),
+        description: 'Máquina alugada/alocada com sucesso para o projeto.',
       })
       setIsAssignOpen(false)
     }
@@ -139,19 +139,21 @@ export default function EquipmentManager() {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            {t('eq.manager.title')}
+            Gestão de Máquinas
           </h1>
-          <p className="text-muted-foreground">{t('eq.manager.desc')}</p>
+          <p className="text-muted-foreground">
+            Controle de Aluguel e Manutenção de equipamentos.
+          </p>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button>
-              <Plus className="mr-2 h-4 w-4" /> {t('eq.new')}
+              <Plus className="mr-2 h-4 w-4" /> Registrar Máquina
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t('eq.register.title')}</DialogTitle>
+              <DialogTitle>Registrar Nova Máquina</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4 py-4">
               <div className="grid md:grid-cols-2 gap-4">
@@ -209,7 +211,7 @@ export default function EquipmentManager() {
 
               <div className="border-t pt-4">
                 <Label className="text-base font-semibold mb-2 block">
-                  {t('eq.finance.title')}
+                  Dados de Aluguel e Financeiro
                 </Label>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="grid gap-2">
@@ -300,10 +302,12 @@ export default function EquipmentManager() {
         <Card className="border-l-4 border-l-yellow-500 bg-yellow-50/50">
           <CardHeader className="py-4">
             <CardTitle className="text-base flex items-center gap-2 text-yellow-700">
-              <AlertTriangle className="h-5 w-5" /> {t('eq.maintenance.alert')}
+              <AlertTriangle className="h-5 w-5" /> Máquinas precisando de
+              Manutenção
             </CardTitle>
             <CardDescription>
-              {t('eq.maintenance.desc', { count: maintenanceAlerts.length })}
+              {maintenanceAlerts.length} máquina(s) com manutenção preventiva
+              próxima ou atrasada.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -313,23 +317,21 @@ export default function EquipmentManager() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder={t('eq.placeholder.search')}
+            placeholder="Buscar máquinas..."
             className="pl-9"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder={t('eq.status.filter')} />
+          <SelectTrigger className="w-[200px]">
+            <SelectValue placeholder="Filtrar por Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">{t('market.all_categories')}</SelectItem>
-            <SelectItem value="available">{t('status.available')}</SelectItem>
-            <SelectItem value="in_use">{t('status.in_use')}</SelectItem>
-            <SelectItem value="maintenance">
-              {t('status.maintenance')}
-            </SelectItem>
+            <SelectItem value="all">Todas as Máquinas</SelectItem>
+            <SelectItem value="available">Disponível</SelectItem>
+            <SelectItem value="in_use">Aluguel (Em Uso)</SelectItem>
+            <SelectItem value="maintenance">Manutenção</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -349,7 +351,11 @@ export default function EquipmentManager() {
                         : 'bg-red-100 text-red-700 hover:bg-red-100'
                   }
                 >
-                  {t(`status.${eq.status}`)}
+                  {eq.status === 'available'
+                    ? 'Disponível'
+                    : eq.status === 'in_use'
+                      ? 'Aluguel (Em Uso)'
+                      : 'Manutenção'}
                 </Badge>
               </div>
               <CardTitle className="mt-2 flex items-center gap-2">
@@ -374,19 +380,18 @@ export default function EquipmentManager() {
               </div>
               {eq.status === 'in_use' && (
                 <div className="text-xs bg-blue-50 p-2 rounded text-blue-800">
-                  {t('eq.project')}: <strong>{eq.projectName}</strong>
+                  Projeto Alocado: <strong>{eq.projectName}</strong>
                 </div>
               )}
               {eq.rentalValue ? (
                 <div className="text-xs flex items-center gap-1 text-muted-foreground">
                   <DollarSign className="h-3 w-3" />
-                  {t('eq.rental')}: {formatCurrency(eq.rentalValue)}
+                  Valor do Aluguel: {formatCurrency(eq.rentalValue)}
                 </div>
               ) : null}
               <div className="flex items-center gap-2 text-sm text-muted-foreground border-t pt-2">
                 <CalendarIcon className="h-4 w-4" />
-                {t('eq.next_maintenance')}:{' '}
-                {formatDate(eq.nextMaintenance, 'dd/MM/yyyy')}
+                Próx. Manutenção: {formatDate(eq.nextMaintenance, 'dd/MM/yyyy')}
                 {isBefore(eq.nextMaintenance, new Date()) && (
                   <AlertTriangle className="h-4 w-4 text-red-500" />
                 )}
@@ -402,7 +407,7 @@ export default function EquipmentManager() {
                     setIsAssignOpen(true)
                   }}
                 >
-                  {t('eq.allocate')}
+                  Locar / Alugar
                 </Button>
               ) : eq.status === 'in_use' ? (
                 <Button
@@ -410,10 +415,10 @@ export default function EquipmentManager() {
                   variant="secondary"
                   onClick={() => {
                     returnEquipment(eq.id)
-                    toast({ title: t('success') })
+                    toast({ title: 'Máquina devolvida com sucesso.' })
                   }}
                 >
-                  {t('eq.return')}
+                  Devolver Máquina
                 </Button>
               ) : (
                 <Button
@@ -422,11 +427,10 @@ export default function EquipmentManager() {
                   onClick={() => {
                     scheduleMaintenance(eq.id, addDays(new Date(), 90))
                     returnEquipment(eq.id) // Sets to available
-                    toast({ title: t('success') })
+                    toast({ title: 'Manutenção concluída.' })
                   }}
                 >
-                  <Wrench className="mr-2 h-4 w-4" />{' '}
-                  {t('eq.finish_maintenance')}
+                  <Wrench className="mr-2 h-4 w-4" /> Finalizar Manutenção
                 </Button>
               )}
               {eq.status !== 'maintenance' && (
@@ -442,9 +446,9 @@ export default function EquipmentManager() {
                           : e,
                       ),
                     }))
-                    toast({ title: t('success') })
+                    toast({ title: 'Máquina enviada para manutenção.' })
                   }}
-                  title={t('eq.send_maintenance')}
+                  title="Enviar para Manutenção"
                 >
                   <Wrench className="h-4 w-4" />
                 </Button>
@@ -457,11 +461,13 @@ export default function EquipmentManager() {
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>{t('eq.allocate.title')}</DialogTitle>
-            <DialogDescription>{t('eq.allocate.desc')}</DialogDescription>
+            <DialogTitle>Locar Máquina para Projeto</DialogTitle>
+            <DialogDescription>
+              Selecione a obra que receberá este equipamento.
+            </DialogDescription>
           </DialogHeader>
           <div className="py-4">
-            <Label>{t('eq.project')}</Label>
+            <Label>Projeto de Destino</Label>
             <Select onValueChange={(val) => setAssignData({ projectId: val })}>
               <SelectTrigger>
                 <SelectValue placeholder={t('general.select')} />
@@ -478,7 +484,7 @@ export default function EquipmentManager() {
             </Select>
           </div>
           <DialogFooter>
-            <Button onClick={handleAssign}>{t('eq.confirm_allocate')}</Button>
+            <Button onClick={handleAssign}>Confirmar Aluguel</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

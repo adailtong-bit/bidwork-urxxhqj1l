@@ -22,6 +22,8 @@ import {
   LogIn,
   UserPlus,
   Mail,
+  Truck,
+  ShoppingCart,
 } from 'lucide-react'
 import {
   Sidebar,
@@ -103,6 +105,12 @@ export function MainSidebar() {
           title: t('nav.my_projects'),
           url: '/construction/dashboard',
           icon: Briefcase,
+        },
+        { title: 'Máquinas', url: '/construction/equipment', icon: Truck },
+        {
+          title: 'Compras',
+          url: '/construction/materials',
+          icon: ShoppingCart,
         },
         {
           title: t('nav.partner_panel'),

@@ -40,7 +40,7 @@ export default function MaterialsMarketplace() {
 
   const navigate = useNavigate()
   const { materials, addOrder, importMaterialList } = useMaterialStore()
-  const { updateStageActuals } = useProjectStore()
+  const { updateStageActuals, addAllocatedCost } = useProjectStore()
   const { user } = useAuthStore()
   const { toast } = useToast()
   const { t, formatCurrency } = useLanguageStore()
@@ -111,31 +111,43 @@ export default function MaterialsMarketplace() {
   )
 
   const handleCheckout = () => {
-    if (!projectId || !stageId) {
+    if (!projectId) {
       toast({
         variant: 'destructive',
         title: t('error'),
-        description: t('val.required'),
+        description: 'Selecione um projeto para gerar faturamento.',
       })
       return
     }
 
     addOrder({
       projectId,
-      stageId,
+      stageId: stageId || 'general',
       items: cart,
       total: cartTotal,
       status: 'pending',
       freightCost: 150,
     })
 
-    updateStageActuals(projectId, stageId, 'material', cartTotal)
+    if (stageId) {
+      updateStageActuals(projectId, stageId, 'material', cartTotal)
+    }
+
+    addAllocatedCost(projectId, {
+      description: `Faturamento - Empresa de Vendas (${cart.length} itens)`,
+      amount: cartTotal,
+      type: 'actual',
+      category: 'material',
+      costClass: 'capex',
+      date: new Date(),
+      stageId: stageId || undefined,
+    })
 
     toast({
-      title: t('success'),
-      description: t('market.checkout'),
+      title: 'Faturamento Gerado!',
+      description: 'A compra foi registrada e o custo alocado no financeiro.',
     })
-    navigate(`/construction/projects/${projectId}`)
+    navigate(`/construction/projects/${projectId}?tab=purchasing`)
   }
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -161,9 +173,11 @@ export default function MaterialsMarketplace() {
           )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              {t('market.title')}
+              Gestão de Compras
             </h1>
-            <p className="text-muted-foreground">{t('market.desc')}</p>
+            <p className="text-muted-foreground">
+              Empresas de Vendas e suprimentos para a obra.
+            </p>
           </div>
         </div>
 
@@ -179,7 +193,7 @@ export default function MaterialsMarketplace() {
             disabled={cart.length === 0}
             className="relative"
           >
-            <ShoppingCart className="mr-2 h-4 w-4" /> {t('market.checkout')}
+            <ShoppingCart className="mr-2 h-4 w-4" /> Gerar Faturamento
             {cart.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
                 {cart.length}
@@ -243,6 +257,12 @@ export default function MaterialsMarketplace() {
                 <Badge className="absolute top-2 right-2">
                   {material.category}
                 </Badge>
+                <Badge
+                  variant="secondary"
+                  className="absolute bottom-2 left-2 bg-background/90 text-xs"
+                >
+                  Empresa de Vendas
+                </Badge>
                 {!allowed && (
                   <div className="absolute inset-0 bg-black/10 flex items-center justify-center">
                     <Badge variant="destructive" className="flex gap-1">
@@ -256,7 +276,7 @@ export default function MaterialsMarketplace() {
                   {material.name}
                 </CardTitle>
                 <div className="flex items-center justify-between mt-1">
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs font-semibold text-primary">
                     {material.supplier}
                   </p>
                   {material.supplierWebsite && (
@@ -314,7 +334,7 @@ export default function MaterialsMarketplace() {
                     onClick={() => addToCart(material)}
                     disabled={!allowed}
                   >
-                    {t('market.add')}
+                    Adicionar Compra
                   </Button>
                 )}
               </CardFooter>
