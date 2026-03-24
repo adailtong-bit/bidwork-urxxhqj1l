@@ -21,6 +21,7 @@ import { cn } from '@/lib/utils'
 import { ProjectFinanceCosts } from './ProjectFinanceCosts'
 import { ProjectFinanceAccounts } from './ProjectFinanceAccounts'
 import { ProjectFinanceLedger } from './ProjectFinanceLedger'
+import { ProjectExecution } from './ProjectExecution'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Legend } from 'recharts'
 import {
   ChartContainer,
@@ -278,9 +279,22 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
           </Alert>
         )}
 
-        <Tabs defaultValue="visao_geral" className="w-full flex flex-col mt-4">
+        <Tabs defaultValue="ledger" className="w-full flex flex-col mt-4">
           <div className="w-full overflow-x-auto pb-2 mb-4 -mx-2 px-2 shrink-0">
-            <TabsList className="w-full max-w-[700px] grid grid-cols-3 h-auto p-1 min-w-[400px]">
+            <TabsList className="w-full max-w-[900px] grid grid-cols-4 h-auto p-1 min-w-[500px]">
+              <TabsTrigger
+                value="ledger"
+                className="py-2 flex items-center gap-2 text-xs md:text-sm whitespace-normal text-center"
+              >
+                <BookOpen className="w-4 h-4 hidden sm:block" /> Diário (Ledger)
+              </TabsTrigger>
+              <TabsTrigger
+                value="execucao"
+                className="py-2 flex items-center gap-2 text-xs md:text-sm whitespace-normal text-center"
+              >
+                <TrendingUp className="w-4 h-4 hidden sm:block" />{' '}
+                Físico-Financeiro
+              </TabsTrigger>
               <TabsTrigger
                 value="visao_geral"
                 className="py-2 flex items-center gap-2 text-xs md:text-sm whitespace-normal text-center"
@@ -294,14 +308,16 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
                 <WalletCards className="w-4 h-4 hidden sm:block" /> Conta
                 Corrente
               </TabsTrigger>
-              <TabsTrigger
-                value="ledger"
-                className="py-2 flex items-center gap-2 text-xs md:text-sm whitespace-normal text-center"
-              >
-                <BookOpen className="w-4 h-4 hidden sm:block" /> Diário (Ledger)
-              </TabsTrigger>
             </TabsList>
           </div>
+
+          <TabsContent value="ledger" className="w-full m-0">
+            <ProjectFinanceLedger projectId={projectId} />
+          </TabsContent>
+
+          <TabsContent value="execucao" className="w-full m-0">
+            <ProjectExecution projectId={projectId} />
+          </TabsContent>
 
           <TabsContent value="visao_geral" className="w-full m-0">
             <ProjectFinanceCosts projectId={projectId} />
@@ -309,10 +325,6 @@ export function ProjectFinance({ projectId }: { projectId: string }) {
 
           <TabsContent value="conta_corrente" className="w-full m-0">
             <ProjectFinanceAccounts projectId={projectId} />
-          </TabsContent>
-
-          <TabsContent value="ledger" className="w-full m-0">
-            <ProjectFinanceLedger projectId={projectId} />
           </TabsContent>
         </Tabs>
       </CardContent>

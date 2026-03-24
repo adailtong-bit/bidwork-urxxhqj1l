@@ -30,6 +30,9 @@ import {
   MessageSquare,
   Smartphone,
   ShieldAlert,
+  Bell,
+  AlertTriangle,
+  TrendingUp,
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ProjectScheduleTable } from '@/components/construction/ProjectScheduleTable'
@@ -49,12 +52,16 @@ import {
 } from '@/components/ui/dialog'
 import { ProjectEstimationTable } from '@/components/construction/ProjectEstimationTable'
 import { TemplateSelector } from '@/components/construction/TemplateSelector'
-import { ProjectExecution } from '@/components/construction/ProjectExecution'
 import { ProjectFinance } from '@/components/construction/ProjectFinance'
 import { ProjectQuotes } from '@/components/construction/ProjectQuotes'
 import { ProjectChat } from '@/components/construction/ProjectChat'
 import { ProjectCompliance } from '@/components/construction/ProjectCompliance'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
 
 export default function ProjectDetail() {
   const { id } = useParams<{ id: string }>()
@@ -63,7 +70,7 @@ export default function ProjectDetail() {
   const { user } = useAuthStore()
   const { upsertNotification } = useNotificationStore()
   const { toast } = useToast()
-  const { t, formatDate, currentLanguage } = useLanguageStore()
+  const { t, formatDate, currentLanguage, formatCurrency } = useLanguageStore()
 
   const currentTab = searchParams.get('tab') || 'financial'
 
@@ -139,8 +146,24 @@ export default function ProjectDetail() {
 
   // Check for critical expired documents
   const todayDate = new Date()
+  todayDate.setHours(0, 0, 0, 0)
   const criticalExpiredDocs = (project.complianceDocuments || []).filter(
     (doc) => doc.isCritical && new Date(doc.expirationDate) < todayDate,
+  )
+
+  const expiring15DaysDocs = (project.complianceDocuments || []).filter(
+    (doc) => {
+      const exp = new Date(doc.expirationDate)
+      exp.setHours(0, 0, 0, 0)
+      const diffDays = Math.ceil(
+        (exp.getTime() - todayDate.getTime()) / (1000 * 60 * 60 * 24),
+      )
+      return diffDays > 0 && diffDays <= 15
+    },
+  )
+
+  const budgetOverruns = (project.ledgerEntries || []).filter(
+    (entry) => entry.finalCost > entry.estimatedCost * 1.1, // 10% tolerance for alert
   )
 
   return (
@@ -201,6 +224,79 @@ export default function ProjectDetail() {
 
         {/* Action Buttons */}
         <div className="absolute right-0 top-4 md:top-auto flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="relative"
+                title="Notificações"
+              >
+                <Bell className="h-4 w-4" />
+                {(expiring15DaysDocs.length > 0 ||
+                  budgetOverruns.length > 0) && (
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                  </span>
+                )}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="end" className="w-80 p-4">
+              <div className="space-y-4">
+                <h4 className="font-semibold text-sm">Alertas do Projeto</h4>
+                <div className="space-y-2 max-h-[300px] overflow-auto">
+                  {expiring15DaysDocs.length === 0 &&
+                    budgetOverruns.length === 0 && (
+                      <p className="text-sm text-muted-foreground">
+                        Tudo certo! Nenhuma notificação.
+                      </p>
+                    )}
+                  {expiring15DaysDocs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex gap-2 items-start bg-yellow-50 p-2 rounded-md border border-yellow-200"
+                    >
+                      <AlertTriangle className="h-4 w-4 text-yellow-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-yellow-900">
+                          Documento Vencendo
+                        </p>
+                        <p className="text-[10px] text-yellow-800">
+                          {doc.name} vence em{' '}
+                          {Math.ceil(
+                            (new Date(doc.expirationDate).getTime() -
+                              todayDate.getTime()) /
+                              (1000 * 60 * 60 * 24),
+                          )}{' '}
+                          dias.
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                  {budgetOverruns.map((entry) => (
+                    <div
+                      key={entry.id}
+                      className="flex gap-2 items-start bg-red-50 p-2 rounded-md border border-red-200"
+                    >
+                      <TrendingUp className="h-4 w-4 text-red-600 mt-0.5 shrink-0" />
+                      <div>
+                        <p className="text-xs font-medium text-red-900">
+                          Estouro de Orçamento
+                        </p>
+                        <p className="text-[10px] text-red-800">
+                          {entry.description}: Custo final (
+                          {formatCurrency(entry.finalCost)}) excedeu o previsto
+                          ({formatCurrency(entry.estimatedCost)}).
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+
           <Button
             variant="outline"
             size="icon"
@@ -244,12 +340,9 @@ export default function ProjectDetail() {
       >
         {/* Responsive Horizontal Scroll Tabs */}
         <div className="w-full overflow-x-auto pb-2 -mb-2">
-          <TabsList className="w-full max-w-6xl flex-nowrap justify-start md:justify-center min-w-[900px] mb-8 h-auto p-1">
+          <TabsList className="w-full max-w-6xl flex-nowrap justify-start md:justify-center min-w-[800px] mb-8 h-auto p-1">
             <TabsTrigger value="financial" className="flex-1">
-              Financeiro
-            </TabsTrigger>
-            <TabsTrigger value="execution" className="flex-1">
-              Resumo Execução
+              Painel Financeiro
             </TabsTrigger>
             <TabsTrigger value="stages" className="flex-1">
               {t('proj.detail.schedule')}
@@ -284,14 +377,6 @@ export default function ProjectDetail() {
           className="w-full min-w-0 animate-fade-in"
         >
           <ProjectFinance projectId={project.id} />
-        </TabsContent>
-
-        {/* Execution Tab */}
-        <TabsContent
-          value="execution"
-          className="w-full min-w-0 animate-fade-in"
-        >
-          <ProjectExecution projectId={project.id} />
         </TabsContent>
 
         {/* Compliance Tab */}
