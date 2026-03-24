@@ -1,5 +1,11 @@
 import { create } from 'zustand'
 
+export interface Vendor {
+  id: string
+  name: string
+  contact?: string
+}
+
 export interface Material {
   id: string
   name: string
@@ -7,19 +13,27 @@ export interface Material {
   price: number
   unit: string
   imageUrl: string
-  supplier: string
+  supplier: string // Default or historical supplier
   stock: number
   description: string
-  // New
   supplierWebsite?: string
-  purchasePermissions?: string[] // Roles allowed to buy
+  purchasePermissions?: string[]
+}
+
+export interface OrderItem {
+  material: Material
+  quantity: number
+  unitPrice: number
+  total: number
 }
 
 export interface Order {
   id: string
   projectId: string
-  stageId: string
-  items: { material: Material; quantity: number }[]
+  stageId?: string
+  vendorId?: string
+  vendorName?: string
+  items: OrderItem[]
   total: number
   freightCost?: number
   status: 'pending' | 'delivered' | 'cancelled'
@@ -30,6 +44,7 @@ export interface Order {
 interface MaterialState {
   materials: Material[]
   orders: Order[]
+  vendors: Vendor[]
   addOrder: (order: Omit<Order, 'id' | 'date'>) => void
   getMaterials: () => Material[]
   getOrdersByProject: (projectId: string) => Order[]
@@ -37,7 +52,14 @@ interface MaterialState {
   importMaterialList: (
     file: File,
   ) => Promise<{ success: boolean; count: number }>
+  addVendor: (vendor: Omit<Vendor, 'id'>) => Vendor
 }
+
+const mockVendors: Vendor[] = [
+  { id: 'v-1', name: 'ConstruMix' },
+  { id: 'v-2', name: 'Olaria Silva' },
+  { id: 'v-3', name: 'AçoForte' },
+]
 
 const mockMaterials: Material[] = [
   {
@@ -102,6 +124,7 @@ const mockMaterials: Material[] = [
 export const useMaterialStore = create<MaterialState>((set, get) => ({
   materials: mockMaterials,
   orders: [],
+  vendors: mockVendors,
   addOrder: (order) =>
     set((state) => ({
       orders: [
@@ -123,8 +146,12 @@ export const useMaterialStore = create<MaterialState>((set, get) => ({
       ),
     })),
   importMaterialList: async (file) => {
-    // Mock import
     await new Promise((resolve) => setTimeout(resolve, 1000))
     return { success: true, count: 5 }
+  },
+  addVendor: (vendor) => {
+    const newVendor = { ...vendor, id: Math.random().toString(36).substr(2, 9) }
+    set((state) => ({ vendors: [...state.vendors, newVendor] }))
+    return newVendor
   },
 }))

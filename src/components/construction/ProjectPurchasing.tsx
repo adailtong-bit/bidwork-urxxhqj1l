@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
 import { Link } from 'react-router-dom'
-import { ShoppingCart } from 'lucide-react'
+import { ShoppingCart, Store, PackageOpen } from 'lucide-react'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export function ProjectPurchasing({ projectId }: { projectId: string }) {
@@ -25,10 +25,12 @@ export function ProjectPurchasing({ projectId }: { projectId: string }) {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-card p-4 rounded-xl border shadow-sm gap-4">
         <div>
           <h3 className="text-lg font-semibold tracking-tight flex items-center gap-2">
-            <ShoppingCart className="h-5 w-5 text-primary" /> Gestão de Compras
+            <ShoppingCart className="h-5 w-5 text-primary" /> Histórico de
+            Compras
           </h3>
           <p className="text-sm text-muted-foreground">
-            Empresas de Vendas e faturamentos gerados.
+            Acompanhe os pedidos de materiais alocados exclusivamente para esta
+            obra.
           </p>
         </div>
         <Button asChild>
@@ -40,49 +42,107 @@ export function ProjectPurchasing({ projectId }: { projectId: string }) {
 
       <Card>
         <CardContent className="p-0 overflow-x-auto w-full">
-          <Table className="min-w-[700px] w-full">
+          <Table className="min-w-[800px] w-full">
             <TableHeader className="bg-muted/50">
               <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Itens (Empresa de Vendas)</TableHead>
-                <TableHead className="text-right">Faturamento Total</TableHead>
-                <TableHead className="text-center">Status</TableHead>
+                <TableHead className="w-[100px]">Data</TableHead>
+                <TableHead>Fornecedor</TableHead>
+                <TableHead>Itens Detalhados</TableHead>
+                <TableHead className="text-right">Valor Total</TableHead>
+                <TableHead className="text-center">
+                  Status / Financeiro
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {orders.length > 0 ? (
-                orders.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell className="text-sm text-muted-foreground">
-                      {formatDate(order.date, 'dd/MM/yyyy')}
-                    </TableCell>
-                    <TableCell>
-                      <div className="text-sm font-medium">
-                        {order.items
-                          .map((i) => `${i.quantity}x ${i.material.name}`)
-                          .join(', ')}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-bold text-primary text-right">
-                      {formatCurrency(order.total)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge
-                        variant="outline"
-                        className="bg-green-50 text-green-700 border-green-200"
-                      >
-                        Faturamento Gerado
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
+                orders
+                  .sort(
+                    (a, b) =>
+                      new Date(b.date).getTime() - new Date(a.date).getTime(),
+                  )
+                  .map((order) => (
+                    <TableRow key={order.id} className="group">
+                      <TableCell className="text-sm text-muted-foreground align-top pt-4">
+                        {formatDate(order.date, 'dd/MM/yyyy')}
+                        <div className="text-[10px] mt-1">
+                          Ref: #{order.id.substring(0, 5).toUpperCase()}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top pt-4">
+                        <div className="font-medium flex items-center gap-1.5">
+                          <Store className="h-4 w-4 text-blue-500" />
+                          {order.vendorName || 'Diversos'}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top pt-4">
+                        <ul className="space-y-1.5">
+                          {order.items.map((item, idx) => (
+                            <li
+                              key={idx}
+                              className="text-sm flex items-start gap-2 bg-muted/20 p-1.5 rounded"
+                            >
+                              <PackageOpen className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
+                              <div className="flex-1">
+                                <span className="font-medium">
+                                  {item.material.name}
+                                </span>
+                                <div className="text-xs text-muted-foreground flex items-center gap-2 mt-0.5">
+                                  <span>
+                                    {item.quantity} {item.material.unit} x{' '}
+                                    {formatCurrency(item.unitPrice)}
+                                  </span>
+                                  <span className="font-semibold text-foreground">
+                                    {formatCurrency(item.total)}
+                                  </span>
+                                </div>
+                              </div>
+                            </li>
+                          ))}
+                        </ul>
+                      </TableCell>
+                      <TableCell className="font-bold text-primary text-right align-top pt-4 text-base">
+                        {formatCurrency(order.total)}
+                      </TableCell>
+                      <TableCell className="text-center align-top pt-4">
+                        <div className="flex flex-col items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className="bg-green-100 text-green-800 hover:bg-green-100 border-green-200"
+                          >
+                            Pedido Confirmado
+                          </Badge>
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] text-muted-foreground"
+                          >
+                            Lançado no CAPEX
+                          </Badge>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
               ) : (
                 <TableRow>
                   <TableCell
-                    colSpan={4}
-                    className="text-center py-8 text-muted-foreground"
+                    colSpan={5}
+                    className="text-center py-12 text-muted-foreground"
                   >
-                    Nenhuma compra registrada para este projeto.
+                    <div className="flex flex-col items-center justify-center">
+                      <ShoppingCart className="h-10 w-10 text-muted-foreground/30 mb-3" />
+                      <p>Nenhuma compra registrada para este projeto.</p>
+                      <Button
+                        variant="link"
+                        asChild
+                        className="text-primary mt-2"
+                      >
+                        <Link
+                          to={`/construction/materials?projectId=${projectId}`}
+                        >
+                          Ir para o Marketplace
+                        </Link>
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
