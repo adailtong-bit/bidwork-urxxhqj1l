@@ -64,6 +64,7 @@ import Messages from '@/pages/messages/Messages'
 import UserProfile from '@/pages/UserProfile'
 import ApprovalDashboard from '@/pages/approvals/ApprovalDashboard'
 import ManageUsers from '@/pages/admin/ManageUsers'
+import AuditLogs from '@/pages/admin/AuditLogs'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { supabase } from '@/lib/supabase/client'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -210,6 +211,14 @@ const App = () => {
                   element={
                     <AdminRoute>
                       <ManageUsers />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/audit"
+                  element={
+                    <AdminRoute>
+                      <AuditLogs />
                     </AdminRoute>
                   }
                 />
