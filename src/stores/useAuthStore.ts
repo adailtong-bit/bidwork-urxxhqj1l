@@ -147,7 +147,7 @@ interface AuthState {
   removeTeamMember: (id: string) => void
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
@@ -194,205 +194,79 @@ export const useAuthStore = create<AuthState>((set) => ({
   },
   login: async (email, password) => {
     set({ isLoading: true })
-    await new Promise((resolve) => setTimeout(resolve, 800))
-
-    let id = Math.random().toString(36).substr(2, 9)
-    let role: 'contractor' | 'executor' | 'admin' | 'partner' = 'contractor'
-    let teamRole: TeamRole | undefined = undefined
-    let entityType: 'pf' | 'pj' = 'pf'
-    let name = 'Usuário Padrão'
-    let companyName = ''
-    let teamMembers: TeamMember[] | undefined = undefined
-    let badges: Badge[] = []
-    let taxId = '000.000.000-00'
-    let phone = '(11) 99999-9999'
-    let constructionSubscription: ConstructionSubscription | undefined =
-      undefined
-    let planName: User['planName'] = 'Básico'
-    let subscriptionTier: User['subscriptionTier'] = 'free'
-
-    if (email.includes('executor')) {
-      role = 'executor'
-      badges = [
-        {
-          id: 'b1',
-          name: 'Fast Delivery',
-          icon: 'Zap',
-          description: 'Entregou 5 projetos antes do prazo.',
-          earnedAt: new Date(Date.now() - 10000000),
-        },
-        {
-          id: 'b2',
-          name: '5-Star Pro',
-          icon: 'Star',
-          description: 'Manteve média 5.0 em 10 jobs.',
-          earnedAt: new Date(Date.now() - 5000000),
-        },
-      ]
-    }
-    if (email.includes('admin')) role = 'admin'
-    if (email.includes('pj')) entityType = 'pj'
-    if (email.includes('partner')) {
-      role = 'partner'
-      entityType = 'pj'
-    }
-
-    // PJ Owner Logic
-    if (email === 'contractor.pj@bidwork.app') {
-      id = 'owner-1'
-      name = 'Admin Tech Corp'
-      companyName = 'Construtora Tech Corp'
-      taxId = '12.345.678/0001-90'
-      role = 'contractor'
-      entityType = 'pj'
-      teamRole = 'Admin'
-      planName = 'Enterprise'
-      subscriptionTier = 'business'
-      constructionSubscription = {
-        active: true,
-        basePrice: 500,
-        franchiseeMarkup: 50,
-        projectLimit: 10,
-        activeProjects: 3,
-      }
-      teamMembers = [
-        {
-          id: 't1',
-          name: 'Ana Gerente',
-          role: 'Project Manager',
-          email: 'ana@techcorp.com',
-          avatar:
-            'https://img.usecurling.com/ppl/thumbnail?gender=female&seed=10',
-          status: 'active',
-          performance: 9.5,
-        },
-      ]
-    } else if (email === 'executor.pj@bidwork.app') {
-      id = 'exec-pj-1'
-      name = 'Soluções Rápidas Ltda'
-      companyName = 'Soluções Rápidas Ltda'
-      taxId = '98.765.432/0001-10'
-      role = 'executor'
-      entityType = 'pj'
-      planName = 'Premium'
-      subscriptionTier = 'pro'
-    } else if (email === 'executor.pf@bidwork.app') {
-      id = 'exec-1'
-      name = 'João Freelancer'
-      taxId = '123.456.789-00'
-      role = 'executor'
-      entityType = 'pf'
-      planName = 'Básico'
-    } else if (email === 'admin@bidwork.app') {
-      id = 'admin-1'
-      name = 'Administrador do Sistema'
-      role = 'admin'
-      planName = 'Enterprise'
-    }
-
-    set({
-      isLoading: false,
-      isAuthenticated: true,
-      user: {
-        id,
-        name,
-        companyName,
-        email,
-        phone,
-        taxId,
-        avatar: `https://img.usecurling.com/ppl/medium?seed=${email.length}`,
-        role,
-        teamRole,
-        entityType,
-        reputation: 4.8,
-        serviceRadius: 50,
-        location: 'São Paulo - SP',
-        isPremium: planName !== 'Básico',
-        subscriptionTier,
-        planName,
-        constructionSubscription,
-        credits: 100,
-        isVerified: true,
-        kycStatus: 'verified',
-        address: {
-          street: 'Av. Paulista',
-          number: '1000',
-          neighborhood: 'Bela Vista',
-          city: 'São Paulo',
-          state: 'SP',
-          zipCode: '01310-100',
-          country: 'BR',
-        },
-        category: role === 'executor' ? 'TI e Programação' : undefined,
-        bankingDetails: {
-          bank: 'Test Bank',
-          agency: '0001',
-          account: '12345-6',
-          document: '12.345.678/0001-99',
-        },
-        loyaltyPoints: 1250,
-        loyaltyHistory: [],
-        teamMembers,
-        badges,
-        openChat: false,
-        notificationPreferences: {
-          emailInterests: true,
-          pushInterests: false,
-        },
-      },
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
     })
+    if (error) {
+      set({ isLoading: false })
+      throw error
+    }
+    set({ isLoading: false })
   },
   register: async (data) => {
     set({ isLoading: true })
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    set({
-      isLoading: false,
-      isAuthenticated: true,
-      user: {
-        id: Math.random().toString(36),
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        taxId: data.taxId,
-        avatar: `https://img.usecurling.com/ppl/medium?seed=${Math.floor(Math.random() * 100)}`,
-        role: data.role,
-        entityType: data.entityType,
-        businessArea: data.businessArea,
-        category: data.category,
-        address: data.address,
-        bankingDetails: data.bankingDetails,
-        reputation: 0,
-        serviceRadius: 50,
-        location: `${data.address.city} - ${data.address.state}`,
-        isPremium: false,
-        subscriptionTier: 'free',
-        planName: 'Básico',
-        credits: 0,
-        isVerified: false,
-        kycStatus: 'none',
-        loyaltyPoints: 0,
-        loyaltyHistory: [],
-        badges: [],
-        openChat: false,
-        notificationPreferences: {
-          emailInterests: true,
-          pushInterests: false,
+    const { data: authData, error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          name: data.name,
         },
       },
     })
+    if (error) {
+      set({ isLoading: false })
+      throw error
+    }
+
+    if (authData.user) {
+      await supabase
+        .from('profiles')
+        .update({
+          phone: data.phone,
+          tax_id: data.taxId,
+          company_name: data.entityType === 'pj' ? data.name : null,
+          entity_type: data.entityType,
+          role: data.role,
+        })
+        .eq('id', authData.user.id)
+    }
+
+    set({ isLoading: false })
   },
   logout: async () => {
+    set({ isLoading: true })
     await supabase.auth.signOut()
-    set({ user: null, isAuthenticated: false })
+    set({ user: null, isAuthenticated: false, isLoading: false })
   },
   updateUserReputation: (newScore) =>
     set((state) => ({
       user: state.user ? { ...state.user, reputation: newScore } : null,
     })),
-  updateSettings: (settings) =>
+  updateSettings: async (settings) => {
+    const currentUser = get().user
+    if (!currentUser) return
+
     set((state) => ({
       user: state.user ? { ...state.user, ...settings } : null,
-    })),
+    }))
+
+    try {
+      const updates: any = {}
+      if (settings.name !== undefined) updates.name = settings.name
+      if (settings.phone !== undefined) updates.phone = settings.phone
+      if (settings.taxId !== undefined) updates.tax_id = settings.taxId
+      if (settings.companyName !== undefined)
+        updates.company_name = settings.companyName
+
+      if (Object.keys(updates).length > 0) {
+        await supabase.from('profiles').update(updates).eq('id', currentUser.id)
+      }
+    } catch (error) {
+      console.error('Failed to update settings in Supabase', error)
+    }
+  },
   clearPendingEvaluation: () =>
     set((state) => ({
       user: state.user ? { ...state.user, pendingEvaluation: undefined } : null,
