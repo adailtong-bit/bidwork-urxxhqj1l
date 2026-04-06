@@ -53,12 +53,61 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { supabase } from '@/lib/supabase/client'
+import { useAuth } from '@/hooks/use-auth'
 
 export default function Settings() {
   const { user, updateSettings, submitKYC } = useAuthStore()
   const { toast } = useToast()
   const { t, currentLanguage, setLanguage, currentCurrency, setCurrency } =
     useLanguageStore()
+  const { updatePassword } = useAuth()
+
+  const [passwordForm, setPasswordForm] = useState({
+    current: '',
+    new: '',
+    confirm: '',
+  })
+  const [isChangingPassword, setIsChangingPassword] = useState(false)
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (passwordForm.new !== passwordForm.confirm) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'As novas senhas não coincidem.',
+      })
+      return
+    }
+    if (passwordForm.new.length < 6) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: 'A senha deve ter pelo menos 6 caracteres.',
+      })
+      return
+    }
+
+    setIsChangingPassword(true)
+    const { error } = await updatePassword(passwordForm.new)
+    setIsChangingPassword(false)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Erro',
+        description: error.message,
+      })
+    } else {
+      toast({
+        title: 'Sucesso',
+        description:
+          'Sua senha foi atualizada. Um e-mail de confirmação pode ter sido enviado.',
+      })
+      setPasswordForm({ current: '', new: '', confirm: '' })
+    }
+  }
 
   const [selectedCountry, setSelectedCountry] = useState<CountryCode>(
     (user?.address?.country as CountryCode) || 'BR',
@@ -156,29 +205,52 @@ export default function Settings() {
 
   if (!user) return null
 
-  const onSubmit = (data: any) => {
-    updateSettings({
-      name: data.name,
-      companyName: data.companyName,
-      phone: data.phone,
-      taxId: data.taxId,
-      openChat: data.openChat,
-      address: {
-        street: data.street,
-        number: data.number,
-        complement: data.complement,
-        neighborhood: data.neighborhood,
-        city: data.city,
-        state: data.state,
-        zipCode: data.zipCode,
-        country: selectedCountry,
-      },
-    })
-    setIsEditing(false)
-    toast({
-      title: t('success'),
-      description: t('success'),
-    })
+  const onSubmit = async (data: any) => {
+    if (!user) return
+
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          name: data.name,
+          company_name: data.companyName,
+          phone: data.phone,
+          tax_id: data.taxId,
+        } as any)
+        .eq('id', user.id)
+
+      if (error) throw error
+
+      // Update local state to reflect changes
+      updateSettings({
+        name: data.name,
+        companyName: data.companyName,
+        phone: data.phone,
+        taxId: data.taxId,
+        openChat: data.openChat,
+        address: {
+          street: data.street,
+          number: data.number,
+          complement: data.complement,
+          neighborhood: data.neighborhood,
+          city: data.city,
+          state: data.state,
+          zipCode: data.zipCode,
+          country: selectedCountry,
+        },
+      })
+      setIsEditing(false)
+      toast({
+        title: t('success'),
+        description: 'Perfil atualizado com sucesso.',
+      })
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: t('error'),
+        description: error.message,
+      })
+    }
   }
 
   const handleSaveBanking = () => {
@@ -583,6 +655,56 @@ export default function Settings() {
                 )}
               </form>
             </Form>
+          </CardContent>
+        </Card>
+
+        {/* Password Reset Section */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" /> Alterar Senha
+            </CardTitle>
+            <CardDescription>
+              Mantenha sua conta segura alterando sua senha periodicamente.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form
+              onSubmit={handlePasswordChange}
+              className="space-y-4 max-w-md"
+            >
+              <div className="space-y-2">
+                <Label>Nova Senha</Label>
+                <Input
+                  type="password"
+                  value={passwordForm.new}
+                  onChange={(e) =>
+                    setPasswordForm({ ...passwordForm, new: e.target.value })
+                  }
+                  placeholder="Mínimo 6 caracteres"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Confirmar Nova Senha</Label>
+                <Input
+                  type="password"
+                  value={passwordForm.confirm}
+                  onChange={(e) =>
+                    setPasswordForm({
+                      ...passwordForm,
+                      confirm: e.target.value,
+                    })
+                  }
+                  placeholder="Confirme a nova senha"
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={isChangingPassword || !passwordForm.new}
+              >
+                {isChangingPassword ? 'Atualizando...' : 'Atualizar Senha'}
+              </Button>
+            </form>
           </CardContent>
         </Card>
 

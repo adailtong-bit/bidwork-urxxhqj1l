@@ -63,7 +63,9 @@ import FieldEntry from '@/pages/construction/FieldEntry'
 import Messages from '@/pages/messages/Messages'
 import UserProfile from '@/pages/UserProfile'
 import ApprovalDashboard from '@/pages/approvals/ApprovalDashboard'
+import ManageUsers from '@/pages/admin/ManageUsers'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { supabase } from '@/lib/supabase/client'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
 import { AuthProvider, useAuth } from '@/hooks/use-auth'
@@ -85,18 +87,31 @@ const AuthSync = () => {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        const isAdmin =
-          user.email === 'adailtong@gmail.com' || user.email?.includes('admin')
-        setDomainUser({
-          id: user.id,
-          name: user.user_metadata?.name || 'Usuário',
-          email: user.email!,
-          role: isAdmin ? 'admin' : 'contractor',
-          entityType: 'pf',
-          isPremium: isAdmin,
-          subscriptionTier: isAdmin ? 'business' : 'free',
-          planName: isAdmin ? 'Enterprise' : 'Básico',
-        })
+        supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single()
+          .then(({ data }) => {
+            const isAdmin =
+              data?.is_admin ||
+              user.email === 'adailtong@gmail.com' ||
+              user.email?.includes('admin')
+
+            setDomainUser({
+              id: user.id,
+              name: data?.name || user.user_metadata?.name || 'Usuário',
+              email: user.email!,
+              role: (data?.role as any) || (isAdmin ? 'admin' : 'contractor'),
+              entityType: (data?.entity_type as any) || 'pf',
+              companyName: data?.company_name || undefined,
+              phone: data?.phone || undefined,
+              taxId: data?.tax_id || undefined,
+              isPremium: isAdmin,
+              subscriptionTier: isAdmin ? 'business' : 'free',
+              planName: isAdmin ? 'Enterprise' : 'Básico',
+            })
+          })
       } else {
         setDomainUser(null)
       }
@@ -190,6 +205,14 @@ const App = () => {
                 <Route path="/my-jobs" element={<MyJobs />} />
 
                 {/* Admin Routes strictly protected */}
+                <Route
+                  path="/admin/users"
+                  element={
+                    <AdminRoute>
+                      <ManageUsers />
+                    </AdminRoute>
+                  }
+                />
                 <Route
                   path="/admin/categories"
                   element={

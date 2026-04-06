@@ -126,6 +126,7 @@ export function MainSidebar() {
         label: t('nav.admin'),
         className: 'text-destructive font-bold',
         items: [
+          { title: 'Usuários', url: '/admin/users', icon: Users },
           {
             title: t('nav.plan_mgmt'),
             url: '/admin/plans',
