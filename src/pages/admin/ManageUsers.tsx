@@ -42,7 +42,7 @@ export default function ManageUsers() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const { toast } = useToast()
-  const { resetPassword } = useAuth()
+  const { user } = useAuth()
 
   const [editUser, setEditUser] = useState<any | null>(null)
   const [isSaving, setIsSaving] = useState(false)
@@ -100,7 +100,7 @@ export default function ManageUsers() {
   }
 
   const handleResetPassword = async (email: string) => {
-    const { error } = await resetPassword(email)
+    const { error } = await supabase.auth.resetPasswordForEmail(email)
     if (error) {
       toast({
         variant: 'destructive',
