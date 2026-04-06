@@ -66,6 +66,7 @@ import ApprovalDashboard from '@/pages/approvals/ApprovalDashboard'
 import { useAuthStore } from '@/stores/useAuthStore'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { EvaluationModal } from '@/components/EvaluationModal'
+import { AuthProvider, useAuth } from '@/hooks/use-auth'
 
 const ScrollToTop = () => {
   const { pathname } = useLocation()
@@ -77,25 +78,59 @@ const ScrollToTop = () => {
   return null
 }
 
-const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
-  const { isAuthenticated, user } = useAuthStore()
+const AuthSync = () => {
+  const { user, loading } = useAuth()
+  const { setDomainUser } = useAuthStore()
 
-  if (!isAuthenticated) {
+  useEffect(() => {
+    if (!loading) {
+      if (user) {
+        const isAdmin =
+          user.email === 'adailtong@gmail.com' || user.email?.includes('admin')
+        setDomainUser({
+          id: user.id,
+          name: user.user_metadata?.name || 'Usuário',
+          email: user.email!,
+          role: isAdmin ? 'admin' : 'contractor',
+          entityType: 'pf',
+          isPremium: isAdmin,
+          subscriptionTier: isAdmin ? 'business' : 'free',
+          planName: isAdmin ? 'Enterprise' : 'Básico',
+        })
+      } else {
+        setDomainUser(null)
+      }
+    }
+  }, [user, loading, setDomainUser])
+
+  return null
+}
+
+const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
+  const { user, loading } = useAuth()
+  const { user: domainUser } = useAuthStore()
+
+  if (loading) return null
+
+  if (!user) {
     return <Navigate to="/login" replace />
   }
 
   return (
     <>
-      {user?.pendingEvaluation && <EvaluationModal open={true} />}
+      {domainUser?.pendingEvaluation && <EvaluationModal open={true} />}
       {children}
     </>
   )
 }
 
 const AdminRoute = ({ children }: { children: JSX.Element }) => {
-  const { user } = useAuthStore()
-  // Allow admin based on role or specific email for testing
-  const isAdmin = user?.role === 'admin' || user?.email.includes('admin')
+  const { user, loading } = useAuth()
+
+  if (loading) return null
+
+  const isAdmin =
+    user?.email === 'adailtong@gmail.com' || user?.email?.includes('admin')
 
   if (!isAdmin) {
     return <Navigate to="/dashboard" replace />
@@ -112,178 +147,187 @@ const App = () => {
   }, [t])
 
   return (
-    <BrowserRouter
-      future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
-    >
-      <ScrollToTop />
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <Routes>
-          <Route element={<Layout />}>
-            {/* Public/App-Like Routes */}
-            <Route path="/" element={<Index />} />
-            <Route path="/services" element={<Services />} />
-            <Route path="/find-jobs" element={<FindJobs />} />
-            <Route path="/jobs/:id" element={<JobDetail />} />
+    <AuthProvider>
+      <BrowserRouter
+        future={{ v7_startTransition: false, v7_relativeSplatPath: false }}
+      >
+        <AuthSync />
+        <ScrollToTop />
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            <Route element={<Layout />}>
+              {/* Public/App-Like Routes */}
+              <Route path="/" element={<Index />} />
+              <Route path="/services" element={<Services />} />
+              <Route path="/find-jobs" element={<FindJobs />} />
+              <Route path="/jobs/:id" element={<JobDetail />} />
 
-            {/* Public Auth Routes */}
-            <Route element={<AuthLayout />}>
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
+              {/* Public Auth Routes */}
+              <Route element={<AuthLayout />}>
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+              </Route>
+
+              {/* Protected Dashboard Routes */}
+              <Route
+                element={
+                  <ProtectedRoute>
+                    <DashboardLayout />
+                  </ProtectedRoute>
+                }
+              >
+                <Route path="/dashboard" element={<Dashboard />} />
+                <Route
+                  path="/partner/dashboard"
+                  element={<PartnerDashboard />}
+                />
+
+                <Route path="/profile/:id" element={<UserProfile />} />
+
+                <Route path="/my-jobs" element={<MyJobs />} />
+
+                {/* Admin Routes strictly protected */}
+                <Route
+                  path="/admin/categories"
+                  element={
+                    <AdminRoute>
+                      <ManageCategories />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/categories/:id"
+                  element={
+                    <AdminRoute>
+                      <ManageCategoryDetail />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/ads"
+                  element={
+                    <AdminRoute>
+                      <ManageAds />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/plans"
+                  element={
+                    <AdminRoute>
+                      <ManagePlans />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="/admin/construction-plans"
+                  element={
+                    <AdminRoute>
+                      <ManageConstructionPlans />
+                    </AdminRoute>
+                  }
+                />
+
+                <Route path="/plans" element={<PlansList />} />
+                <Route path="/plans/:id" element={<PlanDetail />} />
+
+                <Route path="/post-job" element={<PostJob />} />
+                <Route path="/disputes/new/:id" element={<Dispute />} />
+
+                {/* Approvals Workflow */}
+                <Route path="/approvals" element={<ApprovalDashboard />} />
+
+                {/* Construction Management Routes */}
+                <Route
+                  path="/construction/dashboard"
+                  element={<ConstructionDashboard />}
+                />
+                <Route
+                  path="/construction/projects/new"
+                  element={<NewProject />}
+                />
+                <Route
+                  path="/construction/projects"
+                  element={<ProjectList />}
+                />
+                <Route
+                  path="/construction/projects/:id"
+                  element={<ProjectDetail />}
+                />
+                <Route
+                  path="/construction/field-entry"
+                  element={<FieldEntry />}
+                />
+                <Route
+                  path="/construction/materials"
+                  element={<MaterialsMarketplace />}
+                />
+                <Route
+                  path="/construction/equipment"
+                  element={<EquipmentManager />}
+                />
+                <Route path="/construction/logistics" element={<Logistics />} />
+                <Route
+                  path="/construction/inventory"
+                  element={<InventoryManager />}
+                />
+                <Route path="/construction/resources" element={<Resources />} />
+                <Route
+                  path="/construction/invoicing"
+                  element={<TeamInvoicing />}
+                />
+                <Route
+                  path="/construction/documents"
+                  element={<ConstructionDocuments />}
+                />
+                <Route
+                  path="/construction/plans"
+                  element={<ConstructionPlans />}
+                />
+                <Route
+                  path="/construction/checkout/:planId"
+                  element={<ConstructionCheckout />}
+                />
+
+                {/* Training & Gamification Routes */}
+                <Route path="/training" element={<TrainingCenter />} />
+                <Route path="/leaderboard" element={<Leaderboard />} />
+
+                {/* Payment Routes */}
+                <Route
+                  path="/payment/checkout/:jobId/:bidId"
+                  element={<PaymentCheckout />}
+                />
+                <Route path="/payment/success" element={<PaymentSuccess />} />
+
+                {/* Finance Routes */}
+                <Route path="/subscription" element={<SubscriptionPlans />} />
+                <Route path="/credits" element={<CreditsStore />} />
+                <Route path="/loyalty" element={<LoyaltyProgram />} />
+                <Route path="/finance" element={<FinanceDashboard />} />
+                <Route
+                  path="/finance/accounting"
+                  element={<AccountingExport />}
+                />
+
+                {/* Common Routes */}
+                <Route path="/documents" element={<Documents />} />
+                <Route path="/reports" element={<Reports />} />
+                <Route path="/team" element={<Team />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="/testing" element={<TestingHub />} />
+
+                <Route path="/messages" element={<Messages />} />
+              </Route>
             </Route>
-
-            {/* Protected Dashboard Routes */}
-            <Route
-              element={
-                <ProtectedRoute>
-                  <DashboardLayout />
-                </ProtectedRoute>
-              }
-            >
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/partner/dashboard" element={<PartnerDashboard />} />
-
-              <Route path="/profile/:id" element={<UserProfile />} />
-
-              <Route path="/my-jobs" element={<MyJobs />} />
-
-              {/* Admin Routes strictly protected */}
-              <Route
-                path="/admin/categories"
-                element={
-                  <AdminRoute>
-                    <ManageCategories />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/categories/:id"
-                element={
-                  <AdminRoute>
-                    <ManageCategoryDetail />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/ads"
-                element={
-                  <AdminRoute>
-                    <ManageAds />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/plans"
-                element={
-                  <AdminRoute>
-                    <ManagePlans />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/construction-plans"
-                element={
-                  <AdminRoute>
-                    <ManageConstructionPlans />
-                  </AdminRoute>
-                }
-              />
-
-              <Route path="/plans" element={<PlansList />} />
-              <Route path="/plans/:id" element={<PlanDetail />} />
-
-              <Route path="/post-job" element={<PostJob />} />
-              <Route path="/disputes/new/:id" element={<Dispute />} />
-
-              {/* Approvals Workflow */}
-              <Route path="/approvals" element={<ApprovalDashboard />} />
-
-              {/* Construction Management Routes */}
-              <Route
-                path="/construction/dashboard"
-                element={<ConstructionDashboard />}
-              />
-              <Route
-                path="/construction/projects/new"
-                element={<NewProject />}
-              />
-              <Route path="/construction/projects" element={<ProjectList />} />
-              <Route
-                path="/construction/projects/:id"
-                element={<ProjectDetail />}
-              />
-              <Route
-                path="/construction/field-entry"
-                element={<FieldEntry />}
-              />
-              <Route
-                path="/construction/materials"
-                element={<MaterialsMarketplace />}
-              />
-              <Route
-                path="/construction/equipment"
-                element={<EquipmentManager />}
-              />
-              <Route path="/construction/logistics" element={<Logistics />} />
-              <Route
-                path="/construction/inventory"
-                element={<InventoryManager />}
-              />
-              <Route path="/construction/resources" element={<Resources />} />
-              <Route
-                path="/construction/invoicing"
-                element={<TeamInvoicing />}
-              />
-              <Route
-                path="/construction/documents"
-                element={<ConstructionDocuments />}
-              />
-              <Route
-                path="/construction/plans"
-                element={<ConstructionPlans />}
-              />
-              <Route
-                path="/construction/checkout/:planId"
-                element={<ConstructionCheckout />}
-              />
-
-              {/* Training & Gamification Routes */}
-              <Route path="/training" element={<TrainingCenter />} />
-              <Route path="/leaderboard" element={<Leaderboard />} />
-
-              {/* Payment Routes */}
-              <Route
-                path="/payment/checkout/:jobId/:bidId"
-                element={<PaymentCheckout />}
-              />
-              <Route path="/payment/success" element={<PaymentSuccess />} />
-
-              {/* Finance Routes */}
-              <Route path="/subscription" element={<SubscriptionPlans />} />
-              <Route path="/credits" element={<CreditsStore />} />
-              <Route path="/loyalty" element={<LoyaltyProgram />} />
-              <Route path="/finance" element={<FinanceDashboard />} />
-              <Route
-                path="/finance/accounting"
-                element={<AccountingExport />}
-              />
-
-              {/* Common Routes */}
-              <Route path="/documents" element={<Documents />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/team" element={<Team />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="/testing" element={<TestingHub />} />
-
-              <Route path="/messages" element={<Messages />} />
-            </Route>
-          </Route>
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </TooltipProvider>
-    </BrowserRouter>
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </TooltipProvider>
+      </BrowserRouter>
+    </AuthProvider>
   )
 }
 

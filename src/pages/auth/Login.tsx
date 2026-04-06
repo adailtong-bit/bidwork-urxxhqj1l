@@ -6,7 +6,9 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
+import { useState } from 'react'
 import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { Loader2, ArrowRight, Building2 } from 'lucide-react'
 import {
@@ -17,7 +19,6 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form'
-import { TestProfileSwitcher } from '@/components/TestProfileSwitcher'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 
 const createLoginSchema = (t: any) =>
@@ -27,7 +28,8 @@ const createLoginSchema = (t: any) =>
   })
 
 export default function Login() {
-  const { login, isLoading } = useAuthStore()
+  const { signIn } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
   const { t } = useLanguageStore()
@@ -41,19 +43,22 @@ export default function Login() {
   })
 
   async function onSubmit(data: any) {
-    try {
-      await login(data.email, data.password)
+    setIsLoading(true)
+    const { error } = await signIn(data.email, data.password)
+    setIsLoading(false)
+
+    if (error) {
+      toast({
+        variant: 'destructive',
+        title: t('error') || 'Erro',
+        description: error.message || 'Credenciais inválidas.',
+      })
+    } else {
       toast({
         title: t('success') || 'Sucesso',
         description: 'Login realizado com sucesso.',
       })
       navigate('/dashboard')
-    } catch (error) {
-      toast({
-        variant: 'destructive',
-        title: t('error') || 'Erro',
-        description: 'Credenciais inválidas.',
-      })
     }
   }
 
@@ -151,8 +156,6 @@ export default function Login() {
           Create Account (Criar Conta)
         </Link>
       </div>
-
-      <TestProfileSwitcher />
     </div>
   )
 }

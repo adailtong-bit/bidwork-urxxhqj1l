@@ -5,7 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { useAuthStore } from '@/stores/useAuthStore'
+import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import {
@@ -41,7 +41,8 @@ import {
 } from '@/components/ui/select'
 
 export default function Register() {
-  const { register: registerUser, isLoading } = useAuthStore()
+  const { signUp } = useAuth()
+  const [isLoading, setIsLoading] = useState(false)
   const navigate = useNavigate()
   const { toast } = useToast()
   const { t, currentLanguage } = useLanguageStore()
@@ -123,48 +124,24 @@ export default function Register() {
   }
 
   async function onSubmit(data: any) {
-    try {
-      await registerUser({
-        name: data.name,
-        email: data.email,
-        phone: data.phone,
-        password: data.password,
-        role: data.role,
-        entityType: data.entityType,
-        businessArea: data.businessArea,
-        category: data.category,
-        taxId: '',
-        address: {
-          street: data.street,
-          number: data.number,
-          complement: data.complement,
-          neighborhood: data.neighborhood,
-          city: data.city,
-          state: data.state,
-          zipCode: data.zipCode,
-          country: data.country,
-        },
-        bankingDetails:
-          data.role === 'executor'
-            ? {
-                bank: data.bank!,
-                agency: data.agency!,
-                account: data.account!,
-                document: data.document!,
-              }
-            : undefined,
-      })
-      toast({
-        title: t('success'),
-        description: t('dashboard.welcome', { name: data.name }),
-      })
-      navigate('/dashboard')
-    } catch (error) {
+    setIsLoading(true)
+    const { error } = await signUp(data.email, data.password, data.name)
+    setIsLoading(false)
+
+    if (error) {
       toast({
         variant: 'destructive',
         title: t('error'),
-        description: t('val.required'),
+        description: error.message || t('val.required'),
       })
+    } else {
+      toast({
+        title: t('success'),
+        description:
+          t('dashboard.welcome', { name: data.name }) +
+          ' (Verifique seu email)',
+      })
+      navigate('/login')
     }
   }
 

@@ -125,8 +125,9 @@ interface AuthState {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  setDomainUser: (user: Partial<User> | null) => void
   login: (email: string, password: string) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
   register: (data: RegisterData) => Promise<void>
   updateUserReputation: (newScore: number) => void
   updateSettings: (settings: Partial<User>) => void
@@ -149,6 +150,47 @@ export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   isAuthenticated: false,
   isLoading: false,
+  setDomainUser: (userData) => {
+    if (!userData) {
+      set({ user: null, isAuthenticated: false })
+      return
+    }
+
+    set({
+      isAuthenticated: true,
+      user: {
+        id: userData.id || Math.random().toString(36).substr(2, 9),
+        name: userData.name || 'Usuário',
+        email: userData.email || '',
+        role: userData.role || 'contractor',
+        entityType: userData.entityType || 'pf',
+        reputation: userData.reputation || 4.8,
+        serviceRadius: userData.serviceRadius || 50,
+        location: userData.location || 'São Paulo - SP',
+        isPremium: userData.isPremium || false,
+        subscriptionTier: userData.subscriptionTier || 'free',
+        planName: userData.planName || 'Básico',
+        credits: userData.credits || 100,
+        isVerified: userData.isVerified || true,
+        kycStatus: userData.kycStatus || 'verified',
+        loyaltyPoints: userData.loyaltyPoints || 1250,
+        loyaltyHistory: userData.loyaltyHistory || [],
+        badges: userData.badges || [],
+        openChat: userData.openChat || false,
+        teamMembers: userData.teamMembers || [],
+        address: userData.address || {
+          street: 'Av. Paulista',
+          number: '1000',
+          neighborhood: 'Bela Vista',
+          city: 'São Paulo',
+          state: 'SP',
+          zipCode: '01310-100',
+          country: 'BR',
+        },
+        ...userData,
+      } as User,
+    })
+  },
   login: async (email, password) => {
     set({ isLoading: true })
     await new Promise((resolve) => setTimeout(resolve, 800))
@@ -338,7 +380,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       },
     })
   },
-  logout: () => {
+  logout: async () => {
+    const { supabase } = await import('@/lib/supabase/client')
+    await supabase.auth.signOut()
     set({ user: null, isAuthenticated: false })
   },
   updateUserReputation: (newScore) =>
