@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { supabase } from '@/lib/supabase/client'
 
 export type TeamRole =
   | 'Admin'
@@ -381,7 +382,6 @@ export const useAuthStore = create<AuthState>((set) => ({
     })
   },
   logout: async () => {
-    const { supabase } = await import('@/lib/supabase/client')
     await supabase.auth.signOut()
     set({ user: null, isAuthenticated: false })
   },
