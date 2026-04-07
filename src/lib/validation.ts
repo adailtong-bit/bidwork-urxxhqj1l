@@ -1,5 +1,11 @@
 import { z } from 'zod'
 
+export const commonValidation = {
+  email: z.string().email('Invalid email'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
+}
+
 export function getCountryValidation(country: 'BR' | 'US' | string) {
   if (country === 'US') {
     return {
