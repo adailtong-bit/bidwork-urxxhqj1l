@@ -12,8 +12,9 @@ import {
   getCountryValidation,
   commonValidation,
   CountryCode,
+  formatPhone,
+  formatZip,
 } from '@/lib/validation'
-import { maskPhone, maskZip } from '@/lib/utils'
 import {
   Loader2,
   User,
@@ -64,7 +65,10 @@ export default function Register() {
         businessArea: z.string().optional(),
         // Address Fields
         street: z.string().min(3, t('val.required')),
-        number: z.string().min(1, t('val.required')),
+        number:
+          country === 'US'
+            ? z.string().optional()
+            : z.string().min(1, t('val.required')),
         complement: z.string().optional(),
         neighborhood: z.string().min(2, t('val.required')),
         city: z.string().min(2, t('val.required')),
@@ -324,12 +328,7 @@ export default function Register() {
                         placeholder={t('settings.placeholder.phone')}
                         {...field}
                         onChange={(e) =>
-                          field.onChange(
-                            maskPhone(
-                              e.target.value,
-                              country === 'BR' ? 'pt' : 'en',
-                            ),
-                          )
+                          field.onChange(formatPhone(e.target.value, country))
                         }
                         maxLength={country === 'BR' ? 15 : 14}
                       />
@@ -349,12 +348,7 @@ export default function Register() {
                         placeholder={t('settings.placeholder.zip')}
                         {...field}
                         onChange={(e) =>
-                          field.onChange(
-                            maskZip(
-                              e.target.value,
-                              country === 'BR' ? 'pt' : 'en',
-                            ),
-                          )
+                          field.onChange(formatZip(e.target.value, country))
                         }
                         maxLength={country === 'BR' ? 9 : 10}
                       />
@@ -365,12 +359,14 @@ export default function Register() {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div
+              className={`grid ${country === 'US' ? 'grid-cols-1' : 'grid-cols-3'} gap-2`}
+            >
               <FormField
                 control={form.control}
                 name="street"
                 render={({ field }) => (
-                  <FormItem className="col-span-2">
+                  <FormItem className={country === 'US' ? '' : 'col-span-2'}>
                     <FormLabel>{t('settings.address.street')}</FormLabel>
                     <FormControl>
                       <Input placeholder="Main St" {...field} />
@@ -379,19 +375,21 @@ export default function Register() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="number"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('settings.address.number')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="123" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {country !== 'US' && (
+                <FormField
+                  control={form.control}
+                  name="number"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{t('settings.address.number')}</FormLabel>
+                      <FormControl>
+                        <Input placeholder="123" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">

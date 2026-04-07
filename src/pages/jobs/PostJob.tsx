@@ -70,11 +70,11 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 import { Badge } from '@/components/ui/badge'
-import { cn, maskPhone, maskZip } from '@/lib/utils'
+import { cn } from '@/lib/utils'
 import { format } from 'date-fns'
 import { useLanguageStore } from '@/stores/useLanguageStore'
 import { CurrencyInput } from '@/components/CurrencyInput'
-import { getCountryValidation } from '@/lib/validation'
+import { getCountryValidation, formatPhone, formatZip } from '@/lib/validation'
 import { PremiumConstructionModal } from '@/components/PremiumConstructionModal'
 import { SafeImage } from '@/components/SafeImage'
 
@@ -130,7 +130,10 @@ export default function PostJob() {
     contactPhone: phoneValidation,
     zipCode: zipValidation,
     street: z.string().min(3, t('val.required')),
-    number: z.string().min(1, t('val.required')),
+    number:
+      country === 'US'
+        ? z.string().optional()
+        : z.string().min(1, t('val.required')),
     complement: z.string().optional(),
     neighborhood: z.string().min(2, t('val.required')),
     city: z.string().min(2, t('val.required')),
@@ -276,7 +279,7 @@ export default function PostJob() {
       address: {
         zipCode: data.zipCode,
         street: data.street,
-        number: data.number,
+        number: data.number || '',
         complement: data.complement,
         neighborhood: data.neighborhood,
         city: data.city,
@@ -751,7 +754,7 @@ export default function PostJob() {
                           className="pl-9"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(maskPhone(e.target.value, country))
+                            field.onChange(formatPhone(e.target.value, country))
                           }
                           maxLength={country === 'BR' ? 15 : 14}
                         />
@@ -824,7 +827,7 @@ export default function PostJob() {
                           placeholder={t('settings.placeholder.zip')}
                           {...field}
                           onChange={(e) =>
-                            field.onChange(maskZip(e.target.value, country))
+                            field.onChange(formatZip(e.target.value, country))
                           }
                           maxLength={country === 'BR' ? 9 : 10}
                         />
@@ -869,12 +872,16 @@ export default function PostJob() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div
+                className={`grid grid-cols-1 ${country === 'US' ? '' : 'md:grid-cols-4'} gap-4`}
+              >
                 <FormField
                   control={form.control}
                   name="street"
                   render={({ field }) => (
-                    <FormItem className="md:col-span-3">
+                    <FormItem
+                      className={country === 'US' ? '' : 'md:col-span-3'}
+                    >
                       <FormLabel>{t('settings.address.street')}</FormLabel>
                       <FormControl>
                         <Input
@@ -886,22 +893,24 @@ export default function PostJob() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="number"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.address.number')}</FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t('post.placeholder.number')}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {country !== 'US' && (
+                  <FormField
+                    control={form.control}
+                    name="number"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{t('settings.address.number')}</FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={t('post.placeholder.number')}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
