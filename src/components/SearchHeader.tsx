@@ -60,7 +60,7 @@ export function SearchHeader() {
 
             {/* Logo */}
             <Link to="/" className="font-bold text-xl text-primary shrink-0">
-              BIDWORK
+              OPPORJOB
             </Link>
 
             {/* Search Bar - Desktop Only */}
