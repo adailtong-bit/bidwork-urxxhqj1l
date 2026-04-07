@@ -10,9 +10,12 @@ export function MainHeader() {
         <Link to="/" className="flex items-center space-x-2">
           <img
             src={logoImg}
-            alt="CorePM Logo"
+            alt="Bidwork Logo"
             className="h-9 md:h-11 w-auto object-contain transition-transform hover:scale-105"
           />
+          <span className="font-bold text-xl tracking-tight text-foreground hidden sm:inline-block">
+            Bidwork
+          </span>
         </Link>
 
         <div className="flex items-center gap-4">
