@@ -9,7 +9,7 @@ export const commonValidation = {
 }
 
 export function getCountryValidation(country: CountryCode | string) {
-  if (country === 'US') {
+  if (country === 'US' || country === 'United States') {
     return {
       phone: z.string().min(14, 'Invalid phone number').max(14),
       zip: z.string().min(5, 'Invalid ZIP code').max(10),
@@ -27,7 +27,7 @@ export function getCountryValidation(country: CountryCode | string) {
 
 export const formatPhone = (val: string, country: string) => {
   const digits = val.replace(/\D/g, '')
-  if (country === 'US') {
+  if (country === 'US' || country === 'United States') {
     const limited = digits.slice(0, 10)
     if (limited.length === 0) return ''
     if (limited.length <= 3) return `(${limited}`
@@ -47,7 +47,7 @@ export const formatPhone = (val: string, country: string) => {
 
 export const formatZip = (val: string, country: string) => {
   const digits = val.replace(/\D/g, '')
-  if (country === 'US') {
+  if (country === 'US' || country === 'United States') {
     const limited = digits.slice(0, 9)
     if (limited.length <= 5) return limited
     return `${limited.slice(0, 5)}-${limited.slice(5, 9)}`

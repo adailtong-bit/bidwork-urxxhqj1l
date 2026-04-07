@@ -102,6 +102,8 @@ export default function PostJob() {
     ? editingJob.listingType || 'job'
     : searchParams.get('type') || 'job'
 
+  const isJobOrService = typeParam === 'job' || typeParam === 'service'
+
   const [photos, setPhotos] = useState<string[]>(editingJob?.photos || [])
   const [photoInput, setPhotoInput] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -115,9 +117,10 @@ export default function PostJob() {
 
   const isSubscribed = user?.constructionSubscription?.active
 
+  const rawCountry =
+    user?.address?.country || (currentLanguage === 'en' ? 'US' : 'BR')
   const country =
-    (user?.address?.country as 'BR' | 'US') ||
-    (currentLanguage === 'en' ? 'US' : 'BR')
+    rawCountry === 'US' || rawCountry === 'United States' ? 'US' : 'BR'
   const { phone: phoneValidation, zip: zipValidation } =
     getCountryValidation(country)
 
@@ -262,11 +265,7 @@ export default function PostJob() {
   const onSubmit = (data: JobForm) => {
     if (!user) return
 
-    if (
-      data.type === 'auction' &&
-      typeParam === 'job' &&
-      !data.auctionEndDate
-    ) {
+    if (data.type === 'auction' && isJobOrService && !data.auctionEndDate) {
       form.setError('auctionEndDate', {
         message: t('val.required'),
       })
@@ -332,7 +331,7 @@ export default function PostJob() {
         data.projectId &&
         data.stageId &&
         data.type === 'fixed' &&
-        typeParam === 'job'
+        isJobOrService
       ) {
         updateStageActuals(
           data.projectId,
@@ -478,7 +477,7 @@ export default function PostJob() {
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-          {typeParam === 'job' && (
+          {isJobOrService && (
             <Card className="border-l-4 border-l-orange-500">
               <CardHeader className={linkToProject ? 'pb-4' : ''}>
                 <CardTitle className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -764,6 +763,9 @@ export default function PostJob() {
                           placeholder={t('settings.placeholder.phone')}
                           className="pl-9"
                           {...field}
+                          value={
+                            field.value ? formatPhone(field.value, country) : ''
+                          }
                           onChange={(e) =>
                             field.onChange(formatPhone(e.target.value, country))
                           }
@@ -837,6 +839,9 @@ export default function PostJob() {
                         <Input
                           placeholder={t('settings.placeholder.zip')}
                           {...field}
+                          value={
+                            field.value ? formatZip(field.value, country) : ''
+                          }
                           onChange={(e) =>
                             field.onChange(formatZip(e.target.value, country))
                           }
@@ -972,7 +977,7 @@ export default function PostJob() {
               <CardTitle>{t('post.pricing_type')}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              {typeParam === 'job' && (
+              {isJobOrService && (
                 <>
                   <FormField
                     control={form.control}
