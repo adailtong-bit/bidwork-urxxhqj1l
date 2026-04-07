@@ -4,6 +4,7 @@ export interface SubCategory {
   id: string
   name: string
   slug: string
+  translationKey?: string
 }
 
 export type CategoryType =
@@ -18,6 +19,7 @@ export interface Category {
   name: string
   slug: string
   type: CategoryType
+  translationKey?: string
   subCategories: SubCategory[]
 }
 
@@ -39,10 +41,11 @@ const createSlug = (name: string) =>
     .replace(/ /g, '-')
     .replace(/[^\w-]+/g, '')
 
-const createSubCat = (name: string): SubCategory => ({
+const createSubCat = (name: string, translationKey?: string): SubCategory => ({
   id: Math.random().toString(36).substr(2, 9),
   name,
   slug: createSlug(name),
+  translationKey,
 })
 
 export const useCategoryStore = create<CategoryState>((set) => ({
@@ -52,12 +55,13 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Reformas',
       slug: 'reformas',
       type: 'job',
+      translationKey: 'category.reform',
       subCategories: [
-        createSubCat('Pintura'),
-        createSubCat('Instalação de Drywall'),
-        createSubCat('Instalação de Gabinetes'),
-        createSubCat('Eletricista'),
-        createSubCat('Colocador de Piso'),
+        createSubCat('Pintura', 'subcat.painting'),
+        createSubCat('Instalação de Drywall', 'subcat.drywall'),
+        createSubCat('Instalação de Gabinetes', 'subcat.cabinets'),
+        createSubCat('Eletricista', 'subcat.electrician'),
+        createSubCat('Colocador de Piso', 'subcat.flooring'),
       ],
     },
     {
@@ -65,11 +69,12 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Construção',
       slug: 'construcao',
       type: 'job',
+      translationKey: 'category.construction',
       subCategories: [
-        createSubCat('Alvenaria'),
-        createSubCat('Telhados'),
-        createSubCat('Fundação'),
-        createSubCat('Ferragem'),
+        createSubCat('Alvenaria', 'subcat.masonry'),
+        createSubCat('Telhados', 'subcat.roofing'),
+        createSubCat('Fundação', 'subcat.foundation'),
+        createSubCat('Ferragem', 'subcat.ironwork'),
       ],
     },
     {
@@ -77,11 +82,12 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'TI e Programação',
       slug: 'ti-e-programacao',
       type: 'job',
+      translationKey: 'category.ti',
       subCategories: [
-        createSubCat('Desenvolvimento Web'),
-        createSubCat('Aplicativos Mobile'),
-        createSubCat('Design UI/UX'),
-        createSubCat('Suporte de TI'),
+        createSubCat('Desenvolvimento Web', 'subcat.webdev'),
+        createSubCat('Aplicativos Mobile', 'subcat.mobile'),
+        createSubCat('Design UI/UX', 'subcat.uiux'),
+        createSubCat('Suporte de TI', 'subcat.itsupport'),
       ],
     },
     {
@@ -89,10 +95,11 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Design',
       slug: 'design',
       type: 'job',
+      translationKey: 'category.design',
       subCategories: [
-        createSubCat('Identidade Visual'),
-        createSubCat('Web Design'),
-        createSubCat('Ilustração'),
+        createSubCat('Identidade Visual', 'subcat.visualid'),
+        createSubCat('Web Design', 'subcat.webdesign'),
+        createSubCat('Ilustração', 'subcat.illustration'),
       ],
     },
     {
@@ -100,10 +107,11 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Marketing',
       slug: 'marketing',
       type: 'job',
+      translationKey: 'category.marketing',
       subCategories: [
-        createSubCat('SEO'),
-        createSubCat('Gestão de Tráfego'),
-        createSubCat('Social Media'),
+        createSubCat('SEO', 'subcat.seo'),
+        createSubCat('Gestão de Tráfego', 'subcat.traffic'),
+        createSubCat('Social Media', 'subcat.socialmedia'),
       ],
     },
     {
@@ -111,10 +119,11 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Vendas e Produtos',
       slug: 'vendas',
       type: 'marketplace',
+      translationKey: 'category.sales',
       subCategories: [
-        createSubCat('Eletrônicos'),
-        createSubCat('Móveis'),
-        createSubCat('Ferramentas'),
+        createSubCat('Eletrônicos', 'subcat.electronics'),
+        createSubCat('Móveis', 'subcat.furniture'),
+        createSubCat('Ferramentas', 'subcat.tools'),
       ],
     },
     {
@@ -122,10 +131,11 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Locações',
       slug: 'locacoes',
       type: 'rental',
+      translationKey: 'category.rental',
       subCategories: [
-        createSubCat('Equipamentos'),
-        createSubCat('Veículos'),
-        createSubCat('Espaços'),
+        createSubCat('Equipamentos', 'subcat.equipment'),
+        createSubCat('Veículos', 'subcat.vehicles'),
+        createSubCat('Espaços', 'subcat.spaces'),
       ],
     },
     {
@@ -133,9 +143,10 @@ export const useCategoryStore = create<CategoryState>((set) => ({
       name: 'Doação',
       slug: 'doacao',
       type: 'donation',
+      translationKey: 'category.donation',
       subCategories: [
-        createSubCat('Materiais Sobrantes'),
-        createSubCat('Roupas e EPIs'),
+        createSubCat('Materiais Sobrantes', 'subcat.leftovers'),
+        createSubCat('Roupas e EPIs', 'subcat.clothes_ppe'),
       ],
     },
   ],

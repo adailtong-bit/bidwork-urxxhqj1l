@@ -68,11 +68,20 @@ export function MainHeader() {
           </div>
 
           <div className="flex-1 flex items-center gap-4">
-            <h1 className="text-lg font-semibold text-foreground hidden md:block">
+            <Link to="/" className="flex items-center gap-2 mr-2">
+              <div className="bg-primary text-primary-foreground p-1.5 rounded-md flex items-center justify-center shadow-sm">
+                <span className="font-black text-lg leading-none">BW</span>
+              </div>
+              <span className="text-xl font-black tracking-tight text-primary hidden lg:block">
+                BIDWORK
+              </span>
+            </Link>
+            <div className="h-6 w-px bg-border hidden md:block" />
+            <h1 className="text-lg font-medium text-muted-foreground hidden md:block">
               {getPageTitle()}
             </h1>
             {user?.isVerified && (
-              <div className="hidden md:flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium">
+              <div className="hidden md:flex items-center gap-1 bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs font-medium ml-2">
                 <CheckCircle2 className="h-3 w-3" /> {t('header.verified')}
               </div>
             )}

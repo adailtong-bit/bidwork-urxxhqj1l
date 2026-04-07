@@ -225,6 +225,19 @@ export default function PostJob() {
   const currentCategory = categories.find((c) => c.name === selectedCategory)
   const availableSubCategories = currentCategory?.subCategories || []
 
+  const getCategoryName = (catName: string) => {
+    const cat = categories.find((c) => c.name === catName)
+    if (cat?.translationKey) return t(cat.translationKey)
+    return catName
+  }
+
+  const getSubCategoryName = (catName: string, subName: string) => {
+    const cat = categories.find((c) => c.name === catName)
+    const sub = cat?.subCategories.find((s) => s.name === subName)
+    if (sub?.translationKey) return t(sub.translationKey)
+    return subName
+  }
+
   const handleToggleLink = (checked: boolean) => {
     if (checked && !isSubscribed) {
       setShowPremiumModal(true)
@@ -400,11 +413,11 @@ export default function PostJob() {
           </div>
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <Badge variant="secondary" className="font-normal">
-              {values.category || 'Categoria'}
+              {values.category ? getCategoryName(values.category) : 'Categoria'}
             </Badge>
             {values.subCategory && (
               <Badge variant="outline" className="font-normal">
-                {values.subCategory}
+                {getSubCategoryName(values.category || '', values.subCategory)}
               </Badge>
             )}
             {typeParam === 'product' && values.condition && (
@@ -708,7 +721,9 @@ export default function PostJob() {
                         <SelectContent>
                           {categories.map((cat) => (
                             <SelectItem key={cat.id} value={cat.name}>
-                              {cat.name}
+                              {cat.translationKey
+                                ? t(cat.translationKey)
+                                : cat.name}
                             </SelectItem>
                           ))}
                         </SelectContent>
@@ -739,7 +754,9 @@ export default function PostJob() {
                         <SelectContent>
                           {availableSubCategories.map((sub) => (
                             <SelectItem key={sub.id} value={sub.name}>
-                              {sub.name}
+                              {sub.translationKey
+                                ? t(sub.translationKey)
+                                : sub.name}
                             </SelectItem>
                           ))}
                         </SelectContent>

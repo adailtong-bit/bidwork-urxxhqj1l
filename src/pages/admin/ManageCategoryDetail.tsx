@@ -39,11 +39,13 @@ import {
 } from '@/components/ui/alert-dialog'
 import { ArrowLeft, Save, Plus, Edit2, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function ManageCategoryDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
 
   const {
     categories,
@@ -150,7 +152,12 @@ export default function ManageCategoryDetail() {
           <h1 className="text-3xl font-bold tracking-tight">
             Editar Categoria
           </h1>
-          <p className="text-muted-foreground">Gerenciando: {category.name}</p>
+          <p className="text-muted-foreground">
+            Gerenciando:{' '}
+            {category.translationKey
+              ? t(category.translationKey)
+              : category.name}
+          </p>
         </div>
       </div>
 
@@ -202,7 +209,9 @@ export default function ManageCategoryDetail() {
             <TableBody>
               {category.subCategories.map((sub) => (
                 <TableRow key={sub.id}>
-                  <TableCell className="font-medium">{sub.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {sub.translationKey ? t(sub.translationKey) : sub.name}
+                  </TableCell>
                   <TableCell>
                     <span className="text-xs text-muted-foreground font-mono bg-muted/50 px-2 py-0.5 rounded border">
                       {sub.slug}

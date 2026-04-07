@@ -39,10 +39,12 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Plus, Edit2, Trash2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function ManageCategories() {
   const { categories, addCategory, removeCategory } = useCategoryStore()
   const { toast } = useToast()
+  const { t } = useLanguageStore()
   const [newCategory, setNewCategory] = useState('')
   const [newType, setNewType] = useState<CategoryType>('job')
 
@@ -143,7 +145,11 @@ export default function ManageCategories() {
             <TableBody>
               {categories.map((category) => (
                 <TableRow key={category.id}>
-                  <TableCell className="font-medium">{category.name}</TableCell>
+                  <TableCell className="font-medium">
+                    {category.translationKey
+                      ? t(category.translationKey)
+                      : category.name}
+                  </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="whitespace-nowrap">
                       {getTypeLabel(category.type)}
