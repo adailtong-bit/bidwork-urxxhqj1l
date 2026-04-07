@@ -135,7 +135,10 @@ export default function PostJob() {
         ? z.string().optional()
         : z.string().min(1, t('val.required')),
     complement: z.string().optional(),
-    neighborhood: z.string().min(2, t('val.required')),
+    neighborhood:
+      country === 'US'
+        ? z.string().optional()
+        : z.string().min(2, t('val.required')),
     city: z.string().min(2, t('val.required')),
     state: z.string().length(2, t('val.required')),
     // Job
@@ -170,8 +173,16 @@ export default function PostJob() {
       type: editingJob?.type || 'fixed',
       category: editingJob?.category || '',
       subCategory: editingJob?.subCategory || '',
-      contactPhone: editingJob?.contactPhone || user?.phone || '',
-      zipCode: editingJob?.address?.zipCode || user?.address?.zipCode || '',
+      contactPhone: editingJob?.contactPhone
+        ? formatPhone(editingJob.contactPhone, country)
+        : user?.phone
+          ? formatPhone(user.phone, country)
+          : '',
+      zipCode: editingJob?.address?.zipCode
+        ? formatZip(editingJob.address.zipCode, country)
+        : user?.address?.zipCode
+          ? formatZip(user.address.zipCode, country)
+          : '',
       street: editingJob?.address?.street || user?.address?.street || '',
       number: editingJob?.address?.number || user?.address?.number || '',
       complement:
@@ -914,29 +925,33 @@ export default function PostJob() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="neighborhood"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>
-                        {t('settings.address.neighborhood')}
-                      </FormLabel>
-                      <FormControl>
-                        <Input
-                          placeholder={t('post.placeholder.generic')}
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                {country !== 'US' && (
+                  <FormField
+                    control={form.control}
+                    name="neighborhood"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>
+                          {t('settings.address.neighborhood')}
+                        </FormLabel>
+                        <FormControl>
+                          <Input
+                            placeholder={t('post.placeholder.generic')}
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                )}
                 <FormField
                   control={form.control}
                   name="complement"
                   render={({ field }) => (
-                    <FormItem>
+                    <FormItem
+                      className={country === 'US' ? 'md:col-span-2' : ''}
+                    >
                       <FormLabel>{t('settings.address.complement')}</FormLabel>
                       <FormControl>
                         <Input

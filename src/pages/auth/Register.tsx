@@ -71,7 +71,10 @@ export default function Register() {
             ? z.string().optional()
             : z.string().min(1, t('val.required')),
         complement: z.string().optional(),
-        neighborhood: z.string().min(2, t('val.required')),
+        neighborhood:
+          country === 'US'
+            ? z.string().optional()
+            : z.string().min(2, t('val.required')),
         city: z.string().min(2, t('val.required')),
         state: z.string().min(2, t('val.required')),
         zipCode: zip,
@@ -417,24 +420,28 @@ export default function Register() {
             </div>
 
             <div className="grid grid-cols-2 gap-2">
-              <FormField
-                control={form.control}
-                name="neighborhood"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{t('settings.address.neighborhood')}</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Downtown" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {country !== 'US' && (
+                <FormField
+                  control={form.control}
+                  name="neighborhood"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>
+                        {t('settings.address.neighborhood')}
+                      </FormLabel>
+                      <FormControl>
+                        <Input placeholder="Downtown" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="complement"
                 render={({ field }) => (
-                  <FormItem>
+                  <FormItem className={country === 'US' ? 'col-span-2' : ''}>
                     <FormLabel>{t('settings.address.complement')}</FormLabel>
                     <FormControl>
                       <Input placeholder="Apt 101" {...field} />
@@ -475,70 +482,68 @@ export default function Register() {
             </div>
           </div>
 
-          {role === 'executor' && (
-            <div className="space-y-4 pt-4 border-t">
-              <div className="flex items-center gap-2 text-primary">
-                <CreditCard className="h-5 w-5" />
-                <h3 className="font-semibold">{t('settings.banking.title')}</h3>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="bank"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.banking.bank')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Ex: Chase" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="agency"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.banking.agency')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="0000" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="account"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.banking.account')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="00000-0" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="document"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>{t('settings.banking.doc')}</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Document" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
+          <div className="space-y-4 pt-4 border-t">
+            <div className="flex items-center gap-2 text-primary">
+              <CreditCard className="h-5 w-5" />
+              <h3 className="font-semibold">{t('settings.banking.title')}</h3>
             </div>
-          )}
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="bank"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.banking.bank')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Ex: Chase" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="agency"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.banking.agency')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="0000" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="account"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.banking.account')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="00000-0" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="document"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{t('settings.banking.doc')}</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Document" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-4 pt-2">
             <FormField

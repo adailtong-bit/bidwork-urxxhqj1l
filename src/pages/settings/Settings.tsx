@@ -51,7 +51,8 @@ const createSettingsSchema = (country: CountryCode) => {
     number:
       country === 'US' ? z.string().optional() : z.string().min(1, 'Required'),
     complement: z.string().optional(),
-    neighborhood: z.string().min(2, 'Required'),
+    neighborhood:
+      country === 'US' ? z.string().optional() : z.string().min(2, 'Required'),
     city: z.string().min(2, 'Required'),
     state: z.string().min(2, 'Required'),
     zipCode: zip,
@@ -112,7 +113,7 @@ export default function Settings() {
       form.reset({
         name: data.name || '',
         country: c,
-        phone: data.phone || '',
+        phone: data.phone ? formatPhone(data.phone, c) : '',
         entityType: data.entity_type || 'pf',
         role: data.role || 'contractor',
         street: data.street || '',
@@ -121,7 +122,7 @@ export default function Settings() {
         neighborhood: data.neighborhood || '',
         city: data.city || '',
         state: data.state || '',
-        zipCode: data.zip_code || '',
+        zipCode: data.zip_code ? formatZip(data.zip_code, c) : '',
         bank: data.bank || '',
         agency: data.agency || '',
         account: data.account || '',
@@ -426,24 +427,28 @@ export default function Settings() {
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
-                    <FormField
-                      control={form.control}
-                      name="neighborhood"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Neighborhood</FormLabel>
-                          <FormControl>
-                            <Input {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {country !== 'US' && (
+                      <FormField
+                        control={form.control}
+                        name="neighborhood"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Neighborhood</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <FormField
                       control={form.control}
                       name="complement"
                       render={({ field }) => (
-                        <FormItem>
+                        <FormItem
+                          className={country === 'US' ? 'col-span-2' : ''}
+                        >
                           <FormLabel>Complement</FormLabel>
                           <FormControl>
                             <Input {...field} />
@@ -454,65 +459,63 @@ export default function Settings() {
                     />
                   </div>
 
-                  {role === 'executor' && (
-                    <div className="pt-4 border-t space-y-4">
-                      <h4 className="font-medium">Banking Information</h4>
-                      <div className="grid grid-cols-2 gap-4">
-                        <FormField
-                          control={form.control}
-                          name="bank"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Bank</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="agency"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Agency</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="account"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Account</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="document"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Document/Tax ID</FormLabel>
-                              <FormControl>
-                                <Input {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                      </div>
+                  <div className="pt-4 border-t space-y-4">
+                    <h4 className="font-medium">Banking Information</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="bank"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Bank</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="agency"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Agency</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="account"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Account</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="document"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Document/Tax ID</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
                     </div>
-                  )}
+                  </div>
 
                   <Button type="submit" disabled={saving}>
                     {saving && (
