@@ -115,7 +115,9 @@ export default function PostJob() {
 
   const isSubscribed = user?.constructionSubscription?.active
 
-  const country = (user?.address?.country as 'BR' | 'US') || 'BR'
+  const country =
+    (user?.address?.country as 'BR' | 'US') ||
+    (currentLanguage === 'en' ? 'US' : 'BR')
   const { phone: phoneValidation, zip: zipValidation } =
     getCountryValidation(country)
 
@@ -749,11 +751,9 @@ export default function PostJob() {
                           className="pl-9"
                           {...field}
                           onChange={(e) =>
-                            field.onChange(
-                              maskPhone(e.target.value, currentLanguage),
-                            )
+                            field.onChange(maskPhone(e.target.value, country))
                           }
-                          maxLength={currentLanguage === 'pt' ? 15 : 14}
+                          maxLength={country === 'BR' ? 15 : 14}
                         />
                       </div>
                     </FormControl>
@@ -824,11 +824,9 @@ export default function PostJob() {
                           placeholder={t('settings.placeholder.zip')}
                           {...field}
                           onChange={(e) =>
-                            field.onChange(
-                              maskZip(e.target.value, currentLanguage),
-                            )
+                            field.onChange(maskZip(e.target.value, country))
                           }
-                          maxLength={currentLanguage === 'pt' ? 9 : 5}
+                          maxLength={country === 'BR' ? 9 : 10}
                         />
                       </FormControl>
                       <FormMessage />

@@ -24,7 +24,8 @@ export function maskPhone(value: string, region: string = 'BR') {
 export function maskZip(value: string, region: string = 'BR') {
   let v = value.replace(/\D/g, '')
   if (region === 'US') {
-    if (v.length > 5) v = v.substring(0, 5)
+    if (v.length > 9) v = v.substring(0, 9)
+    if (v.length > 5) return v.replace(/^(\d{5})(\d{0,4})/, '$1-$2')
     return v
   }
   // PT/BR

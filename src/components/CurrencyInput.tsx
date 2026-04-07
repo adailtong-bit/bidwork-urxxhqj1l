@@ -31,9 +31,17 @@ export function CurrencyInput({
     }
 
     // Format the value as currency using the selected currency from store
+    const resolvedCurrency =
+      currentCurrency ||
+      (currentLanguage === 'en'
+        ? 'USD'
+        : currentLanguage === 'es'
+          ? 'EUR'
+          : 'BRL')
+
     const formatted = new Intl.NumberFormat(locale, {
       style: 'currency',
-      currency: currentCurrency || 'BRL',
+      currency: resolvedCurrency,
     }).format(value)
 
     setDisplayValue(formatted)

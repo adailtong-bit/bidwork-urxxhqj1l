@@ -87,7 +87,7 @@ export function MainSidebar() {
     })
   } else {
     sections.push({
-      label: 'Platform',
+      label: t('sidebar.group.public'),
       items: [
         { title: t('nav.home'), url: '/', icon: Home },
         { title: t('nav.dashboard'), url: '/dashboard', icon: LayoutDashboard },
@@ -106,9 +106,13 @@ export function MainSidebar() {
           url: '/construction/dashboard',
           icon: Briefcase,
         },
-        { title: 'Equipment', url: '/construction/equipment', icon: Truck },
         {
-          title: 'Purchases',
+          title: t('sidebar.equipment'),
+          url: '/construction/equipment',
+          icon: Truck,
+        },
+        {
+          title: t('sidebar.materials'),
           url: '/construction/materials',
           icon: ShoppingCart,
         },
@@ -126,7 +130,7 @@ export function MainSidebar() {
         label: t('nav.admin'),
         className: 'text-destructive font-bold',
         items: [
-          { title: 'Users', url: '/admin/users', icon: Users },
+          { title: t('sidebar.users'), url: '/admin/users', icon: Users },
           {
             title: t('nav.plan_mgmt'),
             url: '/admin/plans',

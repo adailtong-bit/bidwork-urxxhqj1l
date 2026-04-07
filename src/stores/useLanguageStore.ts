@@ -22,7 +22,12 @@ export const useLanguageStore = create<LanguageState>()(
     (set, get) => ({
       currentLanguage: 'en',
       currentCurrency: 'USD',
-      setLanguage: (lang) => set({ currentLanguage: lang }),
+      setLanguage: (lang) =>
+        set({
+          currentLanguage: lang,
+          currentCurrency:
+            lang === 'en' ? 'USD' : lang === 'es' ? 'EUR' : 'BRL',
+        }),
       setCurrency: (currency) => set({ currentCurrency: currency }),
       t: (key, params) => {
         const lang = get().currentLanguage
