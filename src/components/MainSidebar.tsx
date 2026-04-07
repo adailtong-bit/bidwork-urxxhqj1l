@@ -178,7 +178,7 @@ export function MainSidebar() {
                 state === 'collapsed' ? 'opacity-0 w-0' : 'opacity-100',
               )}
             >
-              OPPERJOB
+              OPPORJOB
             </span>
           </div>
 
