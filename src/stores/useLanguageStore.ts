@@ -20,8 +20,8 @@ interface LanguageState {
 export const useLanguageStore = create<LanguageState>()(
   persist(
     (set, get) => ({
-      currentLanguage: 'pt',
-      currentCurrency: 'BRL',
+      currentLanguage: 'en',
+      currentCurrency: 'USD',
       setLanguage: (lang) => set({ currentLanguage: lang }),
       setCurrency: (currency) => set({ currentCurrency: currency }),
       t: (key, params) => {

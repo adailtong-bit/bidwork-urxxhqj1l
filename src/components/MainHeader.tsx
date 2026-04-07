@@ -53,7 +53,7 @@ export function MainHeader() {
             size="icon"
             className="shrink-0"
             onClick={() => setIsMobileSearchActive(false)}
-            aria-label="Voltar"
+            aria-label="Back"
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
@@ -85,7 +85,7 @@ export function MainHeader() {
               size="icon"
               className="md:hidden"
               onClick={() => setIsMobileSearchActive(true)}
-              aria-label="Buscar"
+              aria-label="Search"
             >
               <Search className="h-5 w-5" />
             </Button>

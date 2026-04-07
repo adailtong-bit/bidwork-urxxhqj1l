@@ -77,11 +77,11 @@ export default function Settings() {
         .eq('id', user?.id)
 
       if (error) throw error
-      toast({ title: 'Sucesso', description: 'Perfil atualizado com sucesso.' })
+      toast({ title: 'Success', description: 'Profile updated successfully.' })
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
+        title: 'Error',
         description: error.message,
       })
     } finally {
@@ -96,7 +96,7 @@ export default function Settings() {
       setUploading(true)
 
       if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('Você deve selecionar uma imagem.')
+        throw new Error('You must select an image.')
       }
 
       const file = event.target.files[0]
@@ -119,11 +119,11 @@ export default function Settings() {
         .eq('id', user?.id)
       setProfile({ ...profile, avatar_url: publicUrl })
 
-      toast({ title: 'Sucesso', description: 'Foto de perfil atualizada!' })
+      toast({ title: 'Success', description: 'Profile picture updated!' })
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao enviar',
+        title: 'Error uploading',
         description: error.message,
       })
     } finally {
@@ -143,7 +143,7 @@ export default function Settings() {
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro MFA',
+        title: 'MFA Error',
         description: error.message,
       })
     }
@@ -162,14 +162,14 @@ export default function Settings() {
 
       if (verify.error) throw verify.error
 
-      toast({ title: 'Sucesso', description: 'MFA ativado com sucesso!' })
+      toast({ title: 'Success', description: 'MFA activated successfully!' })
       setMfaEnrolled(true)
       setQrCode('')
       setSecret('')
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro de Verificação',
+        title: 'Verification Error',
         description: error.message,
       })
     }
@@ -186,14 +186,14 @@ export default function Settings() {
         if (error) throw error
         setMfaEnrolled(false)
         toast({
-          title: 'MFA Desativado',
-          description: 'Autenticação em duas etapas foi removida.',
+          title: 'MFA Disabled',
+          description: 'Two-factor authentication has been removed.',
         })
       }
     } catch (error: any) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
+        title: 'Error',
         description: error.message,
       })
     }
@@ -209,11 +209,9 @@ export default function Settings() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">
-          Configurações da Conta
-        </h1>
+        <h1 className="text-3xl font-bold tracking-tight">Account Settings</h1>
         <p className="text-muted-foreground mt-1">
-          Gerencie seu perfil e as opções de segurança.
+          Manage your profile and security options.
         </p>
       </div>
 
@@ -221,7 +219,7 @@ export default function Settings() {
         <div className="md:col-span-1 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Foto de Perfil</CardTitle>
+              <CardTitle>Profile Picture</CardTitle>
             </CardHeader>
             <CardContent className="flex flex-col items-center space-y-4">
               <div className="relative group">
@@ -256,14 +254,14 @@ export default function Settings() {
                 />
               </div>
               <p className="text-xs text-muted-foreground text-center">
-                Clique na imagem para alterar. Recomendado 256x256px.
+                Click image to change. Recommended 256x256px.
               </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader>
-              <CardTitle>Nível de Acesso</CardTitle>
+              <CardTitle>Access Level</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-2">
@@ -271,16 +269,16 @@ export default function Settings() {
                   variant={profile?.is_admin ? 'destructive' : 'default'}
                   className="w-fit"
                 >
-                  {profile?.is_admin ? 'Master Admin' : 'Usuário Padrão'}
+                  {profile?.is_admin ? 'Master Admin' : 'Standard User'}
                 </Badge>
                 <span className="text-sm text-muted-foreground">
-                  Tipo:{' '}
+                  Type:{' '}
                   <strong className="uppercase">
                     {profile?.entity_type || 'PF'}
                   </strong>
                 </span>
                 <span className="text-sm text-muted-foreground capitalize">
-                  Papel: <strong>{profile?.role || 'Contractor'}</strong>
+                  Role: <strong>{profile?.role || 'Contractor'}</strong>
                 </span>
               </div>
             </CardContent>
@@ -290,13 +288,13 @@ export default function Settings() {
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Informações Pessoais</CardTitle>
-              <CardDescription>Atualize seus dados básicos.</CardDescription>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>Update your basic details.</CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdateProfile} className="space-y-4">
                 <div className="grid gap-2">
-                  <Label>E-mail (Login)</Label>
+                  <Label>Email (Login)</Label>
                   <Input
                     value={user?.email || ''}
                     disabled
@@ -304,7 +302,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Nome Completo</Label>
+                  <Label>Full Name</Label>
                   <Input
                     value={profile?.name || ''}
                     onChange={(e) =>
@@ -313,7 +311,7 @@ export default function Settings() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label>Telefone / Celular</Label>
+                  <Label>Phone / Mobile</Label>
                   <Input
                     value={profile?.phone || ''}
                     onChange={(e) =>
@@ -323,7 +321,7 @@ export default function Settings() {
                 </div>
                 <Button type="submit" disabled={saving}>
                   {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Salvar Alterações
+                  Save Changes
                 </Button>
               </form>
             </CardContent>
@@ -332,42 +330,42 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                Segurança <ShieldAlert className="w-5 h-5 text-primary" />
+                Security <ShieldAlert className="w-5 h-5 text-primary" />
               </CardTitle>
               <CardDescription>
-                Proteja sua conta com autenticação multifator (MFA).
+                Protect your account with multi-factor authentication (MFA).
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between p-4 border rounded-lg">
                 <div>
                   <h4 className="font-medium flex items-center gap-2">
-                    Autenticação em 2 Etapas
+                    2-Step Authentication
                     {mfaEnrolled && (
                       <ShieldCheck className="w-4 h-4 text-green-500" />
                     )}
                   </h4>
                   <p className="text-sm text-muted-foreground">
                     {mfaEnrolled
-                      ? 'O MFA está ativo na sua conta.'
-                      : 'Adicione uma camada extra de segurança.'}
+                      ? 'MFA is active on your account.'
+                      : 'Add an extra layer of security.'}
                   </p>
                 </div>
                 {mfaEnrolled ? (
                   <Button variant="destructive" onClick={disableMfa}>
-                    Desativar MFA
+                    Disable MFA
                   </Button>
                 ) : (
-                  <Button onClick={enrollMfa}>Configurar MFA</Button>
+                  <Button onClick={enrollMfa}>Configure MFA</Button>
                 )}
               </div>
 
               {qrCode && !mfaEnrolled && (
                 <div className="p-4 border rounded-lg space-y-4 bg-muted/30">
-                  <h4 className="font-medium">1. Escaneie o QR Code</h4>
+                  <h4 className="font-medium">1. Scan the QR Code</h4>
                   <p className="text-sm text-muted-foreground">
-                    Abra seu aplicativo autenticador (Google Authenticator,
-                    Authy, etc) e escaneie a imagem abaixo:
+                    Open your authenticator app (Google Authenticator, Authy,
+                    etc) and scan the image below:
                   </p>
                   <div
                     className="bg-white p-4 w-fit rounded-md mx-auto"
@@ -378,7 +376,7 @@ export default function Settings() {
                   </p>
 
                   <div className="pt-4 border-t space-y-4">
-                    <h4 className="font-medium">2. Digite o código gerado</h4>
+                    <h4 className="font-medium">2. Enter the generated code</h4>
                     <div className="flex items-center gap-4">
                       <Input
                         placeholder="000000"
@@ -391,7 +389,7 @@ export default function Settings() {
                         onClick={verifyMfa}
                         disabled={verifyCode.length < 6}
                       >
-                        Verificar e Ativar
+                        Verify and Activate
                       </Button>
                     </div>
                   </div>

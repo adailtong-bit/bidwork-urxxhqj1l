@@ -125,8 +125,8 @@ export default function MaterialsMarketplace() {
     if (!canPurchase(material)) {
       toast({
         variant: 'destructive',
-        title: t('error'),
-        description: 'Permissão negada',
+        title: t('error') || 'Error',
+        description: 'Permission denied',
       })
       return
     }
@@ -150,7 +150,7 @@ export default function MaterialsMarketplace() {
         color: configColor.trim(),
       },
     ])
-    toast({ title: 'Adicionado ao carrinho' })
+    toast({ title: 'Added to cart' })
     setConfiguringMaterial(null)
   }
 
@@ -189,23 +189,23 @@ export default function MaterialsMarketplace() {
     setCheckoutVendorId(v.id)
     setIsNewVendorOpen(false)
     setNewVendorName('')
-    toast({ title: 'Fornecedor cadastrado com sucesso!' })
+    toast({ title: 'Vendor registered successfully!' })
   }
 
   const handleCheckoutSubmit = () => {
     if (!checkoutProjectId) {
       toast({
         variant: 'destructive',
-        title: 'Alocação Obrigatória',
-        description: 'Selecione a obra de destino para esta compra.',
+        title: 'Allocation Required',
+        description: 'Select the destination project for this purchase.',
       })
       return
     }
     if (!checkoutVendorId) {
       toast({
         variant: 'destructive',
-        title: 'Fornecedor Obrigatório',
-        description: 'Selecione ou cadastre o fornecedor/loja.',
+        title: 'Vendor Required',
+        description: 'Select or register the vendor/store.',
       })
       return
     }
@@ -236,8 +236,8 @@ export default function MaterialsMarketplace() {
     })
 
     toast({
-      title: 'Aprovação Necessária',
-      description: `O pedido de ${formatCurrency(cartTotal)} foi enviado para aprovação do gestor.`,
+      title: 'Approval Required',
+      description: `The order of ${formatCurrency(cartTotal)} has been sent to the manager for approval.`,
     })
 
     setCart([])
@@ -250,8 +250,8 @@ export default function MaterialsMarketplace() {
       const result = await importMaterialList(e.target.files[0])
       if (result.success) {
         toast({
-          title: t('success'),
-          description: `${result.count} itens importados.`,
+          title: t('success') || 'Success',
+          description: `${result.count} items imported.`,
         })
       }
     }
@@ -276,18 +276,18 @@ export default function MaterialsMarketplace() {
           )}
           <div>
             <h1 className="text-3xl font-bold tracking-tight">
-              Marketplace e Compras
+              Materials & Purchases
             </h1>
             <p className="text-muted-foreground">
-              Pesquise produtos, especifique variações e aloque os custos às
-              obras.
+              Search for products, specify variations and allocate costs to
+              projects.
             </p>
           </div>
         </div>
 
         <div className="flex items-center gap-4 w-full md:w-auto justify-between md:justify-end">
           <div className="text-right hidden md:block">
-            <p className="text-sm text-muted-foreground">Valor do Carrinho</p>
+            <p className="text-sm text-muted-foreground">Cart Value</p>
             <p className="font-bold text-lg text-primary">
               {formatCurrency(cartTotal)}
             </p>
@@ -297,7 +297,7 @@ export default function MaterialsMarketplace() {
             disabled={cart.length === 0}
             className="relative bg-primary hover:bg-primary/90"
           >
-            <ShoppingCart className="mr-2 h-4 w-4" /> Finalizar Pedido
+            <ShoppingCart className="mr-2 h-4 w-4" /> Checkout
             {cart.length > 0 && (
               <span className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs shadow-md">
                 {cart.length}
@@ -311,7 +311,7 @@ export default function MaterialsMarketplace() {
         <div className="relative flex-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Pesquisar por produto, marca ou código..."
+            placeholder="Search by product, brand or code..."
             className="pl-9 bg-background"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -319,21 +319,21 @@ export default function MaterialsMarketplace() {
         </div>
         <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-[180px] bg-background">
-            <SelectValue placeholder="Categoria" />
+            <SelectValue placeholder="Category" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todas as Categorias</SelectItem>
-            <SelectItem value="Estrutura">Estrutura</SelectItem>
-            <SelectItem value="Alvenaria">Alvenaria</SelectItem>
-            <SelectItem value="Acabamento">Acabamento</SelectItem>
+            <SelectItem value="all">All Categories</SelectItem>
+            <SelectItem value="Estrutura">Structure</SelectItem>
+            <SelectItem value="Alvenaria">Masonry</SelectItem>
+            <SelectItem value="Acabamento">Finishing</SelectItem>
           </SelectContent>
         </Select>
         <Select value={vendorFilter} onValueChange={setVendorFilter}>
           <SelectTrigger className="w-[180px] bg-background">
-            <SelectValue placeholder="Fornecedor Padrão" />
+            <SelectValue placeholder="Default Vendor" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Todos Fornecedores</SelectItem>
+            <SelectItem value="all">All Vendors</SelectItem>
             {[...new Set(materials.map((m) => m.supplier))].map((sup) => (
               <SelectItem key={sup} value={sup}>
                 {sup}
@@ -344,9 +344,9 @@ export default function MaterialsMarketplace() {
         <Button
           variant="outline"
           onClick={() => fileInputRef.current?.click()}
-          title="Importar lista de produtos"
+          title="Import product list"
         >
-          <Upload className="mr-2 h-4 w-4" /> Importar Lista
+          <Upload className="mr-2 h-4 w-4" /> Import List
         </Button>
         <input
           type="file"
@@ -376,12 +376,18 @@ export default function MaterialsMarketplace() {
                   className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
                 />
                 <Badge className="absolute top-2 right-2 shadow-sm">
-                  {material.category}
+                  {material.category === 'Estrutura'
+                    ? 'Structure'
+                    : material.category === 'Alvenaria'
+                      ? 'Masonry'
+                      : material.category === 'Acabamento'
+                        ? 'Finishing'
+                        : material.category}
                 </Badge>
                 {!allowed && (
                   <div className="absolute inset-0 bg-black/40 flex items-center justify-center backdrop-blur-[2px]">
                     <Badge variant="destructive" className="flex gap-1">
-                      <Lock className="h-3 w-3" /> Bloqueado (Permissão)
+                      <Lock className="h-3 w-3" /> Locked (Permission)
                     </Badge>
                   </div>
                 )}
@@ -422,8 +428,8 @@ export default function MaterialsMarketplace() {
                   variant={totalInCart > 0 ? 'outline' : 'secondary'}
                 >
                   {totalInCart > 0
-                    ? `Adicionar Mais (${totalInCart} no carrinho)`
-                    : 'Adicionar ao Carrinho'}
+                    ? `Add More (${totalInCart} in cart)`
+                    : 'Add to Cart'}
                 </Button>
               </CardFooter>
             </Card>
@@ -438,16 +444,16 @@ export default function MaterialsMarketplace() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Especificações do Produto</DialogTitle>
+            <DialogTitle>Product Specifications</DialogTitle>
             <DialogDescription>
-              Defina os detalhes, marca e variações para{' '}
+              Define details, brand, and variations for{' '}
               {configuringMaterial?.name}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label>Marca</Label>
+                <Label>Brand</Label>
                 <Input
                   placeholder="Ex: Tigre, Votorantim..."
                   value={configBrand}
@@ -455,16 +461,16 @@ export default function MaterialsMarketplace() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Cor/Variação</Label>
+                <Label>Color/Variation</Label>
                 <Input
-                  placeholder="Ex: Branco, Cinza..."
+                  placeholder="Ex: White, Gray..."
                   value={configColor}
                   onChange={(e) => setConfigColor(e.target.value)}
                 />
               </div>
             </div>
             <div className="grid gap-2">
-              <Label>Quantidade ({configuringMaterial?.unit})</Label>
+              <Label>Quantity ({configuringMaterial?.unit})</Label>
               <Input
                 type="number"
                 min="1"
@@ -475,7 +481,9 @@ export default function MaterialsMarketplace() {
               />
             </div>
             <div className="bg-muted p-3 rounded-md text-right mt-2 border">
-              <p className="text-sm text-muted-foreground">Subtotal Estimado</p>
+              <p className="text-sm text-muted-foreground">
+                Estimated Subtotal
+              </p>
               <p className="text-2xl font-bold text-primary">
                 {formatCurrency(
                   (configuringMaterial?.price || 0) * configQuantity,
@@ -488,10 +496,10 @@ export default function MaterialsMarketplace() {
               variant="outline"
               onClick={() => setConfiguringMaterial(null)}
             >
-              Cancelar
+              Cancel
             </Button>
             <Button onClick={confirmAddToCart} disabled={configQuantity <= 0}>
-              Adicionar ao Carrinho
+              Add to Cart
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -501,10 +509,9 @@ export default function MaterialsMarketplace() {
       <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle className="text-2xl">Finalizar Pedido</DialogTitle>
+            <DialogTitle className="text-2xl">Checkout</DialogTitle>
             <DialogDescription>
-              Revise os valores, unidades e faça a alocação para aprovação
-              financeira.
+              Review the amounts, units, and allocate for financial approval.
             </DialogDescription>
           </DialogHeader>
 
@@ -513,7 +520,7 @@ export default function MaterialsMarketplace() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-muted/30 p-4 rounded-lg border">
               <div className="space-y-2">
                 <Label className="text-sm font-semibold flex items-center gap-1">
-                  Obra de Destino <span className="text-red-500">*</span>
+                  Destination Project <span className="text-red-500">*</span>
                 </Label>
                 <Select
                   value={checkoutProjectId}
@@ -522,7 +529,7 @@ export default function MaterialsMarketplace() {
                   <SelectTrigger
                     className={`bg-background ${!checkoutProjectId ? 'border-red-300' : ''}`}
                   >
-                    <SelectValue placeholder="Selecione a obra de destino" />
+                    <SelectValue placeholder="Select destination project" />
                   </SelectTrigger>
                   <SelectContent>
                     {activeProjects.map((p) => (
@@ -534,13 +541,13 @@ export default function MaterialsMarketplace() {
                 </Select>
                 {!checkoutProjectId && (
                   <p className="text-xs text-red-500">
-                    A seleção da obra é obrigatória para controle de orçamento.
+                    Project selection is required for budget control.
                   </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-semibold">
-                  Etapa do Cronograma (Opcional)
+                  Schedule Stage (Optional)
                 </Label>
                 <Select
                   value={checkoutStageId}
@@ -548,11 +555,11 @@ export default function MaterialsMarketplace() {
                   disabled={!checkoutProjectId}
                 >
                   <SelectTrigger className="bg-background">
-                    <SelectValue placeholder="Geral (Sem etapa específica)" />
+                    <SelectValue placeholder="General (No specific stage)" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="none">
-                      Geral (Sem etapa específica)
+                      General (No specific stage)
                     </SelectItem>
                     {selectedProjectStages.map((s) => (
                       <SelectItem key={s.id} value={s.id}>
@@ -569,14 +576,14 @@ export default function MaterialsMarketplace() {
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
                 <div className="space-y-2 flex-1 w-full">
                   <Label className="text-sm font-semibold flex items-center gap-1">
-                    Fornecedor / Loja <span className="text-red-500">*</span>
+                    Vendor / Store <span className="text-red-500">*</span>
                   </Label>
                   <Select
                     value={checkoutVendorId}
                     onValueChange={setCheckoutVendorId}
                   >
                     <SelectTrigger className="bg-background">
-                      <SelectValue placeholder="Selecione o Fornecedor" />
+                      <SelectValue placeholder="Select Vendor" />
                     </SelectTrigger>
                     <SelectContent>
                       {vendors.map((v) => (
@@ -592,7 +599,7 @@ export default function MaterialsMarketplace() {
                   onClick={() => setIsNewVendorOpen(!isNewVendorOpen)}
                   className="bg-background"
                 >
-                  <Store className="mr-2 h-4 w-4" /> Novo Fornecedor
+                  <Store className="mr-2 h-4 w-4" /> New Vendor
                 </Button>
               </div>
 
@@ -600,7 +607,7 @@ export default function MaterialsMarketplace() {
               {isNewVendorOpen && (
                 <div className="flex items-center gap-2 pt-2 border-t border-blue-200">
                   <Input
-                    placeholder="Nome do Novo Fornecedor..."
+                    placeholder="New Vendor Name..."
                     value={newVendorName}
                     onChange={(e) => setNewVendorName(e.target.value)}
                     className="bg-background"
@@ -610,7 +617,7 @@ export default function MaterialsMarketplace() {
                     onClick={handleAddNewVendor}
                     disabled={!newVendorName.trim()}
                   >
-                    Salvar Fornecedor
+                    Save Vendor
                   </Button>
                 </div>
               )}
@@ -621,12 +628,10 @@ export default function MaterialsMarketplace() {
               <Table>
                 <TableHeader className="bg-muted/50">
                   <TableRow>
-                    <TableHead className="w-[40%]">
-                      Produto Especificado
-                    </TableHead>
-                    <TableHead>Preço Unit.</TableHead>
-                    <TableHead className="w-[120px]">Qtd / Unid.</TableHead>
-                    <TableHead className="text-right">Total Item</TableHead>
+                    <TableHead className="w-[40%]">Specified Product</TableHead>
+                    <TableHead>Unit Price</TableHead>
+                    <TableHead className="w-[120px]">Qty / Unit</TableHead>
+                    <TableHead className="text-right">Item Total</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -641,7 +646,7 @@ export default function MaterialsMarketplace() {
                               variant="secondary"
                               className="text-[10px] h-4"
                             >
-                              Marca: {item.brand}
+                              Brand: {item.brand}
                             </Badge>
                           )}
                           {item.color && (
@@ -649,7 +654,7 @@ export default function MaterialsMarketplace() {
                               variant="outline"
                               className="text-[10px] h-4"
                             >
-                              Cor: {item.color}
+                              Color: {item.color}
                             </Badge>
                           )}
                           {checkoutProjectId && (
@@ -657,7 +662,7 @@ export default function MaterialsMarketplace() {
                               variant="outline"
                               className="text-[10px] h-4 text-primary border-primary/30"
                             >
-                              Obra:{' '}
+                              Project:{' '}
                               {
                                 projects.find((p) => p.id === checkoutProjectId)
                                   ?.name
@@ -669,7 +674,7 @@ export default function MaterialsMarketplace() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           <span className="text-muted-foreground text-xs">
-                            R$
+                            $
                           </span>
                           <Input
                             type="number"
@@ -729,7 +734,7 @@ export default function MaterialsMarketplace() {
 
           <DialogFooter className="flex-col sm:flex-row items-center justify-between border-t pt-4 gap-4">
             <div className="text-left w-full sm:w-auto">
-              <p className="text-sm text-muted-foreground">Total do Pedido</p>
+              <p className="text-sm text-muted-foreground">Order Total</p>
               <p className="text-3xl font-bold text-primary">
                 {formatCurrency(cartTotal)}
               </p>
@@ -740,14 +745,14 @@ export default function MaterialsMarketplace() {
                 onClick={() => setIsCheckoutOpen(false)}
                 className="w-full sm:w-auto"
               >
-                Cancelar
+                Cancel
               </Button>
               <Button
                 onClick={handleCheckoutSubmit}
                 disabled={!isCartValid || !isAllocationValid}
                 className="w-full sm:w-auto"
               >
-                Solicitar Aprovação
+                Request Approval
               </Button>
             </div>
           </DialogFooter>

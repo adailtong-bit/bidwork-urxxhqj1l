@@ -77,19 +77,18 @@ export default function AuditLogs() {
           <Activity className="w-6 h-6" />
         </div>
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Logs do Sistema</h1>
+          <h1 className="text-3xl font-bold tracking-tight">System Logs</h1>
           <p className="text-muted-foreground mt-1">
-            Trilha de auditoria e monitoramento de atividades (Dashboard
-            Master).
+            Audit trail and activity monitoring (Master Dashboard).
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Histórico Recente</CardTitle>
+          <CardTitle>Recent History</CardTitle>
           <CardDescription>
-            Mostrando as últimas 100 alterações críticas no banco de dados.
+            Showing the last 100 critical changes in the database.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -97,13 +96,13 @@ export default function AuditLogs() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Data / Hora</TableHead>
-                  <TableHead>Usuário</TableHead>
-                  <TableHead>Ação</TableHead>
-                  <TableHead>Tabela</TableHead>
-                  <TableHead>Registro ID</TableHead>
-                  <TableHead>Dados Antigos</TableHead>
-                  <TableHead>Novos Dados</TableHead>
+                  <TableHead>Date / Time</TableHead>
+                  <TableHead>User</TableHead>
+                  <TableHead>Action</TableHead>
+                  <TableHead>Table</TableHead>
+                  <TableHead>Record ID</TableHead>
+                  <TableHead>Old Data</TableHead>
+                  <TableHead>New Data</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -111,7 +110,7 @@ export default function AuditLogs() {
                   <TableRow>
                     <TableCell colSpan={7} className="text-center py-12">
                       <Loader2 className="w-8 h-8 animate-spin text-muted-foreground mx-auto mb-2" />
-                      Carregando logs de auditoria...
+                      Loading audit logs...
                     </TableCell>
                   </TableRow>
                 ) : logs.length === 0 ? (
@@ -120,7 +119,7 @@ export default function AuditLogs() {
                       colSpan={7}
                       className="text-center py-8 text-muted-foreground"
                     >
-                      Nenhum registro de auditoria encontrado.
+                      No audit records found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -129,7 +128,7 @@ export default function AuditLogs() {
                       <TableCell className="whitespace-nowrap font-medium text-xs">
                         {format(
                           new Date(log.created_at),
-                          'dd/MM/yyyy HH:mm:ss',
+                          'MM/dd/yyyy HH:mm:ss',
                         )}
                       </TableCell>
                       <TableCell>
@@ -138,7 +137,7 @@ export default function AuditLogs() {
                           <span className="text-sm font-medium">
                             {log.profiles?.name ||
                               log.profiles?.email ||
-                              'Sistema / Desconhecido'}
+                              'System / Unknown'}
                           </span>
                         </div>
                       </TableCell>

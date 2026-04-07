@@ -56,7 +56,7 @@ export default function Index() {
           budget: 600,
         },
         {
-          title: 'Roupas Infantis (Lote)',
+          title: 'Kids Clothes (Lot)',
           price: 0,
           image: 'https://img.usecurling.com/p/400/400?q=clothes',
           location: 'Sanford, FL',
@@ -64,7 +64,7 @@ export default function Index() {
           budget: 0,
         },
         {
-          title: 'Cadeira de Escritório',
+          title: 'Office Chair',
           price: 0,
           image: 'https://img.usecurling.com/p/400/400?q=chair',
           location: 'Orlando, FL',
@@ -72,7 +72,7 @@ export default function Index() {
           budget: 0,
         },
         {
-          title: 'Apartamento 2 Quartos',
+          title: '2 Bedroom Apartment',
           price: 1200,
           image: 'https://img.usecurling.com/p/400/400?q=apartment',
           location: 'Orlando, FL',
@@ -80,7 +80,7 @@ export default function Index() {
           budget: 1200,
         },
         {
-          title: 'Betoneira 400L',
+          title: 'Concrete Mixer 400L',
           price: 150,
           image: 'https://img.usecurling.com/p/400/400?q=mixer',
           location: 'Miami, FL',
@@ -92,15 +92,15 @@ export default function Index() {
       mockListingsData.forEach((item, index) => {
         addJob({
           title: item.title,
-          description: `Ótima oportunidade para adquirir ${item.title}. Entre em contato para mais detalhes ou para negociar!`,
+          description: `Great opportunity to acquire ${item.title}. Contact for more details or to negotiate!`,
           type: 'fixed',
-          category: 'Geral',
+          category: 'General',
           location: item.location,
           address: {
             zipCode: '00000',
             street: 'Main St',
             number: '1',
-            neighborhood: 'Centro',
+            neighborhood: 'Downtown',
             city: item.location.split(',')[0],
             state: item.location.split(',')[1]?.trim() || 'FL',
             country: 'US',
@@ -118,7 +118,7 @@ export default function Index() {
           regionCode: item.location.split(',')[1]?.trim() || 'FL',
           contactPhone: '(00) 0000-0000',
           ownerId: 'owner-1',
-          ownerName: 'Usuário Demo',
+          ownerName: 'Demo User',
         })
       })
     }
@@ -128,9 +128,9 @@ export default function Index() {
     let tabType = 'jobs'
     if (j.listingType === 'rental') tabType = 'rentals'
     if (j.listingType === 'product') {
-      tabType = j.salePrice === 0 || j.budget === 0 ? 'doacao' : 'desapego'
+      tabType = j.salePrice === 0 || j.budget === 0 ? 'donation' : 'marketplace'
     }
-    if (j.listingType === 'community') tabType = 'doacao'
+    if (j.listingType === 'community') tabType = 'donation'
 
     return {
       id: j.id,
@@ -160,7 +160,7 @@ export default function Index() {
           <CardTitle className="text-xl font-bold">{title}</CardTitle>
           <Button variant="ghost" size="sm" asChild className="hidden sm:flex">
             <Link to={`/find-jobs?type=${filterType}`}>
-              Ver todos <ArrowRight className="ml-2 h-4 w-4" />
+              View all <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </CardHeader>
@@ -185,7 +185,7 @@ export default function Index() {
             className="w-full mt-4 sm:hidden"
           >
             <Link to={`/find-jobs?type=${filterType}`}>
-              Ver todos <ArrowRight className="ml-2 h-4 w-4" />
+              View all <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
           </Button>
         </CardContent>
@@ -201,10 +201,10 @@ export default function Index() {
 
       <div className="px-4 mt-2">
         <div className="space-y-2 pt-2">
-          {renderSection('Desapego (Marketplace)', 'desapego', 'product')}
-          {renderSection('Doações e Comunidade', 'doacao', 'community')}
-          {renderSection('Aluguéis', 'rentals', 'rental')}
-          {renderSection('Vagas em Destaque', 'jobs', 'job')}
+          {renderSection('Marketplace', 'marketplace', 'product')}
+          {renderSection('Donations & Community', 'donation', 'community')}
+          {renderSection('Rentals', 'rentals', 'rental')}
+          {renderSection('Featured Jobs', 'jobs', 'job')}
         </div>
       </div>
     </div>

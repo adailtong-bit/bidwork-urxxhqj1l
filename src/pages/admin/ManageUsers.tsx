@@ -56,7 +56,7 @@ export default function ManageUsers() {
     if (error) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao carregar usuários',
+        title: 'Error loading users',
         description: error.message,
       })
     } else {
@@ -88,11 +88,11 @@ export default function ManageUsers() {
     if (error) {
       toast({
         variant: 'destructive',
-        title: 'Erro ao atualizar',
+        title: 'Error updating',
         description: error.message,
       })
     } else {
-      toast({ title: 'Usuário atualizado com sucesso' })
+      toast({ title: 'User updated successfully' })
       fetchUsers()
       setEditUser(null)
     }
@@ -104,13 +104,13 @@ export default function ManageUsers() {
     if (error) {
       toast({
         variant: 'destructive',
-        title: 'Erro',
+        title: 'Error',
         description: error.message,
       })
     } else {
       toast({
-        title: 'Link enviado',
-        description: `Um e-mail de redefinição foi enviado para ${email}.`,
+        title: 'Link sent',
+        description: `A password reset email has been sent to ${email}.`,
       })
     }
   }
@@ -125,27 +125,25 @@ export default function ManageUsers() {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">
-            Gestão de Usuários
-          </h1>
+          <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie perfis, permissões e acessos.
+            Manage profiles, permissions, and access.
           </p>
         </div>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Usuários Cadastrados</CardTitle>
+          <CardTitle>Registered Users</CardTitle>
           <CardDescription>
-            Visualize e edite as informações de todos os usuários da plataforma.
+            View and edit information for all platform users.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="flex items-center gap-2 mb-4">
             <Search className="w-5 h-5 text-muted-foreground" />
             <Input
-              placeholder="Buscar por nome ou e-mail..."
+              placeholder="Search by name or email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="max-w-md"
@@ -156,31 +154,31 @@ export default function ManageUsers() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nome</TableHead>
-                  <TableHead>E-mail</TableHead>
-                  <TableHead>Papel / Tipo</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role / Type</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Ações</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {loading ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
-                      Carregando...
+                      Loading...
                     </TableCell>
                   </TableRow>
                 ) : filteredUsers.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-8">
-                      Nenhum usuário encontrado.
+                      No users found.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">
-                        {user.name || 'Sem Nome'}
+                        {user.name || 'No Name'}
                         {user.is_admin && (
                           <Badge variant="destructive" className="ml-2">
                             Admin
@@ -205,7 +203,7 @@ export default function ManageUsers() {
                               : ''
                           }
                         >
-                          {user.status === 'inactive' ? 'Inativo' : 'Ativo'}
+                          {user.status === 'inactive' ? 'Inactive' : 'Active'}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -214,7 +212,7 @@ export default function ManageUsers() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleResetPassword(user.email)}
-                            title="Resetar Senha"
+                            title="Reset Password"
                           >
                             <KeyRound className="w-4 h-4" />
                           </Button>
@@ -222,7 +220,7 @@ export default function ManageUsers() {
                             variant="secondary"
                             size="sm"
                             onClick={() => setEditUser({ ...user })}
-                            title="Editar Usuário"
+                            title="Edit User"
                           >
                             <Edit2 className="w-4 h-4" />
                           </Button>
@@ -243,12 +241,12 @@ export default function ManageUsers() {
       >
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
-            <DialogTitle>Editar Usuário</DialogTitle>
+            <DialogTitle>Edit User</DialogTitle>
           </DialogHeader>
           {editUser && (
             <div className="grid gap-4 py-4">
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">E-mail</Label>
+                <Label className="text-right">Email</Label>
                 <Input
                   value={editUser.email}
                   disabled
@@ -256,7 +254,7 @@ export default function ManageUsers() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Nome</Label>
+                <Label className="text-right">Name</Label>
                 <Input
                   value={editUser.name || ''}
                   onChange={(e) =>
@@ -266,7 +264,7 @@ export default function ManageUsers() {
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Tipo Entidade</Label>
+                <Label className="text-right">Entity Type</Label>
                 <div className="col-span-3">
                   <Select
                     value={editUser.entity_type || 'pf'}
@@ -278,15 +276,15 @@ export default function ManageUsers() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="pf">Pessoa Física (PF)</SelectItem>
-                      <SelectItem value="pj">Pessoa Jurídica (PJ)</SelectItem>
+                      <SelectItem value="pf">Individual (PF)</SelectItem>
+                      <SelectItem value="pj">Company (PJ)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               {editUser.entity_type === 'pj' && (
                 <div className="grid grid-cols-4 items-center gap-4">
-                  <Label className="text-right">Empresa</Label>
+                  <Label className="text-right">Company</Label>
                   <Input
                     value={editUser.company_name || ''}
                     onChange={(e) =>
@@ -297,7 +295,7 @@ export default function ManageUsers() {
                 </div>
               )}
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Papel / Função</Label>
+                <Label className="text-right">Role</Label>
                 <div className="col-span-3">
                   <Select
                     value={editUser.role || 'contractor'}
@@ -309,10 +307,10 @@ export default function ManageUsers() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="contractor">Contratante</SelectItem>
+                      <SelectItem value="contractor">Contractor</SelectItem>
                       <SelectItem value="executor">Executor</SelectItem>
-                      <SelectItem value="partner">Parceiro</SelectItem>
-                      <SelectItem value="admin">Administrador</SelectItem>
+                      <SelectItem value="partner">Partner</SelectItem>
+                      <SelectItem value="admin">Administrator</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -330,14 +328,14 @@ export default function ManageUsers() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="active">Ativo</SelectItem>
-                      <SelectItem value="inactive">Inativo</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
-                <Label className="text-right">Acesso Root</Label>
+                <Label className="text-right">Root Access</Label>
                 <div className="col-span-3 flex items-center gap-2">
                   <Button
                     type="button"
@@ -352,7 +350,7 @@ export default function ManageUsers() {
                     }
                   >
                     <ShieldAlert className="w-4 h-4 mr-2" />
-                    {editUser.is_admin ? 'Admin Habilitado' : 'Tornar Admin'}
+                    {editUser.is_admin ? 'Admin Enabled' : 'Make Admin'}
                   </Button>
                 </div>
               </div>
@@ -360,10 +358,10 @@ export default function ManageUsers() {
           )}
           <DialogFooter>
             <Button variant="outline" onClick={() => setEditUser(null)}>
-              Cancelar
+              Cancel
             </Button>
             <Button onClick={handleSave} disabled={isSaving}>
-              {isSaving ? 'Salvando...' : 'Salvar Alterações'}
+              {isSaving ? 'Saving...' : 'Save Changes'}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -138,8 +138,7 @@ export default function Register() {
       toast({
         title: t('success'),
         description:
-          t('dashboard.welcome', { name: data.name }) +
-          ' (Verifique seu email)',
+          t('dashboard.welcome', { name: data.name }) + ' (Check your email)',
       })
       navigate('/login')
     }
@@ -152,7 +151,7 @@ export default function Register() {
         className="inline-flex items-center text-sm font-medium text-muted-foreground hover:text-primary transition-colors"
       >
         <ArrowLeft className="mr-2 h-4 w-4" />
-        Voltar para o início
+        Back to home
       </Link>
 
       <div className="space-y-2 text-center">
@@ -244,7 +243,7 @@ export default function Register() {
             name="entityType"
             render={({ field }) => (
               <FormItem className="space-y-3">
-                <FormLabel>Tipo</FormLabel>
+                <FormLabel>Type</FormLabel>
                 <FormControl>
                   <RadioGroup
                     onValueChange={field.onChange}
@@ -257,7 +256,7 @@ export default function Register() {
                         htmlFor="pf"
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        <UserCircle className="h-4 w-4" /> PF
+                        <UserCircle className="h-4 w-4" /> Individual (PF)
                       </label>
                     </div>
                     <div className="flex items-center space-x-2">
@@ -266,7 +265,7 @@ export default function Register() {
                         htmlFor="pj"
                         className="flex items-center gap-2 cursor-pointer"
                       >
-                        <Building2 className="h-4 w-4" /> PJ
+                        <Building2 className="h-4 w-4" /> Company (PJ)
                       </label>
                     </div>
                   </RadioGroup>
@@ -290,9 +289,7 @@ export default function Register() {
                   <FormControl>
                     <Input
                       placeholder={
-                        entityType === 'pj'
-                          ? 'Minha Empresa Ltda'
-                          : 'João Silva'
+                        entityType === 'pj' ? 'My Company LLC' : 'John Doe'
                       }
                       {...field}
                     />
@@ -470,7 +467,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>{t('settings.banking.bank')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Ex: Nubank" {...field} />
+                        <Input placeholder="Ex: Chase" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -511,7 +508,7 @@ export default function Register() {
                     <FormItem>
                       <FormLabel>{t('settings.banking.doc')}</FormLabel>
                       <FormControl>
-                        <Input placeholder="Documento" {...field} />
+                        <Input placeholder="Document" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>

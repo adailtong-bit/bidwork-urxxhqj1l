@@ -90,7 +90,7 @@ export default function ConstructionDashboard() {
       ? finishedProjectStats
       : [
           {
-            name: 'Residencial Beta (Mock)',
+            name: 'Beta Residential (Mock)',
             plannedDays: 120,
             actualDays: 135,
             timeVariance: 15,
@@ -391,7 +391,7 @@ export default function ConstructionDashboard() {
                       {t('construction.start')}
                     </span>
                     <span className="font-medium">
-                      {formatDate(project.startDate, 'dd/MM/yyyy')}
+                      {formatDate(project.startDate, 'MM/dd/yyyy')}
                     </span>
                   </div>
                   <div>

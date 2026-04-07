@@ -81,12 +81,12 @@ export default function FinanceDashboard() {
         <div className="bg-destructive/10 p-4 rounded-full">
           <Lock className="h-12 w-12 text-destructive" />
         </div>
-        <h1 className="text-2xl font-bold">Acesso Restrito</h1>
+        <h1 className="text-2xl font-bold">Restricted Access</h1>
         <p className="text-muted-foreground text-center max-w-md">
-          Você não tem permissão para visualizar o painel financeiro.
+          You don't have permission to view the financial dashboard.
         </p>
         <Button asChild>
-          <Link to="/dashboard">Voltar ao Início</Link>
+          <Link to="/dashboard">Back to Home</Link>
         </Button>
       </div>
     )
@@ -118,16 +118,16 @@ export default function FinanceDashboard() {
   // Mock Cash Flow Data
   const cashFlowData = [
     { month: 'Jan', entrada: 4000, saida: 2400 },
-    { month: 'Fev', entrada: 3000, saida: 1398 },
+    { month: 'Feb', entrada: 3000, saida: 1398 },
     { month: 'Mar', entrada: 2000, saida: 9800 },
-    { month: 'Abr', entrada: 2780, saida: 3908 },
-    { month: 'Mai', entrada: 1890, saida: 4800 },
+    { month: 'Apr', entrada: 2780, saida: 3908 },
+    { month: 'May', entrada: 1890, saida: 4800 },
     { month: 'Jun', entrada: 2390, saida: 3800 },
   ]
 
   const chartConfig = {
-    entrada: { label: 'Receitas', color: 'hsl(var(--primary))' },
-    saida: { label: 'Despesas', color: 'hsl(var(--destructive))' },
+    entrada: { label: 'Income', color: 'hsl(var(--primary))' },
+    saida: { label: 'Expenses', color: 'hsl(var(--destructive))' },
   }
 
   const handleSchedule = () => {
@@ -137,7 +137,7 @@ export default function FinanceDashboard() {
         payerId: user.id,
         payerName: user.name,
         receiverId: 'mock-receiver',
-        receiverName: 'Fornecedor Externo',
+        receiverName: 'External Supplier',
         amount: scheduleData.amount,
         category: 'other',
       },
@@ -145,7 +145,7 @@ export default function FinanceDashboard() {
     )
 
     setIsScheduleOpen(false)
-    toast({ title: 'Pagamento Agendado!' })
+    toast({ title: 'Payment Scheduled!' })
   }
 
   return (
@@ -153,17 +153,17 @@ export default function FinanceDashboard() {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Dashboard Financeiro
+            Financial Dashboard
           </h1>
           <p className="text-muted-foreground">
-            Acompanhe o fluxo de caixa, pagamentos e recebimentos da conta.
+            Track your cash flow, payments and receipts.
           </p>
         </div>
         <div className="flex gap-2">
           {isPJ && (
             <Button variant="outline" asChild>
               <Link to="/finance/accounting">
-                <Download className="mr-2 h-4 w-4" /> Exportação Contábil
+                <Download className="mr-2 h-4 w-4" /> Accounting Export
               </Link>
             </Button>
           )}
@@ -174,7 +174,7 @@ export default function FinanceDashboard() {
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Saldo Total</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
             <Wallet className="h-4 w-4 text-emerald-500" />
           </CardHeader>
           <CardContent>
@@ -182,13 +182,13 @@ export default function FinanceDashboard() {
               {formatCurrency(totalBalance)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Disponível em conta
+              Available in account
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Gasto</CardTitle>
+            <CardTitle className="text-sm font-medium">Total Spent</CardTitle>
             <TrendingDown className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
@@ -196,14 +196,14 @@ export default function FinanceDashboard() {
               {formatCurrency(totalSpent)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Despesas e pagamentos efetuados
+              Expenses and payments made
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">
-              Faturas Pendentes
+              Pending Invoices
             </CardTitle>
             <Clock className="h-4 w-4 text-yellow-500" />
           </CardHeader>
@@ -212,7 +212,7 @@ export default function FinanceDashboard() {
               {formatCurrency(pendingAmount)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Valores em análise ou retidos
+              Values under review or on hold
             </p>
           </CardContent>
         </Card>
@@ -220,16 +220,16 @@ export default function FinanceDashboard() {
 
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="overview">Visão Geral</TabsTrigger>
-          {isPJ && <TabsTrigger value="cashflow">Fluxo de Caixa</TabsTrigger>}
-          <TabsTrigger value="scheduled">Agendamentos</TabsTrigger>
+          <TabsTrigger value="overview">Overview</TabsTrigger>
+          {isPJ && <TabsTrigger value="cashflow">Cash Flow</TabsTrigger>}
+          <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid gap-6 md:grid-cols-3">
             <Card className="md:col-span-1">
               <CardHeader>
-                <CardTitle>Balanço</CardTitle>
+                <CardTitle>Balance</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="h-[300px]">
@@ -271,16 +271,16 @@ export default function FinanceDashboard() {
 
             <Card className="md:col-span-2">
               <CardHeader>
-                <CardTitle>Histórico de Transações</CardTitle>
+                <CardTitle>Transaction History</CardTitle>
               </CardHeader>
               <CardContent>
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Data</TableHead>
-                      <TableHead>Descrição</TableHead>
-                      <TableHead>Valor</TableHead>
-                      <TableHead>Tipo</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -289,7 +289,7 @@ export default function FinanceDashboard() {
                       transactions.slice(0, 5).map((tx) => (
                         <TableRow key={tx.id}>
                           <TableCell>
-                            {formatDate(tx.date, 'dd/MM/yy')}
+                            {formatDate(tx.date, 'MM/dd/yy')}
                           </TableCell>
                           <TableCell className="font-medium">
                             {tx.jobTitle}
@@ -300,23 +300,23 @@ export default function FinanceDashboard() {
                           <TableCell>
                             {tx.payerId === user.id ? (
                               <span className="text-red-500 font-medium">
-                                Despesa
+                                Expense
                               </span>
                             ) : (
                               <span className="text-green-500 font-medium">
-                                Receita
+                                Income
                               </span>
                             )}
                           </TableCell>
                           <TableCell>
                             {tx.status === 'completed' && (
                               <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                                Pago
+                                Paid
                               </Badge>
                             )}
                             {tx.status === 'pending' && (
                               <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                                Pendente
+                                Pending
                               </Badge>
                             )}
                             {tx.status === 'escrow' && (
@@ -326,12 +326,12 @@ export default function FinanceDashboard() {
                             )}
                             {tx.status === 'scheduled' && (
                               <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">
-                                Agendado
+                                Scheduled
                               </Badge>
                             )}
                             {tx.status === 'failed' && (
                               <Badge className="bg-red-100 text-red-800 hover:bg-red-100">
-                                Cancelado
+                                Cancelled
                               </Badge>
                             )}
                           </TableCell>
@@ -343,7 +343,7 @@ export default function FinanceDashboard() {
                           colSpan={5}
                           className="text-center text-muted-foreground py-8"
                         >
-                          Nenhuma transação encontrada.
+                          No transactions found.
                         </TableCell>
                       </TableRow>
                     )}
@@ -357,9 +357,9 @@ export default function FinanceDashboard() {
         <TabsContent value="cashflow" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Fluxo Projetado</CardTitle>
+              <CardTitle>Projected Flow</CardTitle>
               <CardDescription>
-                Comparativo de entradas e saídas ao longo dos meses.
+                Comparison of income and expenses over the months.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -414,16 +414,16 @@ export default function FinanceDashboard() {
             <Dialog open={isScheduleOpen} onOpenChange={setIsScheduleOpen}>
               <DialogTrigger asChild>
                 <Button>
-                  <Plus className="mr-2 h-4 w-4" /> Agendar Pagamento
+                  <Plus className="mr-2 h-4 w-4" /> Schedule Payment
                 </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
-                  <DialogTitle>Novo Agendamento</DialogTitle>
+                  <DialogTitle>New Schedule</DialogTitle>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label>Descrição</Label>
+                    <Label>Description</Label>
                     <Input
                       value={scheduleData.title}
                       onChange={(e) =>
@@ -432,11 +432,11 @@ export default function FinanceDashboard() {
                           title: e.target.value,
                         })
                       }
-                      placeholder="Ex: Fornecedor Cimento"
+                      placeholder="Ex: Cement Supplier"
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Valor</Label>
+                    <Label>Amount</Label>
                     <CurrencyInput
                       value={scheduleData.amount}
                       onChange={(val) =>
@@ -446,7 +446,7 @@ export default function FinanceDashboard() {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label>Data Programada</Label>
+                    <Label>Scheduled Date</Label>
                     <Input
                       value={scheduleData.date}
                       onChange={(e) =>
@@ -460,7 +460,7 @@ export default function FinanceDashboard() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button onClick={handleSchedule}>Confirmar</Button>
+                  <Button onClick={handleSchedule}>Confirm</Button>
                 </DialogFooter>
               </DialogContent>
             </Dialog>
@@ -468,16 +468,16 @@ export default function FinanceDashboard() {
 
           <Card>
             <CardHeader>
-              <CardTitle>Pagamentos Futuros</CardTitle>
+              <CardTitle>Future Payments</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Data Programada</TableHead>
-                    <TableHead>Descrição</TableHead>
-                    <TableHead>Beneficiário</TableHead>
-                    <TableHead>Valor</TableHead>
+                    <TableHead>Scheduled Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Beneficiary</TableHead>
+                    <TableHead>Amount</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -488,7 +488,7 @@ export default function FinanceDashboard() {
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4" />
                           {tx.scheduledDate
-                            ? formatDate(tx.scheduledDate, 'dd/MM/yyyy')
+                            ? formatDate(tx.scheduledDate, 'MM/dd/yyyy')
                             : '-'}
                         </div>
                       </TableCell>
@@ -500,7 +500,7 @@ export default function FinanceDashboard() {
                           variant="outline"
                           className="border-purple-200 bg-purple-50 text-purple-700"
                         >
-                          Agendado
+                          Scheduled
                         </Badge>
                       </TableCell>
                     </TableRow>
@@ -511,7 +511,7 @@ export default function FinanceDashboard() {
                         colSpan={5}
                         className="text-center py-8 text-muted-foreground"
                       >
-                        Nenhum pagamento futuro agendado.
+                        No future payments scheduled.
                       </TableCell>
                     </TableRow>
                   )}

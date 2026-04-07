@@ -101,7 +101,7 @@ const AuthSync = () => {
 
             setDomainUser({
               id: user.id,
-              name: data?.name || user.user_metadata?.name || 'Usuário',
+              name: data?.name || user.user_metadata?.name || 'User',
               email: user.email!,
               role: (data?.role as any) || (isAdmin ? 'admin' : 'contractor'),
               entityType: (data?.entity_type as any) || 'pf',
@@ -110,7 +110,7 @@ const AuthSync = () => {
               taxId: data?.tax_id || undefined,
               isPremium: isAdmin,
               subscriptionTier: isAdmin ? 'business' : 'free',
-              planName: isAdmin ? 'Enterprise' : 'Básico',
+              planName: isAdmin ? 'Enterprise' : 'Basic',
             })
           })
       } else {
