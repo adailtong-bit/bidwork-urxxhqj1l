@@ -1,4 +1,5 @@
 import { useAdminPricingStore } from '@/stores/useAdminPricingStore'
+import { useAuthStore } from '@/stores/useAuthStore'
 import {
   Card,
   CardHeader,
@@ -14,8 +15,11 @@ import { useLanguageStore } from '@/stores/useLanguageStore'
 
 export default function ConstructionPlans() {
   const { plans } = useAdminPricingStore()
+  const { user } = useAuthStore()
   const navigate = useNavigate()
   const { formatCurrency } = useLanguageStore()
+
+  const isAdmin = user?.role === 'admin' || user?.isPremium
 
   const availablePlans = plans.filter(
     (p) => p.active && p.targetAudience === 'contractor',
@@ -61,11 +65,13 @@ export default function ConstructionPlans() {
               </CardTitle>
               <div className="mt-2 md:mt-4 flex flex-wrap items-baseline gap-1">
                 <span className="text-2xl md:text-3xl font-bold tracking-tight break-all sm:break-words">
-                  {formatCurrency(plan.price)}
+                  {isAdmin ? 'Grátis' : formatCurrency(plan.price)}
                 </span>
-                <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
-                  /{plan.billingCycle === 'monthly' ? 'mês' : 'ciclo'}
-                </span>
+                {!isAdmin && (
+                  <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
+                    /{plan.billingCycle === 'monthly' ? 'mês' : 'ciclo'}
+                  </span>
+                )}
               </div>
               <CardDescription className="mt-2 min-h-[40px] text-xs md:text-sm leading-relaxed break-words">
                 {plan.description}
@@ -126,7 +132,7 @@ export default function ConstructionPlans() {
                 size="lg"
                 onClick={() => navigate(`/construction/checkout/${plan.id}`)}
               >
-                Selecionar Plano
+                {isAdmin ? 'Ativar (Admin)' : 'Selecionar Plano'}
               </Button>
             </CardFooter>
           </Card>

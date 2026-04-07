@@ -56,7 +56,8 @@ export default function ConstructionDashboard() {
   const totalSpent = projects.reduce((acc, p) => acc + p.totalSpent, 0)
 
   // Subscription Check
-  const isSubscribed = user?.constructionSubscription?.active
+  const isAdmin = user?.role === 'admin' || user?.isPremium
+  const isSubscribed = isAdmin || user?.constructionSubscription?.active
 
   const handleProtectedAction = (callback: () => void) => {
     if (!isSubscribed) {
@@ -220,7 +221,7 @@ export default function ConstructionDashboard() {
         </Card>
       </div>
 
-      {user?.constructionSubscription?.active && (
+      {user?.constructionSubscription?.active && !isAdmin && (
         <Card className="bg-blue-50/50 border-blue-100">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-blue-800">
@@ -264,6 +265,20 @@ export default function ConstructionDashboard() {
                 {user.constructionSubscription.projectLimit} {t('nav.projects')}
               </span>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {isAdmin && (
+        <Card className="bg-emerald-50/50 border-emerald-100">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base text-emerald-800">
+              Acesso Administrativo
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="text-sm text-emerald-700">
+            Você tem acesso ilimitado à Gestão de Obras como administrador.
+            Nenhuma cobrança é aplicada.
           </CardContent>
         </Card>
       )}

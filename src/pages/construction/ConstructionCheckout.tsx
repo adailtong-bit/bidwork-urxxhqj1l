@@ -21,10 +21,12 @@ import { CreditCard, Loader2, ShieldCheck, Lock } from 'lucide-react'
 export default function ConstructionCheckout() {
   const { planId } = useParams()
   const { plans } = useAdminPricingStore()
-  const { activateConstructionSubscription } = useAuthStore()
+  const { user, activateConstructionSubscription } = useAuthStore()
   const navigate = useNavigate()
   const { toast } = useToast()
   const { formatCurrency } = useLanguageStore()
+
+  const isAdmin = user?.role === 'admin' || user?.isPremium
 
   const plan = plans.find((p) => p.id === planId)
   const [isProcessing, setIsProcessing] = useState(false)
@@ -44,15 +46,17 @@ export default function ConstructionCheckout() {
     // Simulate payment API call
     setTimeout(() => {
       activateConstructionSubscription({
-        limit: plan.maxProjects || 1,
-        price: plan.price,
+        limit: plan.maxProjects || 9999,
+        price: isAdmin ? 0 : plan.price,
       })
       toast({
-        title: 'Assinatura confirmada!',
-        description: 'Recursos de gestão de obras desbloqueados.',
+        title: isAdmin ? 'Acesso Admin Liberado!' : 'Assinatura confirmada!',
+        description: isAdmin
+          ? 'Você ativou os recursos como administrador.'
+          : 'Recursos de gestão de obras desbloqueados.',
       })
       setIsProcessing(false)
-      navigate('/post-job')
+      navigate('/construction/dashboard')
     }, 2000)
   }
 
@@ -201,7 +205,7 @@ export default function ConstructionCheckout() {
                   Total a Pagar
                 </span>
                 <span className="text-xl md:text-2xl font-bold text-primary break-all">
-                  {formatCurrency(plan.price)}
+                  {isAdmin ? 'Grátis (Admin)' : formatCurrency(plan.price)}
                 </span>
               </div>
             </CardContent>
@@ -220,7 +224,7 @@ export default function ConstructionCheckout() {
                 ) : (
                   <>
                     <ShieldCheck className="mr-2 h-4 w-4 md:h-5 md:w-5" />{' '}
-                    Confirmar Pagamento
+                    {isAdmin ? 'Liberar Acesso Admin' : 'Confirmar Pagamento'}
                   </>
                 )}
               </Button>
