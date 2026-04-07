@@ -78,27 +78,27 @@ const LogoFixer = () => {
       try {
         const checkAndReplace = (el: HTMLElement) => {
           let parent = el.parentElement
-          let foundBidwork = false
-          // Look up the DOM tree to see if this logo is next to the "Bidwork" text
+          let foundOpperjob = false
+          // Look up the DOM tree to see if this logo is next to the "Opperjob" text
           for (let j = 0; j < 4; j++) {
             if (
               parent &&
-              parent.textContent?.toLowerCase().includes('bidwork')
+              parent.textContent?.toLowerCase().includes('opperjob')
             ) {
-              foundBidwork = true
+              foundOpperjob = true
               break
             }
             parent = parent?.parentElement || null
           }
 
-          if (foundBidwork && !el.querySelector('img')) {
+          if (foundOpperjob && !el.querySelector('img')) {
             el.innerHTML = ''
             el.style.backgroundColor = 'transparent'
             el.className = 'flex items-center justify-center shrink-0'
             const img = document.createElement('img')
             img.src = logoImg
             img.className = 'h-8 w-auto object-contain scale-125'
-            img.alt = 'Bidwork Logo'
+            img.alt = 'Opperjob Logo'
             el.appendChild(img)
             el.classList.remove(
               'bg-primary',
@@ -112,9 +112,9 @@ const LogoFixer = () => {
           }
         }
 
-        // 1. Find elements with text 'B' or 'b'
+        // 1. Find elements with text 'O' or 'o'
         const bTextElements = document.evaluate(
-          "//div[text()='B'] | //span[text()='B'] | //div[text()='b'] | //span[text()='b']",
+          "//div[text()='O'] | //span[text()='O'] | //div[text()='o'] | //span[text()='o']",
           document,
           null,
           XPathResult.UNORDERED_NODE_SNAPSHOT_TYPE,

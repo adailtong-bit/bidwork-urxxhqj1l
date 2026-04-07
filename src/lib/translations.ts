@@ -8,8 +8,8 @@ export type Translations = {
 
 export const translations: Translations = {
   pt: {
-    'app.title': 'BIDWORK',
-    'search.placeholder': 'Buscar no BIDWORK',
+    'app.title': 'OPPERJOB',
+    'search.placeholder': 'Buscar no OPPERJOB',
     cancel: 'Cancelar',
     save: 'Salvar',
     delete: 'Excluir',
@@ -897,8 +897,8 @@ export const translations: Translations = {
     'delete.confirm': 'Tem certeza que deseja excluir este item?',
   },
   en: {
-    'app.title': 'BIDWORK',
-    'search.placeholder': 'Search BIDWORK',
+    'app.title': 'OPPERJOB',
+    'search.placeholder': 'Search OPPERJOB',
     cancel: 'Cancel',
     save: 'Save',
     delete: 'Delete',
@@ -1780,8 +1780,8 @@ export const translations: Translations = {
     'delete.confirm': 'Are you sure you want to delete this item?',
   },
   es: {
-    'app.title': 'BIDWORK',
-    'search.placeholder': 'Buscar en BIDWORK',
+    'app.title': 'OPPERJOB',
+    'search.placeholder': 'Buscar en OPPERJOB',
     cancel: 'Cancelar',
     save: 'Guardar',
     delete: 'Eliminar',

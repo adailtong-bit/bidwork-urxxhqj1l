@@ -170,7 +170,7 @@ export function MainSidebar() {
         <SidebarHeader className="h-auto flex flex-col justify-start px-4 py-4 border-b border-sidebar-border/50 gap-4">
           <div className="flex items-center gap-2 font-bold text-xl text-primary truncate overflow-hidden">
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              B
+              O
             </div>
             <span
               className={cn(
@@ -178,7 +178,7 @@ export function MainSidebar() {
                 state === 'collapsed' ? 'opacity-0 w-0' : 'opacity-100',
               )}
             >
-              BIDWORK
+              OPPERJOB
             </span>
           </div>
 
