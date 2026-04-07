@@ -28,27 +28,32 @@ export function getCountryValidation(country: CountryCode | string) {
 export const formatPhone = (val: string, country: string) => {
   const digits = val.replace(/\D/g, '')
   if (country === 'US') {
-    if (digits.length === 0) return ''
-    if (digits.length <= 3) return `(${digits}`
-    if (digits.length <= 6) return `(${digits.slice(0, 3)}) ${digits.slice(3)}`
-    return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6, 10)}`
+    const limited = digits.slice(0, 10)
+    if (limited.length === 0) return ''
+    if (limited.length <= 3) return `(${limited}`
+    if (limited.length <= 6)
+      return `(${limited.slice(0, 3)}) ${limited.slice(3)}`
+    return `(${limited.slice(0, 3)}) ${limited.slice(3, 6)}-${limited.slice(6, 10)}`
   }
   // BR
-  if (digits.length === 0) return ''
-  if (digits.length <= 2) return `(${digits}`
-  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`
-  if (digits.length <= 10)
-    return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`
-  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`
+  const limited = digits.slice(0, 11)
+  if (limited.length === 0) return ''
+  if (limited.length <= 2) return `(${limited}`
+  if (limited.length <= 6) return `(${limited.slice(0, 2)}) ${limited.slice(2)}`
+  if (limited.length <= 10)
+    return `(${limited.slice(0, 2)}) ${limited.slice(2, 6)}-${limited.slice(6)}`
+  return `(${limited.slice(0, 2)}) ${limited.slice(2, 7)}-${limited.slice(7, 11)}`
 }
 
 export const formatZip = (val: string, country: string) => {
   const digits = val.replace(/\D/g, '')
   if (country === 'US') {
-    if (digits.length <= 5) return digits
-    return `${digits.slice(0, 5)}-${digits.slice(5, 9)}`
+    const limited = digits.slice(0, 9)
+    if (limited.length <= 5) return limited
+    return `${limited.slice(0, 5)}-${limited.slice(5, 9)}`
   }
   // BR
-  if (digits.length <= 5) return digits
-  return `${digits.slice(0, 5)}-${digits.slice(5, 8)}`
+  const limited = digits.slice(0, 8)
+  if (limited.length <= 5) return limited
+  return `${limited.slice(0, 5)}-${limited.slice(5, 8)}`
 }

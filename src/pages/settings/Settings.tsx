@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+import { z } from 'zod'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useAuth } from '@/hooks/use-auth'
 import { supabase } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import {
   Card,
   CardContent,
@@ -11,10 +13,54 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { useToast } from '@/hooks/use-toast'
-import { Badge } from '@/components/ui/badge'
-import { ShieldAlert, ShieldCheck, Loader2, Camera } from 'lucide-react'
+import { Loader2 } from 'lucide-react'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
+  getCountryValidation,
+  CountryCode,
+  formatPhone,
+  formatZip,
+} from '@/lib/validation'
+import { SecuritySettings } from './SecuritySettings'
+import { ProfilePictureSettings } from './ProfilePictureSettings'
+
+const createSettingsSchema = (country: CountryCode) => {
+  const { phone, zip } = getCountryValidation(country)
+  return z.object({
+    name: z.string().min(2, 'Required'),
+    country: z.enum(['BR', 'US']),
+    phone: phone,
+    entityType: z.enum(['pf', 'pj']),
+    role: z.enum(['contractor', 'executor']),
+    street: z.string().min(3, 'Required'),
+    number:
+      country === 'US' ? z.string().optional() : z.string().min(1, 'Required'),
+    complement: z.string().optional(),
+    neighborhood: z.string().min(2, 'Required'),
+    city: z.string().min(2, 'Required'),
+    state: z.string().min(2, 'Required'),
+    zipCode: zip,
+    bank: z.string().optional(),
+    agency: z.string().optional(),
+    account: z.string().optional(),
+    document: z.string().optional(),
+  })
+}
 
 export default function Settings() {
   const { user } = useAuth()
@@ -22,20 +68,34 @@ export default function Settings() {
 
   const [profile, setProfile] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [country, setCountry] = useState<CountryCode>('BR')
 
-  const [mfaEnrolled, setMfaEnrolled] = useState(false)
-  const [qrCode, setQrCode] = useState<string>('')
-  const [verifyCode, setVerifyCode] = useState('')
-  const [factorId, setFactorId] = useState('')
-  const [secret, setSecret] = useState('')
+  const form = useForm({
+    resolver: (values, context, options) =>
+      zodResolver(createSettingsSchema(country))(values, context, options),
+    defaultValues: {
+      name: '',
+      country: 'BR',
+      phone: '',
+      entityType: 'pf',
+      role: 'contractor',
+      street: '',
+      number: '',
+      complement: '',
+      neighborhood: '',
+      city: '',
+      state: '',
+      zipCode: '',
+      bank: '',
+      agency: '',
+      account: '',
+      document: '',
+    },
+  })
 
   useEffect(() => {
-    if (user) {
-      fetchProfile()
-      checkMfaStatus()
-    }
+    if (user) fetchProfile()
   }, [user])
 
   const fetchProfile = async () => {
@@ -45,9 +105,28 @@ export default function Settings() {
         .select('*')
         .eq('id', user?.id)
         .single()
-
       if (error) throw error
       setProfile(data)
+      const c = (data.country as CountryCode) || 'BR'
+      setCountry(c)
+      form.reset({
+        name: data.name || '',
+        country: c,
+        phone: data.phone || '',
+        entityType: data.entity_type || 'pf',
+        role: data.role || 'contractor',
+        street: data.street || '',
+        number: data.number || '',
+        complement: data.complement || '',
+        neighborhood: data.neighborhood || '',
+        city: data.city || '',
+        state: data.state || '',
+        zipCode: data.zip_code || '',
+        bank: data.bank || '',
+        agency: data.agency || '',
+        account: data.account || '',
+        document: data.document || '',
+      })
     } catch (error: any) {
       console.error(error)
     } finally {
@@ -55,28 +134,32 @@ export default function Settings() {
     }
   }
 
-  const checkMfaStatus = async () => {
-    const { data } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel()
-    if (data?.currentLevel === 'aal2' || data?.nextLevel === 'aal2') {
-      setMfaEnrolled(true)
-    } else {
-      setMfaEnrolled(false)
-    }
-  }
-
-  const handleUpdateProfile = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleUpdateProfile = async (data: any) => {
     setSaving(true)
     try {
       const { error } = await supabase
         .from('profiles')
         .update({
-          name: profile.name,
-          phone: profile.phone,
+          name: data.name,
+          country: data.country,
+          phone: data.phone,
+          entity_type: data.entityType,
+          role: data.role,
+          street: data.street,
+          number: data.number,
+          complement: data.complement,
+          neighborhood: data.neighborhood,
+          city: data.city,
+          state: data.state,
+          zip_code: data.zipCode,
+          bank: data.bank,
+          agency: data.agency,
+          account: data.account,
+          document: data.document,
         })
         .eq('id', user?.id)
-
       if (error) throw error
+      setProfile({ ...profile, ...data, entity_type: data.entityType })
       toast({ title: 'Success', description: 'Profile updated successfully.' })
     } catch (error: any) {
       toast({
@@ -89,122 +172,14 @@ export default function Settings() {
     }
   }
 
-  const handleAvatarUpload = async (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    try {
-      setUploading(true)
-
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image.')
-      }
-
-      const file = event.target.files[0]
-      const fileExt = file.name.split('.').pop()
-      const filePath = `${user?.id}/${Math.random()}.${fileExt}`
-
-      const { error: uploadError } = await supabase.storage
-        .from('avatars')
-        .upload(filePath, file)
-
-      if (uploadError) throw uploadError
-
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from('avatars').getPublicUrl(filePath)
-
-      await supabase
-        .from('profiles')
-        .update({ avatar_url: publicUrl })
-        .eq('id', user?.id)
-      setProfile({ ...profile, avatar_url: publicUrl })
-
-      toast({ title: 'Success', description: 'Profile picture updated!' })
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error uploading',
-        description: error.message,
-      })
-    } finally {
-      setUploading(false)
-    }
-  }
-
-  const enrollMfa = async () => {
-    try {
-      const { data, error } = await supabase.auth.mfa.enroll({
-        factorType: 'totp',
-      })
-      if (error) throw error
-      setFactorId(data.id)
-      setQrCode(data.totp.qr_code)
-      setSecret(data.totp.secret)
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'MFA Error',
-        description: error.message,
-      })
-    }
-  }
-
-  const verifyMfa = async () => {
-    try {
-      const challenge = await supabase.auth.mfa.challenge({ factorId })
-      if (challenge.error) throw challenge.error
-
-      const verify = await supabase.auth.mfa.verify({
-        factorId,
-        challengeId: challenge.data.id,
-        code: verifyCode,
-      })
-
-      if (verify.error) throw verify.error
-
-      toast({ title: 'Success', description: 'MFA activated successfully!' })
-      setMfaEnrolled(true)
-      setQrCode('')
-      setSecret('')
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Verification Error',
-        description: error.message,
-      })
-    }
-  }
-
-  const disableMfa = async () => {
-    try {
-      const { data } = await supabase.auth.mfa.listFactors()
-      const totpFactor = data?.totp[0]
-      if (totpFactor) {
-        const { error } = await supabase.auth.mfa.unenroll({
-          factorId: totpFactor.id,
-        })
-        if (error) throw error
-        setMfaEnrolled(false)
-        toast({
-          title: 'MFA Disabled',
-          description: 'Two-factor authentication has been removed.',
-        })
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error',
-        description: error.message,
-      })
-    }
-  }
-
   if (loading)
     return (
       <div className="p-8 flex justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     )
+
+  const role = form.watch('role')
 
   return (
     <div className="max-w-4xl mx-auto space-y-8">
@@ -217,186 +192,340 @@ export default function Settings() {
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-1 space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Profile Picture</CardTitle>
-            </CardHeader>
-            <CardContent className="flex flex-col items-center space-y-4">
-              <div className="relative group">
-                <Avatar className="h-32 w-32 border-4 border-muted">
-                  <AvatarImage
-                    src={
-                      profile?.avatar_url ||
-                      `https://api.dicebear.com/7.x/initials/svg?seed=${profile?.name}`
-                    }
-                  />
-                  <AvatarFallback>
-                    {profile?.name?.charAt(0) || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-                <label
-                  htmlFor="avatar-upload"
-                  className="absolute inset-0 flex items-center justify-center bg-black/60 text-white opacity-0 group-hover:opacity-100 rounded-full cursor-pointer transition-opacity"
-                >
-                  {uploading ? (
-                    <Loader2 className="w-6 h-6 animate-spin" />
-                  ) : (
-                    <Camera className="w-6 h-6" />
-                  )}
-                </label>
-                <input
-                  id="avatar-upload"
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  onChange={handleAvatarUpload}
-                  disabled={uploading}
-                />
-              </div>
-              <p className="text-xs text-muted-foreground text-center">
-                Click image to change. Recommended 256x256px.
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle>Access Level</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-2">
-                <Badge
-                  variant={profile?.is_admin ? 'destructive' : 'default'}
-                  className="w-fit"
-                >
-                  {profile?.is_admin ? 'Master Admin' : 'Standard User'}
-                </Badge>
-                <span className="text-sm text-muted-foreground">
-                  Type:{' '}
-                  <strong className="uppercase">
-                    {profile?.entity_type || 'PF'}
-                  </strong>
-                </span>
-                <span className="text-sm text-muted-foreground capitalize">
-                  Role: <strong>{profile?.role || 'Contractor'}</strong>
-                </span>
-              </div>
-            </CardContent>
-          </Card>
+          <ProfilePictureSettings
+            profile={profile}
+            onUpdate={(url) => setProfile({ ...profile, avatar_url: url })}
+          />
         </div>
 
         <div className="md:col-span-2 space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Personal Information</CardTitle>
-              <CardDescription>Update your basic details.</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
-                <div className="grid gap-2">
-                  <Label>Email (Login)</Label>
-                  <Input
-                    value={user?.email || ''}
-                    disabled
-                    className="bg-muted"
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Full Name</Label>
-                  <Input
-                    value={profile?.name || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, name: e.target.value })
-                    }
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Phone / Mobile</Label>
-                  <Input
-                    value={profile?.phone || ''}
-                    onChange={(e) =>
-                      setProfile({ ...profile, phone: e.target.value })
-                    }
-                  />
-                </div>
-                <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-                  Save Changes
-                </Button>
-              </form>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                Security <ShieldAlert className="w-5 h-5 text-primary" />
-              </CardTitle>
               <CardDescription>
-                Protect your account with multi-factor authentication (MFA).
+                Update your basic details and address.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <h4 className="font-medium flex items-center gap-2">
-                    2-Step Authentication
-                    {mfaEnrolled && (
-                      <ShieldCheck className="w-4 h-4 text-green-500" />
-                    )}
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    {mfaEnrolled
-                      ? 'MFA is active on your account.'
-                      : 'Add an extra layer of security.'}
-                  </p>
-                </div>
-                {mfaEnrolled ? (
-                  <Button variant="destructive" onClick={disableMfa}>
-                    Disable MFA
-                  </Button>
-                ) : (
-                  <Button onClick={enrollMfa}>Configure MFA</Button>
-                )}
-              </div>
-
-              {qrCode && !mfaEnrolled && (
-                <div className="p-4 border rounded-lg space-y-4 bg-muted/30">
-                  <h4 className="font-medium">1. Scan the QR Code</h4>
-                  <p className="text-sm text-muted-foreground">
-                    Open your authenticator app (Google Authenticator, Authy,
-                    etc) and scan the image below:
-                  </p>
-                  <div
-                    className="bg-white p-4 w-fit rounded-md mx-auto"
-                    dangerouslySetInnerHTML={{ __html: qrCode }}
-                  />
-                  <p className="text-xs text-center text-muted-foreground break-all">
-                    Secret: {secret}
-                  </p>
-
-                  <div className="pt-4 border-t space-y-4">
-                    <h4 className="font-medium">2. Enter the generated code</h4>
-                    <div className="flex items-center gap-4">
+            <CardContent>
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(handleUpdateProfile)}
+                  className="space-y-4"
+                >
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <FormLabel>Email (Login)</FormLabel>
                       <Input
-                        placeholder="000000"
-                        value={verifyCode}
-                        onChange={(e) => setVerifyCode(e.target.value)}
-                        className="max-w-[150px] text-center tracking-widest font-mono"
-                        maxLength={6}
+                        value={user?.email || ''}
+                        disabled
+                        className="bg-muted"
                       />
-                      <Button
-                        onClick={verifyMfa}
-                        disabled={verifyCode.length < 6}
-                      >
-                        Verify and Activate
-                      </Button>
                     </div>
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Full Name / Company</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
-                </div>
-              )}
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="entityType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Entity Type</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="pf">
+                                Individual (PF)
+                              </SelectItem>
+                              <SelectItem value="pj">Company (PJ)</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="role"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Account Role</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="contractor">
+                                Contractor
+                              </SelectItem>
+                              <SelectItem value="executor">Executor</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="country"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Country</FormLabel>
+                          <Select
+                            onValueChange={(v) => {
+                              setCountry(v as CountryCode)
+                              field.onChange(v)
+                            }}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="BR">Brasil</SelectItem>
+                              <SelectItem value="US">United States</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Phone</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  formatPhone(e.target.value, country),
+                                )
+                              }
+                              maxLength={country === 'BR' ? 15 : 14}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="zipCode"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>ZIP/Postal Code</FormLabel>
+                          <FormControl>
+                            <Input
+                              {...field}
+                              onChange={(e) =>
+                                field.onChange(
+                                  formatZip(e.target.value, country),
+                                )
+                              }
+                              maxLength={country === 'BR' ? 9 : 10}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="city"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>City</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="state"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>State</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div
+                    className={`grid gap-4 ${country === 'US' ? 'grid-cols-1' : 'grid-cols-3'}`}
+                  >
+                    <FormField
+                      control={form.control}
+                      name="street"
+                      render={({ field }) => (
+                        <FormItem
+                          className={country === 'US' ? '' : 'col-span-2'}
+                        >
+                          <FormLabel>Street</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    {country !== 'US' && (
+                      <FormField
+                        control={form.control}
+                        name="number"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Number</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <FormField
+                      control={form.control}
+                      name="neighborhood"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Neighborhood</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="complement"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Complement</FormLabel>
+                          <FormControl>
+                            <Input {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {role === 'executor' && (
+                    <div className="pt-4 border-t space-y-4">
+                      <h4 className="font-medium">Banking Information</h4>
+                      <div className="grid grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="bank"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Bank</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="agency"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Agency</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="account"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Account</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="document"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Document/Tax ID</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  <Button type="submit" disabled={saving}>
+                    {saving && (
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    )}
+                    Save Changes
+                  </Button>
+                </form>
+              </Form>
             </CardContent>
           </Card>
+
+          <SecuritySettings />
         </div>
       </div>
     </div>

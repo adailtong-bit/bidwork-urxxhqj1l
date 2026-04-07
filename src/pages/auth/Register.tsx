@@ -5,6 +5,7 @@ import { z } from 'zod'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { supabase } from '@/lib/supabase/client'
 import { useAuth } from '@/hooks/use-auth'
 import { useToast } from '@/hooks/use-toast'
 import { useLanguageStore } from '@/stores/useLanguageStore'
@@ -129,7 +130,30 @@ export default function Register() {
 
   async function onSubmit(data: any) {
     setIsLoading(true)
-    const { error } = await signUp(data.email, data.password, data.name)
+    const { error } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+      options: {
+        data: {
+          name: data.name,
+          role: data.role,
+          entityType: data.entityType,
+          phone: data.phone,
+          country: data.country,
+          street: data.street,
+          number: data.number,
+          complement: data.complement,
+          neighborhood: data.neighborhood,
+          city: data.city,
+          state: data.state,
+          zipCode: data.zipCode,
+          bank: data.bank,
+          agency: data.agency,
+          account: data.account,
+          document: data.document,
+        },
+      },
+    })
     setIsLoading(false)
 
     if (error) {

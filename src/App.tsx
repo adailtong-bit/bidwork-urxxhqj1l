@@ -108,6 +108,20 @@ const AuthSync = () => {
               companyName: data?.company_name || undefined,
               phone: data?.phone || undefined,
               taxId: data?.tax_id || undefined,
+              address: {
+                country: data?.country || 'BR',
+                street: data?.street || '',
+                number: data?.number || '',
+                complement: data?.complement || '',
+                neighborhood: data?.neighborhood || '',
+                city: data?.city || '',
+                state: data?.state || '',
+                zipCode: data?.zip_code || '',
+              },
+              location:
+                data?.city && data?.state
+                  ? `${data.city} - ${data.state}`
+                  : undefined,
               isPremium: isAdmin,
               subscriptionTier: isAdmin ? 'business' : 'free',
               planName: isAdmin ? 'Enterprise' : 'Basic',
