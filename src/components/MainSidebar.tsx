@@ -167,15 +167,27 @@ export function MainSidebar() {
   return (
     <>
       <Sidebar collapsible="icon">
-        <SidebarHeader className="h-auto flex flex-col justify-start px-4 py-4 border-b border-sidebar-border/50 gap-4">
-          <div className="flex items-center gap-2 font-bold text-xl text-primary truncate overflow-hidden">
+        <SidebarHeader
+          className={cn(
+            'h-auto flex flex-col justify-start py-4 border-b border-sidebar-border/50 gap-4 transition-all duration-200',
+            state === 'collapsed' ? 'px-2 items-center' : 'px-4',
+          )}
+        >
+          <div
+            className={cn(
+              'flex items-center font-bold text-xl text-primary transition-all duration-200',
+              state === 'collapsed'
+                ? 'justify-center w-full'
+                : 'gap-2 justify-start w-full overflow-hidden',
+            )}
+          >
             <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
               O
             </div>
             <span
               className={cn(
-                'transition-opacity duration-200',
-                state === 'collapsed' ? 'opacity-0 w-0' : 'opacity-100',
+                'transition-all duration-200 truncate',
+                state === 'collapsed' ? 'opacity-0 w-0 hidden' : 'opacity-100',
               )}
             >
               OPPORJOB
